@@ -1,13 +1,13 @@
 spring:
-#  datasource:
-#    url: jdbc:postgresql://${DB_SERVER}
-#    username: ${keyvault.acquirerMDbUsername}
-#    password: ${keyvault.acquirerMDbPassword}
-#    driver-class-name: org.postgresql.Driver
-#  jpa:
-#    properties:
-#      hibernate:
-#        dialect: org.hibernate.dialect.PostgreSQLDialect
+  #  datasource:
+  #    url: jdbc:postgresql://${DB_SERVER}
+  #    username: ${keyvault.acquirerMDbUsername}
+  #    password: ${keyvault.acquirerMDbPassword}
+  #    driver-class-name: org.postgresql.Driver
+  #  jpa:
+  #    properties:
+  #      hibernate:
+  #        dialect: org.hibernate.dialect.PostgreSQLDialect
   application:
     name: Tkm Acquirer Manager ${HOSTNAME:0}
 #  kafka:
@@ -46,11 +46,14 @@ azure:
     uri: ${AZURE_KEYVAULT_URI}
   storage:
     default-endpoints-protocol: https
-    account-name: ${AZURE_STORAGE_ACCOUNT_NAME}
-    connection-string: ${keyvault.blobStorageConnectionString}
+    account-name: ${keyvault.blobAccountName}
+    account-key: ${keyvault.blobAccountKey}
+    blob-endpoint: ${AZURE_STORAGE_ENDPOINT}
+    connection-string: "DefaultEndpointsProtocol=${azure.storage.default-endpoints-protocol};AccountName=${azure.storage.account-name};AccountKey=${azure.storage.account-key};BlobEndpoint=${azure.storage.blob-endpoint};"
 
 keyvault:
-  blobStorageConnectionString: ${${AZURE_KEYVAULT_PROFILE:prod}-blobStorageConnectionString}
+  blobAccountName: ${${AZURE_KEYVAULT_PROFILE:prod}-blobAccountName}
+  blobAccountKey: ${${AZURE_KEYVAULT_PROFILE:prod}-blobAccountKey}
   eventhubLogSaslJaasConfig: ${${AZURE_KEYVAULT_PROFILE:prod}-eventhubLogSaslJaasConfig:null}
   acquirerMEventhubReadSaslJaasConfig: ${${AZURE_KEYVAULT_PROFILE:prod}-acquirerMEventhubReadSaslJaasConfig:null}
 #  readQueuePrvPgpKey: ${${AZURE_KEYVAULT_PROFILE:prod}-readQueuePrvPgpKey}

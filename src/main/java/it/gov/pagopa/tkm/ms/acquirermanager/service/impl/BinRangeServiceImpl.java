@@ -23,7 +23,7 @@ public class BinRangeServiceImpl implements BinRangeService {
     @Value("${azure.storage.connection-string}")
     private String connectionString;
 
-    @Value("${BLOB_STORAGE_NAME}")
+    @Value("${BLOB_STORAGE_BIN_HASH_CONTAINER}")
     private String containerName;
 
     @Value("${AZURE_KEYVAULT_PROFILE}")
