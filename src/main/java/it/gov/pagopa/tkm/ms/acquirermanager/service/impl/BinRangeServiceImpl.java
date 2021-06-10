@@ -17,7 +17,6 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,29 +33,35 @@ public class BinRangeServiceImpl implements BinRangeService {
 
     @Override
     public LinksResponse getBinRangeFiles() {
-        List<String> links = getLinks();
-        int linksSize = links.size();
-        return new LinksResponse(
-                links,
-                linksSize,
-                Instant.now().plus(getAvailableFor(linksSize), ChronoUnit.MINUTES),
-                Instant.now()
-        );
-    }
-
-    private List<String> getLinks() {
         BlobServiceClient serviceClient = new BlobServiceClientBuilder().connectionString(connectionString).buildClient();
         BlobContainerClient client = serviceClient.getBlobContainerClient(containerName);
-        String directory = String.format("%s/%s/",BatchEnum.BIN_RANGE_GEN, dateFormat.format(Instant.now()));
+        PagedIterable<BlobItem> blobItems = getBlobItem(client);
+        OffsetDateTime now = OffsetDateTime.now();
+        OffsetDateTime offsetDateTime = now.plusMinutes(getAvailableFor(blobItems.stream().count()));
+        List<String> links = getLinks(offsetDateTime, client, blobItems);
+
+        return LinksResponse.builder()
+                .fileLinks(links)
+                .numberOfFiles(links.size())
+                .availableUntil(offsetDateTime.toInstant())
+                //todo fixit
+                .generationDate(now.toInstant())
+                .expiredIn(offsetDateTime.toEpochSecond() - now.toEpochSecond())
+                .build();
+    }
+
+    private PagedIterable<BlobItem> getBlobItem(BlobContainerClient client) {
+        String directory = String.format("%s/%s/", BatchEnum.BIN_RANGE_GEN, dateFormat.format(Instant.now()));
         PagedIterable<BlobItem> blobItems = client.listBlobsByHierarchy(directory);
         long numberOfFiles = blobItems.stream().count();
         if (numberOfFiles == 0) {
             throw new AcquirerDataNotFoundException();
         }
-        BlobServiceSasSignatureValues sasValues = new BlobServiceSasSignatureValues(
-                OffsetDateTime.now().plusMinutes(getAvailableFor(numberOfFiles)),
-                new BlobContainerSasPermission().setReadPermission(true)
-        );
+        return blobItems;
+    }
+
+    private List<String> getLinks(OffsetDateTime expireTime, BlobContainerClient client, PagedIterable<BlobItem> blobItems) {
+        BlobServiceSasSignatureValues sasValues = new BlobServiceSasSignatureValues(expireTime, new BlobContainerSasPermission().setReadPermission(true));
         List<String> links = new ArrayList<>();
         String completeContainerUrl = client.getBlobContainerUrl();
         for (BlobItem blobItem : blobItems) {
