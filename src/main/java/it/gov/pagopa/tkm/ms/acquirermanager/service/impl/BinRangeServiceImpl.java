@@ -47,7 +47,7 @@ public class BinRangeServiceImpl implements BinRangeService {
     private List<String> getLinks() {
         BlobServiceClient serviceClient = new BlobServiceClientBuilder().connectionString(connectionString).buildClient();
         BlobContainerClient client = serviceClient.getBlobContainerClient(containerName);
-        String directory = BatchEnum.BIN_RANGE_GEN + "/" + dateFormat.format(Instant.now()) + "/";
+        String directory = String.format("%s/%s/",BatchEnum.BIN_RANGE_GEN, dateFormat.format(Instant.now()));
         PagedIterable<BlobItem> blobItems = client.listBlobsByHierarchy(directory);
         long numberOfFiles = blobItems.stream().count();
         if (numberOfFiles == 0) {
