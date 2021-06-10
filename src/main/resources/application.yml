@@ -49,7 +49,7 @@ azure:
     account-name: ${keyvault.blobAccountName}
     account-key: ${keyvault.blobAccountKey}
     blob-endpoint: ${AZURE_STORAGE_ENDPOINT}
-    connection-string: "DefaultEndpointsProtocol=${azure.storage.default-endpoints-protocol};AccountName=${azure.storage.account-name};AccountKey=${azure.storage.account-key};BlobEndpoint=${azure.storage.blob-endpoint};"
+    connection-string: DefaultEndpointsProtocol=${azure.storage.default-endpoints-protocol};AccountName=${keyvault.blobAccountName};AccountKey=${keyvault.blobAccountKey};BlobEndpoint=${azure.storage.blob-endpoint};
 
 keyvault:
   blobAccountName: ${${AZURE_KEYVAULT_PROFILE:prod}-blobAccountName}

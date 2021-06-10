@@ -1,17 +1,17 @@
 package it.gov.pagopa.tkm.ms.acquirermanager.service.impl;
 
+import com.azure.core.http.rest.*;
 import com.azure.storage.blob.*;
 import com.azure.storage.blob.models.*;
 import com.azure.storage.common.sas.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.constant.*;
+import it.gov.pagopa.tkm.ms.acquirermanager.exception.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.response.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.*;
-import org.apache.commons.lang3.*;
 import org.apache.commons.lang3.math.*;
 import org.springframework.beans.factory.annotation.*;
 import org.springframework.stereotype.*;
 
-import javax.annotation.*;
 import java.time.*;
 import java.time.format.*;
 import java.time.temporal.*;
@@ -23,29 +23,10 @@ public class BinRangeServiceImpl implements BinRangeService {
     @Value("${azure.storage.connection-string}")
     private String connectionString;
 
-    @Value("${BLOB_STORAGE_BIN_HASH_CONTAINER}")
+    @Value("${BLOB_STORAGE_CONTAINER}")
     private String containerName;
 
-    @Value("${AZURE_KEYVAULT_PROFILE}")
-    private String profile;
-
-    private BlobContainerClient client;
-
-    private String sas;
-
     private final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("uuuuMMdd").withZone(ZoneId.of("Europe/Rome"));
-
-    @PostConstruct
-    public void init() {
-        AccountSasPermission permissions = new AccountSasPermission().setListPermission(true).setReadPermission(true);
-        AccountSasResourceType resourceTypes = new AccountSasResourceType().setObject(true);
-        AccountSasService services = new AccountSasService().setBlobAccess(true);
-        OffsetDateTime expiryTime = OffsetDateTime.now().plusDays(10);
-        AccountSasSignatureValues sasValues = new AccountSasSignatureValues(expiryTime, permissions, services, resourceTypes);
-        BlobServiceClient serviceClient = new BlobServiceClientBuilder().connectionString(connectionString).buildClient();
-        sas = serviceClient.generateAccountSas(sasValues);
-        client = serviceClient.getBlobContainerClient(containerName);
-    }
 
     @Override
     public LinksResponse getBinRangeFiles() {
@@ -54,28 +35,37 @@ public class BinRangeServiceImpl implements BinRangeService {
         return new LinksResponse(
                 links,
                 linksSize,
-                getAvailableUntil(linksSize),
+                Instant.now().plus(getAvailableFor(linksSize), ChronoUnit.MINUTES),
                 Instant.now()
         );
     }
 
     private List<String> getLinks() {
-        List<String> links = new ArrayList<>();
-        String directory = StringUtils.joinWith("_",
-                BatchEnum.BIN_RANGE_GEN,
-                profile,
-                dateFormat.format(Instant.now())
+        BlobServiceClient serviceClient = new BlobServiceClientBuilder().connectionString(connectionString).buildClient();
+        BlobContainerClient client = serviceClient.getBlobContainerClient(containerName);
+        String directory = BatchEnum.BIN_RANGE_GEN + "/" + dateFormat.format(Instant.now()) + "/";
+        PagedIterable<BlobItem> blobItems = client.listBlobsByHierarchy(directory);
+        long numberOfFiles = blobItems.stream().count();
+        if (numberOfFiles == 0) {
+            throw new AcquirerDataNotFoundException();
+        }
+        AccountSasSignatureValues sasValues = new AccountSasSignatureValues(
+                OffsetDateTime.now().plusMinutes(getAvailableFor(numberOfFiles)),
+                new AccountSasPermission().setReadPermission(true),
+                new AccountSasService().setBlobAccess(true),
+                new AccountSasResourceType().setObject(true)
         );
+        List<String> links = new ArrayList<>();
         String completeContainerUrl = client.getBlobContainerUrl();
-        for (BlobItem blobItem : client.listBlobsByHierarchy(directory + "/")) {
+        String sas = serviceClient.generateAccountSas(sasValues);
+        for (BlobItem blobItem : blobItems) {
             links.add(completeContainerUrl + "/" + blobItem.getName() + "?" + sas);
         }
         return links;
     }
 
-    private Instant getAvailableUntil(int linksSize) {
-        int duration = NumberUtils.min(10, linksSize * 2);
-        return Instant.now().plus(duration, ChronoUnit.MINUTES);
+    private long getAvailableFor(long linksSize) {
+        return NumberUtils.min(10, linksSize * 2);
     }
 
 }

@@ -10,17 +10,17 @@ import org.springframework.web.bind.annotation.*;
 @Log4j2
 public class ErrorHandler {
 
+    @ExceptionHandler(AcquirerDataNotFoundException.class)
+    public ResponseEntity<Void> handleAcquirerDataNotFoundException(AcquirerDataNotFoundException ce) {
+        log.error(ce.getMessage());
+        return ResponseEntity.notFound().build();
+    }
+
     @ExceptionHandler(AcquirerException.class)
     public ResponseEntity<ErrorCodeEnum> handleAcquirerException(AcquirerException ce) {
         log.error(ce.getMessage());
         return ResponseEntity.badRequest().body(ce.getErrorCode());
     }
-
-    /*@ExceptionHandler({MissingServletRequestParameterException.class, MethodArgumentTypeMismatchException.class, MethodArgumentNotValidException.class, ValidationException.class, HttpMessageNotReadableException.class})
-    public ResponseEntity<ErrorCodeEnum> handleValidationException(Exception ve) {
-        log.error(ve.getMessage());
-        return ResponseEntity.badRequest().body(ErrorCodeEnum.REQUEST_VALIDATION_FAILED);
-    }*/
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Void> handleException(Exception e) {
