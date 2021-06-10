@@ -10,10 +10,8 @@ import org.apache.commons.lang3.*;
 import org.apache.commons.lang3.math.*;
 import org.springframework.beans.factory.annotation.*;
 import org.springframework.stereotype.*;
-import org.springframework.web.util.*;
 
 import javax.annotation.*;
-import java.text.*;
 import java.time.*;
 import java.time.format.*;
 import java.time.temporal.*;
@@ -40,8 +38,8 @@ public class BinRangeServiceImpl implements BinRangeService {
     @PostConstruct
     public void init() {
         AccountSasPermission permissions = new AccountSasPermission().setListPermission(true).setReadPermission(true);
-        AccountSasResourceType resourceTypes = new AccountSasResourceType().setContainer(true);
-        AccountSasService services = new AccountSasService().setBlobAccess(true).setFileAccess(true);
+        AccountSasResourceType resourceTypes = new AccountSasResourceType().setObject(true);
+        AccountSasService services = new AccountSasService().setBlobAccess(true);
         OffsetDateTime expiryTime = OffsetDateTime.now().plusDays(10);
         AccountSasSignatureValues sasValues = new AccountSasSignatureValues(expiryTime, permissions, services, resourceTypes);
         BlobServiceClient serviceClient = new BlobServiceClientBuilder().connectionString(connectionString).buildClient();
@@ -68,12 +66,9 @@ public class BinRangeServiceImpl implements BinRangeService {
                 profile,
                 dateFormat.format(Instant.now())
         );
+        String completeContainerUrl = client.getBlobContainerUrl();
         for (BlobItem blobItem : client.listBlobsByHierarchy(directory + "/")) {
-            links.add(UriComponentsBuilder
-                            .fromHttpUrl(client.getBlobContainerUrl())
-                            .path("/" + blobItem.getName())
-                            .queryParam(sas)
-                            .toUriString());
+            links.add(completeContainerUrl + "/" + blobItem.getName() + "?" + sas);
         }
         return links;
     }
