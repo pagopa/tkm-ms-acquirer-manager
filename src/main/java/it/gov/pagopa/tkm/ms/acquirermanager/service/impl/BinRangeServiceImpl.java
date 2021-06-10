@@ -1,21 +1,25 @@
 package it.gov.pagopa.tkm.ms.acquirermanager.service.impl;
 
-import com.azure.core.http.rest.*;
+import com.azure.core.http.rest.PagedIterable;
 import com.azure.storage.blob.*;
-import com.azure.storage.blob.models.*;
-import com.azure.storage.common.sas.*;
-import it.gov.pagopa.tkm.ms.acquirermanager.constant.*;
-import it.gov.pagopa.tkm.ms.acquirermanager.exception.*;
-import it.gov.pagopa.tkm.ms.acquirermanager.model.response.*;
-import it.gov.pagopa.tkm.ms.acquirermanager.service.*;
-import org.apache.commons.lang3.math.*;
-import org.springframework.beans.factory.annotation.*;
-import org.springframework.stereotype.*;
+import com.azure.storage.blob.models.BlobItem;
+import com.azure.storage.blob.sas.BlobContainerSasPermission;
+import com.azure.storage.blob.sas.BlobServiceSasSignatureValues;
+import it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum;
+import it.gov.pagopa.tkm.ms.acquirermanager.exception.AcquirerDataNotFoundException;
+import it.gov.pagopa.tkm.ms.acquirermanager.model.response.LinksResponse;
+import it.gov.pagopa.tkm.ms.acquirermanager.service.BinRangeService;
+import org.apache.commons.lang3.math.NumberUtils;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
-import java.time.*;
-import java.time.format.*;
-import java.time.temporal.*;
-import java.util.*;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class BinRangeServiceImpl implements BinRangeService {
@@ -23,7 +27,7 @@ public class BinRangeServiceImpl implements BinRangeService {
     @Value("${azure.storage.connection-string}")
     private String connectionString;
 
-    @Value("${BLOB_STORAGE_CONTAINER}")
+    @Value("${BLOB_STORAGE_BIN_HASH_CONTAINER}")
     private String containerName;
 
     private final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("uuuuMMdd").withZone(ZoneId.of("Europe/Rome"));
@@ -49,17 +53,20 @@ public class BinRangeServiceImpl implements BinRangeService {
         if (numberOfFiles == 0) {
             throw new AcquirerDataNotFoundException();
         }
-        AccountSasSignatureValues sasValues = new AccountSasSignatureValues(
+        BlobServiceSasSignatureValues sasValues = new BlobServiceSasSignatureValues(
                 OffsetDateTime.now().plusMinutes(getAvailableFor(numberOfFiles)),
-                new AccountSasPermission().setReadPermission(true),
-                new AccountSasService().setBlobAccess(true),
-                new AccountSasResourceType().setObject(true)
+                new BlobContainerSasPermission().setReadPermission(true)
         );
         List<String> links = new ArrayList<>();
         String completeContainerUrl = client.getBlobContainerUrl();
-        String sas = serviceClient.generateAccountSas(sasValues);
         for (BlobItem blobItem : blobItems) {
-            links.add(completeContainerUrl + "/" + blobItem.getName() + "?" + sas);
+            String blobName = blobItem.getName();
+            BlobClient blobClient = new BlobClientBuilder()
+                    .connectionString(connectionString)
+                    .blobName(blobName)
+                    .containerName(containerName)
+                    .buildClient();
+            links.add(String.format("%s/%s?%s", completeContainerUrl, blobName, blobClient.generateSas(sasValues)));
         }
         return links;
     }
