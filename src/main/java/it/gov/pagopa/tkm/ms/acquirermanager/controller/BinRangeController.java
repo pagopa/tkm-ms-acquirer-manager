@@ -11,7 +11,6 @@ import static it.gov.pagopa.tkm.ms.acquirermanager.constant.ApiEndpoints.LINK;
 public interface BinRangeController {
 
     @GetMapping(LINK)
-    @Transactional
     LinksResponse getBinRangeFiles();
 
 }
