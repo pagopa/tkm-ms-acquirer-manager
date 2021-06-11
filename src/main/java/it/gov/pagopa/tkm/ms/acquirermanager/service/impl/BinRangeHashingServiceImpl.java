@@ -8,7 +8,7 @@ import com.azure.storage.blob.sas.BlobServiceSasSignatureValues;
 import it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum;
 import it.gov.pagopa.tkm.ms.acquirermanager.exception.AcquirerDataNotFoundException;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.response.LinksResponse;
-import it.gov.pagopa.tkm.ms.acquirermanager.service.BinRangeService;
+import it.gov.pagopa.tkm.ms.acquirermanager.service.BinRangeHashingService;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
-public class BinRangeServiceImpl implements BinRangeService {
+public class BinRangeHashingServiceImpl implements BinRangeHashingService {
 
     @Value("${azure.storage.connection-string}")
     private String connectionString;
@@ -32,10 +32,10 @@ public class BinRangeServiceImpl implements BinRangeService {
     private final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("uuuuMMdd").withZone(ZoneId.of("Europe/Rome"));
 
     @Override
-    public LinksResponse getBinRangeFiles() {
+    public LinksResponse getSasLinkResponse(BatchEnum batchEnum) {
         BlobServiceClient serviceClient = new BlobServiceClientBuilder().connectionString(connectionString).buildClient();
         BlobContainerClient client = serviceClient.getBlobContainerClient(containerName);
-        PagedIterable<BlobItem> blobItems = getBlobItem(client);
+        PagedIterable<BlobItem> blobItems = getBlobItem(client, batchEnum);
         OffsetDateTime now = OffsetDateTime.now();
         OffsetDateTime offsetDateTime = now.plusMinutes(getAvailableFor(blobItems.stream().count()));
         List<String> links = getLinks(offsetDateTime, client, blobItems);
@@ -50,8 +50,8 @@ public class BinRangeServiceImpl implements BinRangeService {
                 .build();
     }
 
-    private PagedIterable<BlobItem> getBlobItem(BlobContainerClient client) {
-        String directory = String.format("%s/%s/", BatchEnum.BIN_RANGE_GEN, dateFormat.format(Instant.now()));
+    private PagedIterable<BlobItem> getBlobItem(BlobContainerClient client, BatchEnum batchEnum) {
+        String directory = String.format("%s/%s/", batchEnum, dateFormat.format(Instant.now()));
         PagedIterable<BlobItem> blobItems = client.listBlobsByHierarchy(directory);
         long numberOfFiles = blobItems.stream().count();
         if (numberOfFiles == 0) {
