@@ -3,6 +3,8 @@ package it.gov.pagopa.tkm.ms.acquirermanager.service.impl;
 import com.azure.core.http.rest.PagedIterable;
 import com.azure.storage.blob.*;
 import com.azure.storage.blob.models.BlobItem;
+import com.azure.storage.blob.models.BlobListDetails;
+import com.azure.storage.blob.models.ListBlobsOptions;
 import com.azure.storage.blob.sas.BlobContainerSasPermission;
 import com.azure.storage.blob.sas.BlobServiceSasSignatureValues;
 import it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum;
@@ -65,7 +67,13 @@ public class BinRangeHashingServiceImpl implements BinRangeHashingService {
 
     private PagedIterable<BlobItem> getBlobItems(BlobContainerClient client, BatchEnum batchEnum) {
         String directory = String.format("%s/%s/", batchEnum, dateFormat.format(Instant.now()));
-        PagedIterable<BlobItem> blobItems = client.listBlobsByHierarchy(directory);
+
+        BlobListDetails blobListDetails = new BlobListDetails().setRetrieveMetadata(true);
+        ListBlobsOptions listBlobsOptions = new ListBlobsOptions()
+                .setPrefix(directory)
+                .setDetails(blobListDetails);
+
+        PagedIterable<BlobItem> blobItems = client.listBlobsByHierarchy("/", listBlobsOptions, null);
         if (blobItems.stream().count() == 0) {
             throw new AcquirerDataNotFoundException();
         }
