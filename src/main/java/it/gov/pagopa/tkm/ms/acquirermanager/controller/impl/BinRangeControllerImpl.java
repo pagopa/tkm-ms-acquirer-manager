@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 public class BinRangeControllerImpl implements BinRangeController {
 
     @Autowired
-    private BinRangeHashingServiceImpl binRangeService;
+    private BinRangeHashServiceImpl binRangeService;
 
     @Override
     public LinksResponse getBinRangeFiles() {
