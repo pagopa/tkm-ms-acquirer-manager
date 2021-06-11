@@ -5,7 +5,6 @@ import com.azure.storage.blob.*;
 import com.azure.storage.blob.models.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.constant.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.exception.*;
-import it.gov.pagopa.tkm.ms.acquirermanager.model.response.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.impl.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
@@ -43,7 +42,7 @@ public class TestBinRangeHashService {
     @Mock
     private BlobContainerClient containerClientMock;
 
-    private final DefaultBeans testBeans = new DefaultBeans();
+    private DefaultBeans testBeans;
 
     @Mock
     private PagedIterable<BlobItem> pagedIterableMock;
@@ -62,6 +61,7 @@ public class TestBinRangeHashService {
 
     @BeforeEach
     void init() {
+        testBeans = new DefaultBeans();
         instantMockedStatic.when(Instant::now).thenReturn(DefaultBeans.INSTANT);
         offsetMockedStatic.when(OffsetDateTime::now).thenReturn(DefaultBeans.OFFSET_DATE_TIME);
         ReflectionTestUtils.setField(binRangeHashService, "connectionString", DefaultBeans.TEST_CONNECTION_STRING);
@@ -86,10 +86,16 @@ public class TestBinRangeHashService {
     }
 
     @Test
-    void givenExistingFile_returnLinksResponse() {
+    void givenExistingFile_returnLinksResponseBinRanges() {
         startupAssumptions(false);
         when(pagedIterableMock.iterator()).thenReturn(testBeans.BLOB_LIST.iterator());
         assertEquals(testBeans.LINKS_RESPONSE, binRangeHashService.getSasLinkResponse(BatchEnum.BIN_RANGE_GEN));
+    }
+
+    @Test
+    void givenExistingFile_returnLinksResponseHashes() {
+        startupAssumptions(false);
+        when(pagedIterableMock.iterator()).thenReturn(testBeans.BLOB_LIST.iterator());
         assertEquals(testBeans.LINKS_RESPONSE, binRangeHashService.getSasLinkResponse(BatchEnum.HTOKEN_HPAN_GEN));
     }
 
