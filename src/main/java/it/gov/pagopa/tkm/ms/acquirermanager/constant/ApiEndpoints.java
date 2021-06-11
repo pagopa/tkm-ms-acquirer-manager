@@ -5,7 +5,7 @@ public class ApiEndpoints {
     }
 
     public static final String BIN_RANGE_BASE_PATH = "/bin-range";
-    public static final String HTOKEN_HPAN_BASE_PATH = "/htoken/known";
+    public static final String HTOKEN_HPAN_BASE_PATH = "/htoken-hpan/known";
     public static final String LINK = "/link";
 
 }
