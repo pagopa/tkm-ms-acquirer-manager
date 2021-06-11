@@ -7,7 +7,7 @@ servers:
   - url: https://test.cstar.pagopa.it/tkm/uat/acquirerm
   - url: https://prod.cstar.pagopa.it/tkm/acquirerm
 paths:
-  /binrange/link:
+  /bin-range/link:
     get:
       summary: Get Temporary link to download bin range details
       operationId: getBinRangeLink
@@ -46,7 +46,7 @@ paths:
                 maxLength: 16
                 example: 937aee55bbabd29b
               required: true
-  /htoken/known/link:
+  /htoken-hpan/known/link:
     get:
       summary: Get Temporary link to download Known Htoken
       operationId: getHtokenKnow
