@@ -8,7 +8,7 @@ import com.azure.storage.blob.sas.BlobServiceSasSignatureValues;
 import it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum;
 import it.gov.pagopa.tkm.ms.acquirermanager.exception.AcquirerDataNotFoundException;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.response.LinksResponse;
-import it.gov.pagopa.tkm.ms.acquirermanager.service.BinRangeService;
+import it.gov.pagopa.tkm.ms.acquirermanager.service.BinRangeHashingService;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
-public class BinRangeServiceImpl implements BinRangeService {
+public class BinRangeHashingServiceImpl implements BinRangeHashingService {
 
     @Value("${azure.storage.connection-string}")
     private String connectionString;
@@ -34,14 +34,15 @@ public class BinRangeServiceImpl implements BinRangeService {
     private static final String GENERATION_DATE_METADATA = "generationdate";
 
     @Override
-    public LinksResponse getBinRangeFiles() {
+    public LinksResponse getSasLinkResponse(BatchEnum batchEnum) {
         BlobServiceClient serviceClient = new BlobServiceClientBuilder().connectionString(connectionString).buildClient();
         BlobContainerClient client = serviceClient.getBlobContainerClient(containerName);
-        PagedIterable<BlobItem> blobItems = getBlobItems(client);
+        PagedIterable<BlobItem> blobItems = getBlobItems(client, batchEnum);
         OffsetDateTime now = OffsetDateTime.now();
         OffsetDateTime offsetDateTime = now.plusMinutes(getAvailableFor(blobItems.stream().count()));
         List<String> links = getLinks(offsetDateTime, client, blobItems);
         String genDate = blobItems.stream().findFirst().map(b -> b.getMetadata().get(GENERATION_DATE_METADATA)).orElse(Instant.EPOCH.toString());
+
         return LinksResponse.builder()
                 .fileLinks(links)
                 .numberOfFiles(links.size())
@@ -51,8 +52,8 @@ public class BinRangeServiceImpl implements BinRangeService {
                 .build();
     }
 
-    private PagedIterable<BlobItem> getBlobItems(BlobContainerClient client) {
-        String directory = String.format("%s/%s/", BatchEnum.BIN_RANGE_GEN, dateFormat.format(Instant.now()));
+    private PagedIterable<BlobItem> getBlobItems(BlobContainerClient client, BatchEnum batchEnum) {
+        String directory = String.format("%s/%s/", batchEnum, dateFormat.format(Instant.now()));
         PagedIterable<BlobItem> blobItems = client.listBlobsByHierarchy(directory);
         if (blobItems.stream().count() == 0) {
             throw new AcquirerDataNotFoundException();
