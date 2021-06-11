@@ -31,30 +31,31 @@ public class BinRangeHashingServiceImpl implements BinRangeHashingService {
 
     private final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("uuuuMMdd").withZone(ZoneId.of("Europe/Rome"));
 
+    private static final String GENERATION_DATE_METADATA = "generationdate";
+
     @Override
     public LinksResponse getSasLinkResponse(BatchEnum batchEnum) {
         BlobServiceClient serviceClient = new BlobServiceClientBuilder().connectionString(connectionString).buildClient();
         BlobContainerClient client = serviceClient.getBlobContainerClient(containerName);
-        PagedIterable<BlobItem> blobItems = getBlobItem(client, batchEnum);
+        PagedIterable<BlobItem> blobItems = getBlobItems(client, batchEnum);
         OffsetDateTime now = OffsetDateTime.now();
         OffsetDateTime offsetDateTime = now.plusMinutes(getAvailableFor(blobItems.stream().count()));
         List<String> links = getLinks(offsetDateTime, client, blobItems);
+        String genDate = blobItems.stream().findFirst().map(b -> b.getMetadata().get(GENERATION_DATE_METADATA)).orElse(Instant.EPOCH.toString());
 
         return LinksResponse.builder()
                 .fileLinks(links)
                 .numberOfFiles(links.size())
                 .availableUntil(offsetDateTime.toInstant())
-                //todo fixit
-                .generationDate(now.toInstant())
+                .generationDate(Instant.parse(genDate))
                 .expiredIn(offsetDateTime.toEpochSecond() - now.toEpochSecond())
                 .build();
     }
 
-    private PagedIterable<BlobItem> getBlobItem(BlobContainerClient client, BatchEnum batchEnum) {
+    private PagedIterable<BlobItem> getBlobItems(BlobContainerClient client, BatchEnum batchEnum) {
         String directory = String.format("%s/%s/", batchEnum, dateFormat.format(Instant.now()));
         PagedIterable<BlobItem> blobItems = client.listBlobsByHierarchy(directory);
-        long numberOfFiles = blobItems.stream().count();
-        if (numberOfFiles == 0) {
+        if (blobItems.stream().count() == 0) {
             throw new AcquirerDataNotFoundException();
         }
         return blobItems;
