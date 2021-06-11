@@ -31,30 +31,30 @@ public class BinRangeServiceImpl implements BinRangeService {
 
     private final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("uuuuMMdd").withZone(ZoneId.of("Europe/Rome"));
 
+    private static final String GENERATION_DATE_METADATA = "generationdate";
+
     @Override
     public LinksResponse getBinRangeFiles() {
         BlobServiceClient serviceClient = new BlobServiceClientBuilder().connectionString(connectionString).buildClient();
         BlobContainerClient client = serviceClient.getBlobContainerClient(containerName);
-        PagedIterable<BlobItem> blobItems = getBlobItem(client);
+        PagedIterable<BlobItem> blobItems = getBlobItems(client);
         OffsetDateTime now = OffsetDateTime.now();
         OffsetDateTime offsetDateTime = now.plusMinutes(getAvailableFor(blobItems.stream().count()));
         List<String> links = getLinks(offsetDateTime, client, blobItems);
-
+        String genDate = blobItems.stream().findFirst().map(b -> b.getMetadata().get(GENERATION_DATE_METADATA)).orElse(Instant.EPOCH.toString());
         return LinksResponse.builder()
                 .fileLinks(links)
                 .numberOfFiles(links.size())
                 .availableUntil(offsetDateTime.toInstant())
-                //todo fixit
-                .generationDate(now.toInstant())
+                .generationDate(Instant.parse(genDate))
                 .expiredIn(offsetDateTime.toEpochSecond() - now.toEpochSecond())
                 .build();
     }
 
-    private PagedIterable<BlobItem> getBlobItem(BlobContainerClient client) {
+    private PagedIterable<BlobItem> getBlobItems(BlobContainerClient client) {
         String directory = String.format("%s/%s/", BatchEnum.BIN_RANGE_GEN, dateFormat.format(Instant.now()));
         PagedIterable<BlobItem> blobItems = client.listBlobsByHierarchy(directory);
-        long numberOfFiles = blobItems.stream().count();
-        if (numberOfFiles == 0) {
+        if (blobItems.stream().count() == 0) {
             throw new AcquirerDataNotFoundException();
         }
         return blobItems;
