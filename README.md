@@ -6,7 +6,7 @@
  1. Run:<br>
     `$version=??` for poweshell or `version=??` for gitbash<br>
  	`mvn --batch-mode release:clean release:prepare`<br>
- 	`git checkout -b tmp/${version} card-manager-${version}`<br> 
+ 	`git checkout -b tmp/${version} acquirer-manager-${version}`<br> 
  	`git push --set-upstream origin tmp/${version}`<br>
  	
  2. Merge **tmp/${version}** into **release/sit**
