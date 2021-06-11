@@ -1,16 +1,16 @@
 package it.gov.pagopa.tkm.ms.acquirermanager.controller.impl;
 
 import it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum;
-import it.gov.pagopa.tkm.ms.acquirermanager.controller.HashingKnownController;
+import it.gov.pagopa.tkm.ms.acquirermanager.controller.KnownHashesController;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.response.LinksResponse;
-import it.gov.pagopa.tkm.ms.acquirermanager.service.impl.BinRangeHashingServiceImpl;
+import it.gov.pagopa.tkm.ms.acquirermanager.service.impl.BinRangeHashServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-public class HashingKnownControllerImpl implements HashingKnownController {
+public class KnownHashesControllerImpl implements KnownHashesController {
     @Autowired
-    private BinRangeHashingServiceImpl binRangeService;
+    private BinRangeHashServiceImpl binRangeService;
 
     @Override
     public LinksResponse getKnownHpanAndHtoken() {

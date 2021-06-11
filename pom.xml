@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
 
 	<artifactId>acquirer-manager</artifactId>
-	<version>0.0.5</version>
+	<version>0.0.6</version>
 	<packaging>jar</packaging>
 
     <parent>
@@ -61,7 +61,7 @@
                         <exclude>it/gov/pagopa/tkm/ms/acquirermanager/model/**/*.class</exclude>
                         <exclude>it/gov/pagopa/tkm/ms/acquirermanager/constant/**/*.class</exclude>
                         <exclude>it/gov/pagopa/tkm/ms/acquirermanager/exception/**/*.class</exclude>
-                        <exclude>it/pagopa/AcquirerManagerApplication</exclude>
+                        <exclude>it/gov/pagopa/tkm/ms/acquirermanager/AcquirerManagerApplication.class</exclude>
                     </excludes>
                 </configuration>
                 <executions>
@@ -140,6 +140,6 @@
     </distributionManagement>
     <scm>
         <developerConnection>scm:git:https://github.com/pagopa/tkm-ms-acquirer-manager.git</developerConnection>
-        <tag>acquirer-manager-0.0.5</tag>
+        <tag>acquirer-manager-0.0.6</tag>
     </scm>
 </project>
