@@ -9,6 +9,7 @@ import it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum;
 import it.gov.pagopa.tkm.ms.acquirermanager.exception.AcquirerDataNotFoundException;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.response.LinksResponse;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.BinRangeHashingService;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class BinRangeHashingServiceImpl implements BinRangeHashingService {
@@ -41,15 +43,24 @@ public class BinRangeHashingServiceImpl implements BinRangeHashingService {
         OffsetDateTime now = OffsetDateTime.now();
         OffsetDateTime offsetDateTime = now.plusMinutes(getAvailableFor(blobItems.stream().count()));
         List<String> links = getLinks(offsetDateTime, client, blobItems);
-        String genDate = blobItems.stream().findFirst().map(b -> b.getMetadata().get(GENERATION_DATE_METADATA)).orElse(Instant.EPOCH.toString());
 
         return LinksResponse.builder()
                 .fileLinks(links)
                 .numberOfFiles(links.size())
                 .availableUntil(offsetDateTime.toInstant())
-                .generationDate(Instant.parse(genDate))
+                .generationDate(getGenerationDate(blobItems))
                 .expiredIn(offsetDateTime.toEpochSecond() - now.toEpochSecond())
                 .build();
+    }
+
+    private Instant getGenerationDate(PagedIterable<BlobItem> blobItems) {
+        Instant instant = null;
+        Map<String, String> genDate = blobItems.stream().findFirst().map(BlobItem::getMetadata).orElse(null);
+        if (genDate != null) {
+            String generationDate = genDate.get(GENERATION_DATE_METADATA);
+            instant = StringUtils.isNotBlank(generationDate) ? Instant.parse(generationDate) : null;
+        }
+        return instant;
     }
 
     private PagedIterable<BlobItem> getBlobItems(BlobContainerClient client, BatchEnum batchEnum) {
