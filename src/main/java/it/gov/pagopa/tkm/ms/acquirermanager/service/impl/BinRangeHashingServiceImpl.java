@@ -1,6 +1,5 @@
 package it.gov.pagopa.tkm.ms.acquirermanager.service.impl;
 
-import com.azure.core.http.rest.PagedIterable;
 import com.azure.storage.blob.*;
 import com.azure.storage.blob.models.BlobItem;
 import com.azure.storage.blob.models.BlobListDetails;
@@ -9,23 +8,33 @@ import com.azure.storage.blob.sas.BlobContainerSasPermission;
 import com.azure.storage.blob.sas.BlobServiceSasSignatureValues;
 import it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum;
 import it.gov.pagopa.tkm.ms.acquirermanager.exception.AcquirerDataNotFoundException;
+import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.response.LinksResponse;
-import it.gov.pagopa.tkm.ms.acquirermanager.service.BinRangeHashingService;
+import it.gov.pagopa.tkm.ms.acquirermanager.repository.*;
+import it.gov.pagopa.tkm.ms.acquirermanager.service.*;
+import org.apache.commons.codec.digest.*;
+import org.apache.commons.collections.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.springframework.beans.factory.annotation.Value;
+import org.apache.commons.collections4.ListUtils;
+import org.springframework.beans.factory.annotation.*;
 import org.springframework.stereotype.Service;
 
+import java.io.*;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.zip.*;
+
+import static it.gov.pagopa.tkm.ms.acquirermanager.constant.BlobMetadataEnum.*;
 
 @Service
 public class BinRangeHashingServiceImpl implements BinRangeHashingService {
+
+    @Autowired
+    private BinRangeRepository binRangeRepository;
 
     @Value("${azure.storage.connection-string}")
     private String connectionString;
@@ -33,17 +42,25 @@ public class BinRangeHashingServiceImpl implements BinRangeHashingService {
     @Value("${BLOB_STORAGE_BIN_HASH_CONTAINER}")
     private String containerName;
 
-    private final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("uuuuMMdd").withZone(ZoneId.of("Europe/Rome"));
+    @Value("${max_rows_in_files}")
+    private int maxRowsInFiles;
 
-    private static final String GENERATION_DATE_METADATA = "generationdate";
+    @Value("${AZURE_KEYVAULT_PROFILE}")
+    private String profile;
+
+    private final BlobServiceClientBuilder serviceClientBuilder = new BlobServiceClientBuilder();
+
+    private final BlobClientBuilder blobClientBuilder = new BlobClientBuilder();
+
+    private final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("uuuuMMdd").withZone(ZoneId.of("Europe/Rome"));
 
     @Override
     public LinksResponse getSasLinkResponse(BatchEnum batchEnum) {
-        BlobServiceClient serviceClient = new BlobServiceClientBuilder().connectionString(connectionString).buildClient();
+        BlobServiceClient serviceClient = serviceClientBuilder.connectionString(connectionString).buildClient();
         BlobContainerClient client = serviceClient.getBlobContainerClient(containerName);
-        PagedIterable<BlobItem> blobItems = getBlobItems(client, batchEnum);
+        List<BlobItem> blobItems = getBlobItems(client, batchEnum);
         OffsetDateTime now = OffsetDateTime.now();
-        OffsetDateTime offsetDateTime = now.plusMinutes(getAvailableFor(blobItems.stream().count()));
+        OffsetDateTime offsetDateTime = now.plusMinutes(getAvailableFor(blobItems.size()));
         List<String> links = getLinks(offsetDateTime, client, blobItems);
 
         return LinksResponse.builder()
@@ -55,38 +72,39 @@ public class BinRangeHashingServiceImpl implements BinRangeHashingService {
                 .build();
     }
 
-    private Instant getGenerationDate(PagedIterable<BlobItem> blobItems) {
+    private Instant getGenerationDate(List<BlobItem> blobItems) {
         Instant instant = null;
         Map<String, String> genDate = blobItems.stream().findFirst().map(BlobItem::getMetadata).orElse(null);
         if (genDate != null) {
-            String generationDate = genDate.get(GENERATION_DATE_METADATA);
+            String generationDate = genDate.get(generationdate.name());
             instant = StringUtils.isNotBlank(generationDate) ? Instant.parse(generationDate) : null;
         }
         return instant;
     }
 
-    private PagedIterable<BlobItem> getBlobItems(BlobContainerClient client, BatchEnum batchEnum) {
-        String directory = String.format("%s/%s/", batchEnum, dateFormat.format(Instant.now()));
+    private List<BlobItem> getBlobItems(BlobContainerClient client, BatchEnum batchEnum) {
+        Instant now = Instant.now();
+        String directory = String.format("%s/%s/", batchEnum, dateFormat.format(now));
 
         BlobListDetails blobListDetails = new BlobListDetails().setRetrieveMetadata(true);
         ListBlobsOptions listBlobsOptions = new ListBlobsOptions()
                 .setPrefix(directory)
                 .setDetails(blobListDetails);
-
-        PagedIterable<BlobItem> blobItems = client.listBlobsByHierarchy("/", listBlobsOptions, null);
-        if (blobItems.stream().count() == 0) {
+        List<BlobItem> blobItemList = new ArrayList<>();
+        client.listBlobsByHierarchy("/", listBlobsOptions, null).iterator().forEachRemaining(blobItemList::add);
+        if (CollectionUtils.isEmpty(blobItemList)) {
             throw new AcquirerDataNotFoundException();
         }
-        return blobItems;
+        return blobItemList;
     }
 
-    private List<String> getLinks(OffsetDateTime expireTime, BlobContainerClient client, PagedIterable<BlobItem> blobItems) {
+    private List<String> getLinks(OffsetDateTime expireTime, BlobContainerClient client, List<BlobItem> blobItems) {
         BlobServiceSasSignatureValues sasValues = new BlobServiceSasSignatureValues(expireTime, new BlobContainerSasPermission().setReadPermission(true));
         List<String> links = new ArrayList<>();
         String completeContainerUrl = client.getBlobContainerUrl();
         for (BlobItem blobItem : blobItems) {
             String blobName = blobItem.getName();
-            BlobClient blobClient = new BlobClientBuilder()
+            BlobClient blobClient = blobClientBuilder
                     .connectionString(connectionString)
                     .blobName(blobName)
                     .containerName(containerName)
@@ -98,6 +116,48 @@ public class BinRangeHashingServiceImpl implements BinRangeHashingService {
 
     private long getAvailableFor(long linksSize) {
         return NumberUtils.min(10, linksSize * 2);
+    }
+
+    @Override
+    public void generateBinRangeFiles() throws IOException {
+        String today = dateFormat.format(Instant.now());
+        String directory = String.format("%s/%s/", BatchEnum.BIN_RANGE_GEN, today);
+        BlobServiceClient serviceClient = serviceClientBuilder.connectionString(connectionString).buildClient();
+        BlobContainerClient client = serviceClient.getBlobContainerClient(containerName);
+        List<List<TkmBinRange>> binRanges = ListUtils.partition(binRangeRepository.findAll(), maxRowsInFiles);
+        int index = 0;
+        for (List<TkmBinRange> chunk : binRanges) {
+            index++;
+            String filename = StringUtils.joinWith("_", BatchEnum.BIN_RANGE_GEN, profile, today, index);
+            byte[] fileContents = writeFile(filename + ".csv", chunk);
+            BlobClient blobClient = client.getBlobClient(directory + filename + ".zip");
+            blobClient.upload(new ByteArrayInputStream(fileContents), fileContents.length, false);
+            Map<String, String> metadata = new HashMap<>();
+            metadata.put(generationdate.name(), Instant.now().toString());
+            metadata.put(checksumsha256.name(), DigestUtils.sha256Hex(fileContents));
+            blobClient.setMetadata(metadata);
+        }
+    }
+
+    private byte[] writeFile(String filename, List<TkmBinRange> binRanges) throws IOException {
+        StringBuilder sb = new StringBuilder();
+        for (TkmBinRange binRange : binRanges) {
+            sb.append(StringUtils.joinWith(";", binRange.getMin(), binRange.getMax()));
+            sb.append(System.getProperty("line.separator"));
+        }
+        return zipBytes(filename, sb.toString().getBytes());
+    }
+
+    private byte[] zipBytes(String filename, byte[] input) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ZipOutputStream zos = new ZipOutputStream(baos);
+        ZipEntry entry = new ZipEntry(filename);
+        entry.setSize(input.length);
+        zos.putNextEntry(entry);
+        zos.write(input);
+        zos.closeEntry();
+        zos.close();
+        return baos.toByteArray();
     }
 
 }
