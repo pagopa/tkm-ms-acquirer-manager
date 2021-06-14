@@ -1,23 +1,23 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: tkmmacquirermanageruat
+  name: tkmmsacquirermanageruat
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: tkmmacquirermanageruat
+      app: tkmmsacquirermanageruat
   template:
     metadata:
       labels:
-        app: tkmmacquirermanageruat
+        app: tkmmsacquirermanageruat
       annotations:
         prometheus.io/path: /actuator/prometheus
         prometheus.io/port: '8080'
         prometheus.io/scrape: 'true'
     spec:
       containers:
-        - name: tkmmacquirermanageruat
+        - name: tkmmsacquirermanageruat
           image: cstaruatregistry.azurecr.io/tkmmsconsentmanager
           ports:
             - containerPort: 8080

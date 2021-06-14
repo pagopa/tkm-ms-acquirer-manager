@@ -18,7 +18,7 @@ variables:
   vmImageNameDefault: 'ubuntu-latest'
 
   # Image Repository Name
-  imageRepository: 'tkmmacquirermanager'
+  imageRepository: 'tkmmsacquirermanager'
 
   isToDeploy: $[ne(variables['Build.Reason'], 'PullRequest')]
   isSIT: $[eq(variables['Build.SourceBranch'], 'refs/heads/release/sit')]
