@@ -1,38 +1,48 @@
 package it.gov.pagopa.tkm.ms.acquirermanager.service.impl;
 
 import com.azure.storage.blob.*;
-import com.azure.storage.blob.models.*;
-import com.azure.storage.blob.sas.*;
-import it.gov.pagopa.tkm.ms.acquirermanager.constant.*;
-import it.gov.pagopa.tkm.ms.acquirermanager.exception.*;
-import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.*;
-import it.gov.pagopa.tkm.ms.acquirermanager.model.response.*;
-import it.gov.pagopa.tkm.ms.acquirermanager.repository.*;
-import it.gov.pagopa.tkm.ms.acquirermanager.service.*;
-import lombok.extern.log4j.*;
-import org.apache.commons.codec.digest.*;
+import com.azure.storage.blob.models.BlobItem;
+import com.azure.storage.blob.models.BlobListDetails;
+import com.azure.storage.blob.models.ListBlobsOptions;
+import com.azure.storage.blob.sas.BlobContainerSasPermission;
+import com.azure.storage.blob.sas.BlobServiceSasSignatureValues;
+import it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum;
+import it.gov.pagopa.tkm.ms.acquirermanager.exception.AcquirerDataNotFoundException;
+import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.TkmBinRange;
+import it.gov.pagopa.tkm.ms.acquirermanager.model.response.LinksResponse;
+import it.gov.pagopa.tkm.ms.acquirermanager.repository.BinRangeRepository;
+import it.gov.pagopa.tkm.ms.acquirermanager.service.HashService;
+import lombok.extern.log4j.Log4j2;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections4.ListUtils;
-import org.apache.commons.io.*;
-import org.apache.commons.lang3.*;
-import org.apache.commons.lang3.math.*;
-import org.springframework.beans.factory.annotation.*;
-import org.springframework.stereotype.*;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
 import java.io.*;
-import java.nio.file.*;
-import java.time.*;
-import java.time.format.*;
-import java.util.*;
-import java.util.zip.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
-import static it.gov.pagopa.tkm.ms.acquirermanager.constant.BlobMetadataEnum.*;
-
+import static it.gov.pagopa.tkm.ms.acquirermanager.constant.BlobMetadataEnum.checksumsha256;
 import static it.gov.pagopa.tkm.ms.acquirermanager.constant.BlobMetadataEnum.generationdate;
 
 @Service
 @Log4j2
-public class BinRangeHashServiceImpl implements BinRangeHashService {
+public class HashServiceImpl implements HashService {
 
     @Autowired
     private BinRangeRepository binRangeRepository;
@@ -120,19 +130,27 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
     }
 
     @Override
-    public void generateBinRangeFiles() throws IOException {
+    public void generateFiles(BatchEnum batchEnum) throws IOException {
         Instant now = Instant.now();
         String today = dateFormat.format(now);
-        String directory = String.format("%s/%s/", BatchEnum.BIN_RANGE_GEN, today);
+        String directory = String.format("%s/%s/", batchEnum, today);
         BlobServiceClient serviceClient = serviceClientBuilder.connectionString(connectionString).buildClient();
         BlobContainerClient client = serviceClient.getBlobContainerClient(containerName);
+        if (batchEnum.equals(BatchEnum.BIN_RANGE_GEN)) {
+            generateBinRangeFile(now, today, directory, client);
+        } else {
+            generateHpanHtokenFile(now, today, directory, client);
+        }
+    }
+
+    private void generateBinRangeFile(Instant now, String today, String directory, BlobContainerClient client) throws IOException {
         List<List<TkmBinRange>> binRanges = ListUtils.partition(binRangeRepository.findAll(), maxRowsInFiles);
         log.info("Number of bin ranges retrieved: " + CollectionUtils.size(binRanges));
         int index = 0;
         for (List<TkmBinRange> chunk : binRanges) {
             index++;
             String filename = StringUtils.joinWith("_", BatchEnum.BIN_RANGE_GEN, profile, today, index);
-            byte[] fileContents = writeFile(filename + ".csv", chunk);
+            byte[] fileContents = writeBinRangeFile(filename + ".csv", chunk);
             BlobClient blobClient = client.getBlobClient(directory + filename + ".zip");
             blobClient.upload(new ByteArrayInputStream(fileContents), fileContents.length, false);
             Map<String, String> metadata = new HashMap<>();
@@ -143,7 +161,14 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
         }
     }
 
-    private byte[] writeFile(String filename, List<TkmBinRange> binRanges) throws IOException {
+    private void generateHpanHtokenFile(Instant now, String today, String directory, BlobContainerClient client) {
+        //TODO: chiamate verso S2 per recuperare HPAN + Htoken --> thread efficienti in parallelo
+        log.info("Number of retrieved HPANs: ");
+        log.info("Number of retrieved Htokens: ");
+        int index = 0;
+    }
+
+    private byte[] writeBinRangeFile(String filename, List<TkmBinRange> binRanges) throws IOException {
         String tempFilePath = FileUtils.getTempDirectoryPath() + "/" + filename;
         String lineSeparator = System.getProperty("line.separator");
         try (FileOutputStream out = new FileOutputStream(tempFilePath)) {

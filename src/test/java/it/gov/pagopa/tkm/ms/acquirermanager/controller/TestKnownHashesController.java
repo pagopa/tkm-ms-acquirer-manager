@@ -28,7 +28,7 @@ public class TestKnownHashesController {
     private KnownHashesControllerImpl KnownHashesController;
 
     @Mock
-    private BinRangeHashServiceImpl binRangeHashService;
+    private HashServiceImpl binRangeHashService;
 
     private final ObjectMapper mapper = new ObjectMapper();
 

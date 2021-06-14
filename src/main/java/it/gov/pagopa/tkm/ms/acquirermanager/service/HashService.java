@@ -3,12 +3,12 @@ package it.gov.pagopa.tkm.ms.acquirermanager.service;
 import it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.response.LinksResponse;
 
-import java.io.*;
+import java.io.IOException;
 
-public interface BinRangeHashService {
+public interface HashService {
 
     LinksResponse getSasLinkResponse(BatchEnum batchEnum);
 
-    void generateBinRangeFiles() throws IOException;
+    void generateFiles(BatchEnum batchEnum) throws IOException;
 
 }

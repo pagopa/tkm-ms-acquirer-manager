@@ -22,10 +22,10 @@ import static org.mockito.Mockito.*;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ExtendWith(MockitoExtension.class)
-public class TestBinRangeHashService {
+public class TestHashService {
 
     @InjectMocks
-    private BinRangeHashServiceImpl binRangeHashService;
+    private HashServiceImpl binRangeHashService;
 
     @Mock
     private BlobServiceClientBuilder serviceClientBuilderMock;
