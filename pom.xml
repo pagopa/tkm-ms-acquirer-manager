@@ -14,6 +14,7 @@
 
     <properties>
         <spring.azure-version>3.2.0</spring.azure-version>
+        <shedlock-version>4.24.0</shedlock-version>
     </properties>
 
     <dependencies>
@@ -49,6 +50,16 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-collections4</artifactId>
             <version>4.4</version>
+        </dependency>
+        <dependency>
+            <groupId>net.javacrumbs.shedlock</groupId>
+            <artifactId>shedlock-spring</artifactId>
+            <version>${shedlock-version}</version>
+        </dependency>
+        <dependency>
+            <groupId>net.javacrumbs.shedlock</groupId>
+            <artifactId>shedlock-provider-jdbc-template</artifactId>
+            <version>${shedlock-version}</version>
         </dependency>
     </dependencies>
 
