@@ -27,7 +27,7 @@ spec:
             - configMapRef:
                 name: kafka-log-configuration
             - configMapRef:
-                name: tkmmacquirermanager
+                name: tkmmsacquirermanager
           livenessProbe:
             httpGet:
               path: /actuator/health
