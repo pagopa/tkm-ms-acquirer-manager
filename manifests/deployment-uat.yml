@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: tkmmsacquirermanageruat
-          image: cstaruatregistry.azurecr.io/tkmmsconsentmanager
+          image: cstaruatregistry.azurecr.io/tkmmsacquirermanager
           ports:
             - containerPort: 8080
           envFrom:
