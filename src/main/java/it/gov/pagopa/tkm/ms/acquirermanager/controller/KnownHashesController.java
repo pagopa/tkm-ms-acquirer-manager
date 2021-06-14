@@ -8,7 +8,7 @@ import static it.gov.pagopa.tkm.ms.acquirermanager.constant.ApiEndpoints.HTOKEN_
 import static it.gov.pagopa.tkm.ms.acquirermanager.constant.ApiEndpoints.LINK;
 
 @RequestMapping(HTOKEN_HPAN_BASE_PATH)
-public interface HashingKnownController {
+public interface KnownHashesController {
 
     @GetMapping(LINK)
     LinksResponse getKnownHpanAndHtoken();

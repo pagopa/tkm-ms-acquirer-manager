@@ -28,9 +28,11 @@ import java.util.zip.*;
 
 import static it.gov.pagopa.tkm.ms.acquirermanager.constant.BlobMetadataEnum.*;
 
+import static it.gov.pagopa.tkm.ms.acquirermanager.constant.BlobMetadataEnum.generationdate;
+
 @Service
 @Log4j2
-public class BinRangeHashingServiceImpl implements BinRangeHashingService {
+public class BinRangeHashServiceImpl implements BinRangeHashService {
 
     @Autowired
     private BinRangeRepository binRangeRepository;

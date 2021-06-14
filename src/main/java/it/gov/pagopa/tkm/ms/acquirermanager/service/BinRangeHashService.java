@@ -5,7 +5,7 @@ import it.gov.pagopa.tkm.ms.acquirermanager.model.response.LinksResponse;
 
 import java.io.*;
 
-public interface BinRangeHashingService {
+public interface BinRangeHashService {
 
     LinksResponse getSasLinkResponse(BatchEnum batchEnum);
 
