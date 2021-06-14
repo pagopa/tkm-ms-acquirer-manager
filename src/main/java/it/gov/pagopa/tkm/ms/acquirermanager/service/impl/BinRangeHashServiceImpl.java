@@ -134,10 +134,10 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
             String filename = StringUtils.joinWith("_", BatchEnum.BIN_RANGE_GEN, profile, today, index);
             byte[] fileContents = writeFile(filename + ".csv", chunk);
             BlobClient blobClient = client.getBlobClient(directory + filename + ".zip");
+            blobClient.upload(new ByteArrayInputStream(fileContents), fileContents.length, false);
             Map<String, String> metadata = new HashMap<>();
             metadata.put(generationdate.name(), now.toString());
             metadata.put(checksumsha256.name(), DigestUtils.sha256Hex(fileContents));
-            blobClient.upload(new ByteArrayInputStream(fileContents), fileContents.length, false);
             blobClient.setMetadata(metadata);
             log.info("Uploaded: " + filename);
         }
