@@ -1,33 +1,45 @@
 package it.gov.pagopa.tkm.ms.acquirermanager.service.impl;
 
 import com.azure.storage.blob.*;
-import com.azure.storage.blob.models.*;
-import com.azure.storage.blob.sas.*;
-import it.gov.pagopa.tkm.ms.acquirermanager.constant.*;
-import it.gov.pagopa.tkm.ms.acquirermanager.exception.*;
-import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.*;
-import it.gov.pagopa.tkm.ms.acquirermanager.model.response.*;
-import it.gov.pagopa.tkm.ms.acquirermanager.repository.*;
-import it.gov.pagopa.tkm.ms.acquirermanager.service.*;
-import lombok.extern.log4j.*;
-import org.apache.commons.codec.digest.*;
+import com.azure.storage.blob.models.BlobItem;
+import com.azure.storage.blob.models.BlobListDetails;
+import com.azure.storage.blob.models.ListBlobsOptions;
+import com.azure.storage.blob.sas.BlobContainerSasPermission;
+import com.azure.storage.blob.sas.BlobServiceSasSignatureValues;
+import it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum;
+import it.gov.pagopa.tkm.ms.acquirermanager.exception.AcquirerDataNotFoundException;
+import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.TkmBinRange;
+import it.gov.pagopa.tkm.ms.acquirermanager.model.response.LinksResponse;
+import it.gov.pagopa.tkm.ms.acquirermanager.repository.BinRangeRepository;
+import it.gov.pagopa.tkm.ms.acquirermanager.service.BinRangeHashService;
+import lombok.extern.log4j.Log4j2;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections4.ListUtils;
-import org.apache.commons.io.*;
-import org.apache.commons.lang3.*;
-import org.apache.commons.lang3.math.*;
-import org.springframework.beans.factory.annotation.*;
-import org.springframework.stereotype.*;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
 import java.io.*;
-import java.nio.file.*;
-import java.time.*;
-import java.time.format.*;
-import java.util.*;
-import java.util.zip.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
-import static it.gov.pagopa.tkm.ms.acquirermanager.constant.BlobMetadataEnum.*;
-
+import static com.google.common.base.StandardSystemProperty.LINE_SEPARATOR;
+import static com.google.common.base.StandardSystemProperty.PATH_SEPARATOR;
+import static it.gov.pagopa.tkm.ms.acquirermanager.constant.BlobMetadataEnum.checksumsha256;
 import static it.gov.pagopa.tkm.ms.acquirermanager.constant.BlobMetadataEnum.generationdate;
 
 @Service
@@ -128,9 +140,8 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
         BlobContainerClient client = serviceClient.getBlobContainerClient(containerName);
         List<List<TkmBinRange>> binRanges = ListUtils.partition(binRangeRepository.findAll(), maxRowsInFiles);
         log.info("Number of bin ranges retrieved: " + CollectionUtils.size(binRanges));
-        int index = 0;
+        int index = 1;
         for (List<TkmBinRange> chunk : binRanges) {
-            index++;
             String filename = StringUtils.joinWith("_", BatchEnum.BIN_RANGE_GEN, profile, today, index);
             byte[] fileContents = writeFile(filename + ".csv", chunk);
             BlobClient blobClient = client.getBlobClient(directory + filename + ".zip");
@@ -139,16 +150,16 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
             metadata.put(generationdate.name(), now.toString());
             metadata.put(checksumsha256.name(), DigestUtils.sha256Hex(fileContents));
             blobClient.setMetadata(metadata);
+            index++;
             log.info("Uploaded: " + filename);
         }
     }
 
     private byte[] writeFile(String filename, List<TkmBinRange> binRanges) throws IOException {
-        String tempFilePath = FileUtils.getTempDirectoryPath() + "/" + filename;
-        String lineSeparator = System.getProperty("line.separator");
+        String tempFilePath = FileUtils.getTempDirectoryPath() + PATH_SEPARATOR + filename;
         try (FileOutputStream out = new FileOutputStream(tempFilePath)) {
             for (TkmBinRange binRange : binRanges) {
-                out.write((StringUtils.joinWith(";", binRange.getMin(), binRange.getMax()) + lineSeparator).getBytes());
+                out.write((StringUtils.joinWith(";", binRange.getMin(), binRange.getMax()) + LINE_SEPARATOR).getBytes());
             }
         }
         log.info("Written: " + tempFilePath + " - Exists? " + Files.exists(Paths.get(tempFilePath)));
