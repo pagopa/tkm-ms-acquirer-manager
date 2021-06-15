@@ -53,7 +53,7 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
     @Value("${BLOB_STORAGE_BIN_HASH_CONTAINER}")
     private String containerName;
 
-    @Value("${max_rows_in_files}")
+    @Value("${batch.bin-range-gen.max-rows-in-files}")
     private int maxRowsInFiles;
 
     @Value("${AZURE_KEYVAULT_PROFILE}")
