@@ -116,6 +116,7 @@ public class TestBinRangeHashService {
 
     @Test
     void givenBinRanges_uploadThemToBlobStorage() throws IOException {
+        System.out.println(File.separator);
         when(serviceClientBuilderMock.connectionString(DefaultBeans.TEST_CONNECTION_STRING)).thenReturn(serviceClientBuilderMock);
         when(serviceClientBuilderMock.buildClient()).thenReturn(serviceClientMock);
         when(serviceClientMock.getBlobContainerClient(DefaultBeans.TEST_CONTAINER_NAME)).thenReturn(containerClientMock);

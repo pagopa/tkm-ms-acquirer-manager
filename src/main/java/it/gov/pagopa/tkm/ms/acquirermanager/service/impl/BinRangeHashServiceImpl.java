@@ -37,6 +37,7 @@ import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import static com.google.common.base.StandardSystemProperty.LINE_SEPARATOR;
 import static it.gov.pagopa.tkm.ms.acquirermanager.constant.BlobMetadataEnum.checksumsha256;
 import static it.gov.pagopa.tkm.ms.acquirermanager.constant.BlobMetadataEnum.generationdate;
 
@@ -167,11 +168,10 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
     }
 
     private byte[] writeFile(String filename, List<TkmBinRange> binRanges) throws IOException {
-        String tempFilePath = FileUtils.getTempDirectoryPath() + filename;
-        String lineSeparator = System.getProperty("line.separator");
+        String tempFilePath = FileUtils.getTempDirectoryPath() + File.separator + filename;
         try (FileOutputStream out = new FileOutputStream(tempFilePath)) {
             for (TkmBinRange binRange : binRanges) {
-                String toWrite = StringUtils.joinWith(";", binRange.getMin(), binRange.getMax()) + lineSeparator;
+                String toWrite = StringUtils.joinWith(";", binRange.getMin(), binRange.getMax()) + LINE_SEPARATOR.value();
                 out.write(toWrite.getBytes());
                 log.trace(toWrite);
             }
