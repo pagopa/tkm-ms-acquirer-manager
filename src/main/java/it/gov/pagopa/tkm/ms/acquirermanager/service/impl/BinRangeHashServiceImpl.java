@@ -69,20 +69,24 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
 
     @Override
     public LinksResponse getSasLinkResponse(BatchEnum batchEnum) {
+        log.info("Getting files for batch: " + batchEnum);
         BlobServiceClient serviceClient = serviceClientBuilder.connectionString(connectionString).buildClient();
         BlobContainerClient client = serviceClient.getBlobContainerClient(containerName);
         List<BlobItem> blobItems = getBlobItems(client, batchEnum);
+        int blobItemsSize = CollectionUtils.size(blobItems);
+        log.info(blobItemsSize + " files found on Blob Storage");
         OffsetDateTime now = OffsetDateTime.now();
-        OffsetDateTime offsetDateTime = now.plusMinutes(getAvailableFor(blobItems.size()));
+        OffsetDateTime offsetDateTime = now.plusMinutes(getAvailableFor(blobItemsSize));
         List<String> links = getLinks(offsetDateTime, client, blobItems);
-
-        return LinksResponse.builder()
+        LinksResponse response = LinksResponse.builder()
                 .fileLinks(links)
                 .numberOfFiles(links.size())
                 .availableUntil(offsetDateTime.toInstant())
                 .generationDate(getGenerationDate(blobItems))
                 .expiredIn(offsetDateTime.toEpochSecond() - now.toEpochSecond())
                 .build();
+        log.debug("Response: " + response.toString());
+        return response;
     }
 
     private Instant getGenerationDate(List<BlobItem> blobItems) {
@@ -98,7 +102,7 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
     private List<BlobItem> getBlobItems(BlobContainerClient client, BatchEnum batchEnum) {
         Instant now = Instant.now();
         String directory = String.format("%s/%s/", batchEnum, dateFormat.format(now));
-
+        log.info("Looking for directory: " + directory);
         BlobListDetails blobListDetails = new BlobListDetails().setRetrieveMetadata(true);
         ListBlobsOptions listBlobsOptions = new ListBlobsOptions()
                 .setPrefix(directory)
@@ -106,6 +110,7 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
         List<BlobItem> blobItemList = new ArrayList<>();
         client.listBlobsByHierarchy("/", listBlobsOptions, null).iterator().forEachRemaining(blobItemList::add);
         if (CollectionUtils.isEmpty(blobItemList)) {
+            log.info("No files found on Blob Storage");
             throw new AcquirerDataNotFoundException();
         }
         return blobItemList;
@@ -117,6 +122,7 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
         String completeContainerUrl = client.getBlobContainerUrl();
         for (BlobItem blobItem : blobItems) {
             String blobName = blobItem.getName();
+            log.trace(blobName);
             BlobClient blobClient = blobClientBuilder
                     .connectionString(connectionString)
                     .blobName(blobName)
@@ -133,13 +139,19 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
 
     @Override
     public void generateBinRangeFiles() throws IOException {
+        log.info("Start of bin range generation batch");
         Instant now = Instant.now();
         String today = dateFormat.format(now);
         String directory = String.format("%s/%s/", BatchEnum.BIN_RANGE_GEN, today);
         BlobServiceClient serviceClient = serviceClientBuilder.connectionString(connectionString).buildClient();
         BlobContainerClient client = serviceClient.getBlobContainerClient(containerName);
-        List<List<TkmBinRange>> binRanges = ListUtils.partition(binRangeRepository.findAll(), maxRowsInFiles);
-        log.info("Number of bin ranges retrieved: " + CollectionUtils.size(binRanges));
+        List<TkmBinRange> binRangesFull = binRangeRepository.findAll();
+        if (CollectionUtils.isEmpty(binRangesFull)) {
+            log.warn("No bin ranges found, aborting");
+            return;
+        }
+        List<List<TkmBinRange>> binRanges = ListUtils.partition(binRangesFull, maxRowsInFiles);
+        log.info(CollectionUtils.size(binRangesFull) + " bin ranges retrieved, generating " + CollectionUtils.size(binRanges) + " files");
         int index = 1;
         for (List<TkmBinRange> chunk : binRanges) {
             String filename = StringUtils.joinWith("_", BatchEnum.BIN_RANGE_GEN, profile, today, index);
@@ -151,18 +163,21 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
             metadata.put(checksumsha256.name(), DigestUtils.sha256Hex(fileContents));
             blobClient.setMetadata(metadata);
             index++;
-            log.info("Uploaded: " + filename);
+            log.debug("Uploaded: " + filename);
         }
+        log.info("End of bin range generation batch");
     }
 
     private byte[] writeFile(String filename, List<TkmBinRange> binRanges) throws IOException {
         String tempFilePath = FileUtils.getTempDirectoryPath() + PATH_SEPARATOR + filename;
         try (FileOutputStream out = new FileOutputStream(tempFilePath)) {
             for (TkmBinRange binRange : binRanges) {
-                out.write((StringUtils.joinWith(";", binRange.getMin(), binRange.getMax()) + LINE_SEPARATOR).getBytes());
+                String toWrite = StringUtils.joinWith(";", binRange.getMin(), binRange.getMax()) + LINE_SEPARATOR;
+                out.write(toWrite.getBytes());
+                log.trace(toWrite);
             }
         }
-        log.info("Written: " + tempFilePath + " - Exists? " + Files.exists(Paths.get(tempFilePath)));
+        log.debug("Written: " + tempFilePath + " - Exists? " + Files.exists(Paths.get(tempFilePath)));
         return zipFile(tempFilePath, filename);
     }
 
@@ -181,9 +196,9 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
         }
         zos.closeEntry();
         zos.close();
-        log.info("Zipped: " + csvFilePath);
+        log.debug("Zipped: " + csvFilePath);
         Files.delete(Paths.get(csvFilePath));
-        log.info("Deleted: " + csvFilePath + " - Exists? " + Files.exists(Paths.get(csvFilePath)));
+        log.debug("Deleted: " + csvFilePath + " - Exists? " + Files.exists(Paths.get(csvFilePath)));
         return baos.toByteArray();
     }
 

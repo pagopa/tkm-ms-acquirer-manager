@@ -92,3 +92,7 @@ management:
     web:
       exposure:
         include: "info,health,prometheus"
+
+batch:
+  bin-range-gen:
+    cron: ${BIN_RANGE_GEN_CRON:-}
