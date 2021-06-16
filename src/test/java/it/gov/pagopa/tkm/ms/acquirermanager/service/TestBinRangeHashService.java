@@ -3,6 +3,8 @@ package it.gov.pagopa.tkm.ms.acquirermanager.service;
 import com.azure.core.http.rest.*;
 import com.azure.storage.blob.*;
 import com.azure.storage.blob.models.*;
+import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.databind.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.constant.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.exception.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.repository.*;
@@ -52,6 +54,12 @@ public class TestBinRangeHashService {
 
     @Mock
     private BinRangeRepository binRangeRepository;
+
+    @Mock
+    private BatchResultRepository batchResultRepository;
+
+    @Mock
+    private ObjectMapper mapper;
 
     private DefaultBeans testBeans;
 
@@ -115,7 +123,7 @@ public class TestBinRangeHashService {
     }
 
     @Test
-    void givenBinRanges_uploadThemToBlobStorage() throws IOException {
+    void givenBinRanges_generateAndUploadFiles() throws JsonProcessingException {
         when(serviceClientBuilderMock.connectionString(DefaultBeans.TEST_CONNECTION_STRING)).thenReturn(serviceClientBuilderMock);
         when(serviceClientBuilderMock.buildClient()).thenReturn(serviceClientMock);
         when(serviceClientMock.getBlobContainerClient(DefaultBeans.TEST_CONTAINER_NAME)).thenReturn(containerClientMock);
@@ -125,6 +133,21 @@ public class TestBinRangeHashService {
         verify(containerClientMock, times(2)).getBlobClient(anyString());
         verify(blobClientMock, times(2)).upload(any(InputStream.class), anyLong(), anyBoolean());
         verify(blobClientMock, times(2)).setMetadata(anyMap());
+        verify(batchResultRepository).save(any());
+    }
+
+    @Test
+    void givenNoBinRanges_generateAndUploadEmptyFile() throws JsonProcessingException {
+        when(serviceClientBuilderMock.connectionString(DefaultBeans.TEST_CONNECTION_STRING)).thenReturn(serviceClientBuilderMock);
+        when(serviceClientBuilderMock.buildClient()).thenReturn(serviceClientMock);
+        when(serviceClientMock.getBlobContainerClient(DefaultBeans.TEST_CONTAINER_NAME)).thenReturn(containerClientMock);
+        when(containerClientMock.getBlobClient(any())).thenReturn(blobClientMock);
+        when(binRangeRepository.findAll()).thenReturn(null);
+        binRangeHashService.generateBinRangeFiles();
+        verify(containerClientMock).getBlobClient(anyString());
+        verify(blobClientMock).upload(any(InputStream.class), anyLong(), anyBoolean());
+        verify(blobClientMock).setMetadata(anyMap());
+        verify(batchResultRepository).save(any());
     }
 
 }
