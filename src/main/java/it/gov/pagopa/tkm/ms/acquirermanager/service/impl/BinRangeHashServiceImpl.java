@@ -142,67 +142,57 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
     }
 
     @Override
-    public void generateBinRangeFiles() {
+    public void generateBinRangeFiles() throws JsonProcessingException {
         log.info("Start of bin range generation batch");
         Instant now = Instant.now();
+        long start = now.toEpochMilli();
         String today = dateFormat.format(now);
         String directory = String.format("%s/%s/", BIN_RANGE_GEN, today);
-        BlobServiceClient serviceClient = serviceClientBuilder.connectionString(connectionString).buildClient();
-        BlobContainerClient client = serviceClient.getBlobContainerClient(containerName);
-        List<TkmBinRange> binRangesFull = binRangeRepository.findAll();
-        List<TkmBatchResult> batchResults = new ArrayList<>();
-        if (CollectionUtils.isEmpty(binRangesFull)) {
-            batchResults.add(writeAndUploadFile(now, today, 1, Collections.emptyList(), client, directory));
-        } else {
-            List<List<TkmBinRange>> binRanges = ListUtils.partition(binRangesFull, maxRowsInFiles);
-            log.info(CollectionUtils.size(binRangesFull) + " bin ranges retrieved, generating " + CollectionUtils.size(binRanges) + " files");
-            int index = 1;
-            for (List<TkmBinRange> chunk : binRanges) {
-                TkmBatchResult batchFile = writeAndUploadFile(now, today, index, chunk, client, directory);
-                batchResults.add(batchFile);
-                index++;
-            }
-        }
-        batchResultRepository.saveAll(batchResults);
-        log.info("End of bin range generation batch");
-    }
-
-    private TkmBatchResult writeAndUploadFile(Instant now, String today, int index, List<TkmBinRange> chunk, BlobContainerClient client, String directory) {
-        String filename = StringUtils.joinWith("_", BIN_RANGE_GEN, profile.toUpperCase(), today, index);
-        TkmBatchResult batchResult = new TkmBatchResult()
-                .setTargetBatch(BIN_RANGE_GEN)
-                .setRunDate(now);
-        String sha256 = null;
-        long start = Instant.now().toEpochMilli();
+        TkmBatchResult batchResult = TkmBatchResult.builder()
+                .targetBatch(BIN_RANGE_GEN)
+                .runDate(now)
+                .build();
+        List<BatchResultDetails> batchResultDetails = new ArrayList<>();
         try {
-            byte[] fileContents = writeFile(filename + ".csv", chunk);
-            BlobClient blobClient = client.getBlobClient(directory + filename + ".zip");
-            blobClient.upload(new ByteArrayInputStream(fileContents), fileContents.length, false);
-            sha256 = DigestUtils.sha256Hex(fileContents);
-            Map<String, String> metadata = new HashMap<>();
-            metadata.put(generationdate.name(), now.toString());
-            metadata.put(checksumsha256.name(), sha256);
-            blobClient.setMetadata(metadata);
+            BlobServiceClient serviceClient = serviceClientBuilder.connectionString(connectionString).buildClient();
+            BlobContainerClient client = serviceClient.getBlobContainerClient(containerName);
+            List<TkmBinRange> binRangesFull = binRangeRepository.findAll();
+            if (CollectionUtils.isEmpty(binRangesFull)) {
+                log.info("No bin ranges found, generating empty file");
+                batchResultDetails.add(writeAndUploadFile(now, today, 1, Collections.emptyList(), client, directory));
+            } else {
+                List<List<TkmBinRange>> binRanges = ListUtils.partition(binRangesFull, maxRowsInFiles);
+                log.info(CollectionUtils.size(binRangesFull) + " bin ranges retrieved, generating " + CollectionUtils.size(binRanges) + " files");
+                int index = 1;
+                for (List<TkmBinRange> chunk : binRanges) {
+                    batchResultDetails.add(writeAndUploadFile(now, today, index, chunk, client, directory));
+                    index++;
+                }
+            }
             batchResult.setRunOutcome(true);
-            log.debug("Uploaded: " + filename);
         } catch (Exception e) {
             log.error(e);
             batchResult.setRunOutcome(false);
         }
-        long end = Instant.now().toEpochMilli();
-        batchResult.setRunDurationMillis(end - start);
-        batchResult.setDetails(generateDetails(filename, CollectionUtils.size(chunk), sha256));
-        return batchResult;
+        long duration = Instant.now().toEpochMilli() - start;
+        batchResult.setRunDurationMillis(duration);
+        batchResult.setDetails(mapper.writeValueAsString(batchResultDetails));
+        batchResultRepository.save(batchResult);
+        log.info("End of bin range generation batch");
     }
 
-    private String generateDetails(String fileName, int size, String sha) {
-        String details = null;
-        try {
-            details = mapper.writeValueAsString(new BatchFileDetails(fileName, size, sha));
-        } catch (JsonProcessingException e) {
-            log.error(e);
-        }
-        return details;
+    private BatchResultDetails writeAndUploadFile(Instant now, String today, int index, List<TkmBinRange> chunk, BlobContainerClient client, String directory) throws IOException {
+        String filename = StringUtils.joinWith("_", BIN_RANGE_GEN, profile.toUpperCase(), today, index);
+        byte[] fileContents = writeFile(filename + ".csv", chunk);
+        BlobClient blobClient = client.getBlobClient(directory + filename + ".zip");
+        blobClient.upload(new ByteArrayInputStream(fileContents), fileContents.length, false);
+        String sha256 = DigestUtils.sha256Hex(fileContents);
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put(generationdate.name(), now.toString());
+        metadata.put(checksumsha256.name(), sha256);
+        blobClient.setMetadata(metadata);
+        log.debug("Uploaded: " + filename);
+        return new BatchResultDetails(filename, CollectionUtils.size(chunk), sha256);
     }
 
     private byte[] writeFile(String filename, List<TkmBinRange> binRanges) throws IOException {

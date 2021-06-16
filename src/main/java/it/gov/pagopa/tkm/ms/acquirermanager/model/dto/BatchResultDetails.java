@@ -5,7 +5,7 @@ import lombok.*;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class BatchFileDetails {
+public class BatchResultDetails {
 
     private String fileName;
 
