@@ -5,10 +5,12 @@ import lombok.*;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class BinRangeDto {
+public class BatchFileDetails {
 
-    private String min;
+    private String fileName;
 
-    private String max;
+    private int fileSize;
+
+    private String sha256;
 
 }

@@ -6,11 +6,14 @@ import com.azure.storage.blob.models.BlobListDetails;
 import com.azure.storage.blob.models.ListBlobsOptions;
 import com.azure.storage.blob.sas.BlobContainerSasPermission;
 import com.azure.storage.blob.sas.BlobServiceSasSignatureValues;
+import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.databind.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum;
 import it.gov.pagopa.tkm.ms.acquirermanager.exception.AcquirerDataNotFoundException;
-import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.TkmBinRange;
+import it.gov.pagopa.tkm.ms.acquirermanager.model.dto.*;
+import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.response.LinksResponse;
-import it.gov.pagopa.tkm.ms.acquirermanager.repository.BinRangeRepository;
+import it.gov.pagopa.tkm.ms.acquirermanager.repository.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.BinRangeHashService;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -30,16 +33,12 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import static com.google.common.base.StandardSystemProperty.LINE_SEPARATOR;
-import static it.gov.pagopa.tkm.ms.acquirermanager.constant.BlobMetadataEnum.checksumsha256;
-import static it.gov.pagopa.tkm.ms.acquirermanager.constant.BlobMetadataEnum.generationdate;
+import static it.gov.pagopa.tkm.ms.acquirermanager.constant.BlobMetadataEnum.*;
+import static it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum.*;
 
 @Service
 @Log4j2
@@ -47,6 +46,12 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
 
     @Autowired
     private BinRangeRepository binRangeRepository;
+
+    @Autowired
+    private BatchResultRepository batchResultRepository;
+
+    @Autowired
+    private ObjectMapper mapper;
 
     @Value("${azure.storage.connection-string}")
     private String connectionString;
@@ -137,41 +142,75 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
     }
 
     @Override
-    public void generateBinRangeFiles() throws IOException {
+    public void generateBinRangeFiles() {
         log.info("Start of bin range generation batch");
         Instant now = Instant.now();
         String today = dateFormat.format(now);
-        String directory = String.format("%s/%s/", BatchEnum.BIN_RANGE_GEN, today);
+        String directory = String.format("%s/%s/", BIN_RANGE_GEN, today);
         BlobServiceClient serviceClient = serviceClientBuilder.connectionString(connectionString).buildClient();
         BlobContainerClient client = serviceClient.getBlobContainerClient(containerName);
         List<TkmBinRange> binRangesFull = binRangeRepository.findAll();
+        List<TkmBatchResult> batchResults = new ArrayList<>();
         if (CollectionUtils.isEmpty(binRangesFull)) {
-            log.warn("No bin ranges found, aborting");
-            return;
+            batchResults.add(writeAndUploadFile(now, today, 1, Collections.emptyList(), client, directory));
+        } else {
+            List<List<TkmBinRange>> binRanges = ListUtils.partition(binRangesFull, maxRowsInFiles);
+            log.info(CollectionUtils.size(binRangesFull) + " bin ranges retrieved, generating " + CollectionUtils.size(binRanges) + " files");
+            int index = 1;
+            for (List<TkmBinRange> chunk : binRanges) {
+                TkmBatchResult batchFile = writeAndUploadFile(now, today, index, chunk, client, directory);
+                batchResults.add(batchFile);
+                index++;
+            }
         }
-        List<List<TkmBinRange>> binRanges = ListUtils.partition(binRangesFull, maxRowsInFiles);
-        log.info(CollectionUtils.size(binRangesFull) + " bin ranges retrieved, generating " + CollectionUtils.size(binRanges) + " files");
-        int index = 1;
-        for (List<TkmBinRange> chunk : binRanges) {
-            String filename = StringUtils.joinWith("_", BatchEnum.BIN_RANGE_GEN, profile, today, index);
+        batchResultRepository.saveAll(batchResults);
+        log.info("End of bin range generation batch");
+    }
+
+    private TkmBatchResult writeAndUploadFile(Instant now, String today, int index, List<TkmBinRange> chunk, BlobContainerClient client, String directory) {
+        String filename = StringUtils.joinWith("_", BIN_RANGE_GEN, profile.toUpperCase(), today, index);
+        TkmBatchResult batchResult = new TkmBatchResult()
+                .setTargetBatch(BIN_RANGE_GEN)
+                .setRunDate(now);
+        String sha256 = null;
+        long start = Instant.now().toEpochMilli();
+        try {
             byte[] fileContents = writeFile(filename + ".csv", chunk);
             BlobClient blobClient = client.getBlobClient(directory + filename + ".zip");
             blobClient.upload(new ByteArrayInputStream(fileContents), fileContents.length, false);
+            sha256 = DigestUtils.sha256Hex(fileContents);
             Map<String, String> metadata = new HashMap<>();
             metadata.put(generationdate.name(), now.toString());
-            metadata.put(checksumsha256.name(), DigestUtils.sha256Hex(fileContents));
+            metadata.put(checksumsha256.name(), sha256);
             blobClient.setMetadata(metadata);
-            index++;
+            batchResult.setRunOutcome(true);
             log.debug("Uploaded: " + filename);
+        } catch (Exception e) {
+            log.error(e);
+            batchResult.setRunOutcome(false);
         }
-        log.info("End of bin range generation batch");
+        long end = Instant.now().toEpochMilli();
+        batchResult.setRunDurationMillis(end - start);
+        batchResult.setDetails(generateDetails(filename, CollectionUtils.size(chunk), sha256));
+        return batchResult;
+    }
+
+    private String generateDetails(String fileName, int size, String sha) {
+        String details = null;
+        try {
+            details = mapper.writeValueAsString(new BatchFileDetails(fileName, size, sha));
+        } catch (JsonProcessingException e) {
+            log.error(e);
+        }
+        return details;
     }
 
     private byte[] writeFile(String filename, List<TkmBinRange> binRanges) throws IOException {
         String tempFilePath = FileUtils.getTempDirectoryPath() + File.separator + filename;
+        String lineSeparator = System.lineSeparator();
         try (FileOutputStream out = new FileOutputStream(tempFilePath)) {
             for (TkmBinRange binRange : binRanges) {
-                String toWrite = StringUtils.joinWith(";", binRange.getMin(), binRange.getMax()) + LINE_SEPARATOR.value();
+                String toWrite = StringUtils.joinWith(";", binRange.getMin(), binRange.getMax()) + lineSeparator;
                 out.write(toWrite.getBytes());
                 log.trace(toWrite);
             }

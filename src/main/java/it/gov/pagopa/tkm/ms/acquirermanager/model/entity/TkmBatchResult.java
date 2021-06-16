@@ -8,10 +8,10 @@ import javax.persistence.*;
 import java.time.*;
 
 @Entity
-@Table(name = "FILE")
+@Table(name = "BATCH_RESULT")
 @Data
 @Accessors(chain = true)
-public class TkmFile {
+public class TkmBatchResult {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,11 +22,14 @@ public class TkmFile {
     @Column(name = "TARGET_BATCH", nullable = false)
     private BatchEnum targetBatch;
 
-    @Column(name = "GEN_DATE", nullable = false)
-    private Instant genDate;
+    @Column(name = "RUN_DATE", nullable = false)
+    private Instant runDate;
 
-    @Column(name = "GEN_OUTCOME", nullable = false)
-    private boolean genOutcome;
+    @Column(name = "RUN_OUTCOME", nullable = false)
+    private boolean runOutcome;
+
+    @Column(name = "RUN_DURATION_MILLIS", nullable = false)
+    private long runDurationMillis;
 
     @Column(name = "DETAILS", nullable = false)
     private String details;
