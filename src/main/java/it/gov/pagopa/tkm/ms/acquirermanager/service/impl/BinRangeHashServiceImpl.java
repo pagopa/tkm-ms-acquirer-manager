@@ -10,7 +10,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import it.gov.pagopa.tkm.constant.TkmDatetimeConstant;
 import it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa.*;
-import it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum;
+import it.gov.pagopa.tkm.ms.acquirermanager.constant.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.exception.AcquirerDataNotFoundException;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.dto.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.TkmBatchResult;
@@ -248,8 +248,10 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
     @Override
     public void retrieveVisaBinRanges() throws Exception {
         log.info("Start of Visa bin range retrieval batch");
+        binRangeRepository.deleteByCircuit(CircuitEnum.VISA);
+        log.info("Deleted old Visa bin ranges");
         List<TkmBinRange> binRanges = visaClient.getBinRanges();
-        log.info(CollectionUtils.size(binRanges) + " bin ranges retrieved");
+        log.info(CollectionUtils.size(binRanges) + " token bin ranges retrieved");
         binRangeRepository.saveAll(binRanges);
         log.info("End of Visa bin range retrieval batch");
     }

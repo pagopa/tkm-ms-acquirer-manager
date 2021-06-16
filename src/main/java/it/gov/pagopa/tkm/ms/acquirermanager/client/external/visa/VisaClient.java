@@ -1,6 +1,7 @@
 package it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa;
 
 import com.fasterxml.jackson.databind.*;
+import it.gov.pagopa.tkm.constant.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa.model.request.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa.model.response.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.*;
@@ -14,7 +15,6 @@ import java.io.*;
 import java.net.*;
 import java.nio.charset.*;
 import java.security.*;
-import java.text.*;
 import java.time.*;
 import java.time.format.*;
 import java.util.*;
@@ -47,25 +47,27 @@ public class VisaClient {
 
     private final Integer CHUNK_SIZE = 500;
 
-    private final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss.SSS").withZone(ZoneId.of("Europe/Rome"));
+    private final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss.SSS").withZone(ZoneId.of(TkmDatetimeConstant.DATE_TIME_TIMEZONE));
 
     public List<TkmBinRange> getBinRanges() throws Exception {
-        List<TkmBinRange> TkmBinRangeList = new ArrayList<>();
+        List<TkmBinRange> tkmBinRangeList = new ArrayList<>();
         int index = 0;
-        //TODO LIMIT?
+        //TODO LIMIT? RETRY?
         while (true) {
             log.info("Calling Visa bin range API");
             VisaBinRangeResponse response = getBinRangesChunk(index);
             log.trace(response.toString());
-            log.info("There are " + response.getTotalRecordsCount() + " bin ranges in total, this response contains " + response.getNumRecordsReturned() + " bin ranges");
-            TkmBinRangeList.addAll(response.getResponseData().stream().map(VisaBinRangeResponseData::toTkmBinRange).collect(Collectors.toList()));
+            log.info(response.getTotalRecordsCount() + " bin ranges total, this response contains " + response.getNumRecordsReturned() + " bin ranges");
+            tkmBinRangeList.addAll(response.getResponseData().stream()
+                    .filter(VisaBinRangeResponseData::isForTokens)
+                    .map(VisaBinRangeResponseData::toTkmBinRange).collect(Collectors.toList()));
             if (response.hasMore() && "CDI000".equals(response.getResponseStatus().getStatusCode())) {
                 index = index + CHUNK_SIZE;
             } else {
                 break;
             }
         }
-        return TkmBinRangeList;
+        return tkmBinRangeList;
     }
 
     private VisaBinRangeResponse getBinRangesChunk(Integer index) throws Exception {

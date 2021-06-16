@@ -33,12 +33,17 @@ public class VisaBinRangeResponseData {
 
     private String accountCtryAlpha2Code;
 
+    public boolean isForTokens() {
+        return "T".equals(binRangePaymentAccountType);
+    }
+
     public TkmBinRange toTkmBinRange() {
-        return new TkmBinRange()
-                .setCircuit(CircuitEnum.VISA)
-                .setInsertDate(Instant.now())
-                .setMin(binRangeMinNum)
-                .setMax(binRangeMaxNum);
+        return TkmBinRange.builder()
+                .circuit(CircuitEnum.VISA)
+                .insertDate(Instant.now())
+                .min(binRangeMinNum)
+                .max(binRangeMaxNum)
+                .build();
     }
 
 }
