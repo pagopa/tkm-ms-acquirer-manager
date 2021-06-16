@@ -9,6 +9,7 @@ import com.azure.storage.blob.sas.BlobServiceSasSignatureValues;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import it.gov.pagopa.tkm.constant.TkmDatetimeConstant;
+import it.gov.pagopa.tkm.ms.acquirermanager.Thread.GenBinRangeCallable;
 import it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum;
 import it.gov.pagopa.tkm.ms.acquirermanager.exception.AcquirerDataNotFoundException;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.dto.BatchResultDetails;
@@ -18,6 +19,7 @@ import it.gov.pagopa.tkm.ms.acquirermanager.model.response.LinksResponse;
 import it.gov.pagopa.tkm.ms.acquirermanager.repository.BatchResultRepository;
 import it.gov.pagopa.tkm.ms.acquirermanager.repository.BinRangeRepository;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.BinRangeHashService;
+import it.gov.pagopa.tkm.ms.acquirermanager.service.FileGenerator;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.collections.CollectionUtils;
@@ -29,6 +31,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import javax.persistence.EntityManager;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -37,6 +40,9 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -69,6 +75,11 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
     @Value("${AZURE_KEYVAULT_PROFILE}")
     private String profile;
 
+    @Autowired
+    private EntityManager entityManager;
+
+    @Autowired
+    private FileGenerator fileGenerator;
     private final BlobServiceClientBuilder serviceClientBuilder = new BlobServiceClientBuilder();
 
     private final BlobClientBuilder blobClientBuilder = new BlobClientBuilder();
@@ -157,7 +168,16 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
                 .build();
         List<BatchResultDetails> batchResultDetails = new ArrayList<>();
         try {
-            generate(now, batchResultDetails);
+            long count = binRangeRepository.count();
+            int ceil = (int) Math.ceil(count / (double) maxRowsInFiles);
+            ExecutorService taskExecutor = Executors.newFixedThreadPool(ceil);
+            List<GenBinRangeCallable> genBinRangeCallables = new ArrayList<>();
+            for (int i = 0; i < ceil; i++) {
+                GenBinRangeCallable genBinRangeCallable = new GenBinRangeCallable(fileGenerator, now, maxRowsInFiles, i, i);
+                genBinRangeCallables.add(genBinRangeCallable);
+            }
+            taskExecutor.invokeAll(genBinRangeCallables);
+            awaitTerminationAfterShutdown(taskExecutor);
             long duration = Instant.now().toEpochMilli() - start;
             batchResult.setRunDurationMillis(duration);
             batchResult.setDetails(mapper.writeValueAsString(batchResultDetails));
@@ -171,6 +191,18 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
         }
         batchResultRepository.save(batchResult);
         log.info("End of bin range generation batch");
+    }
+
+    private void awaitTerminationAfterShutdown(ExecutorService threadPool) {
+        threadPool.shutdown();
+        try {
+            if (!threadPool.awaitTermination(300, TimeUnit.SECONDS)) {
+                threadPool.shutdownNow();
+            }
+        } catch (InterruptedException ex) {
+            threadPool.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
     }
 
     private void generate(Instant now, List<BatchResultDetails> batchResultDetails) throws IOException {

@@ -34,6 +34,13 @@ server:
 logging:
   level:
     root: ${LOGGING_LEVEL:INFO}
+    org:
+      hibernate:
+        SQL: TRACE
+        type:
+          descriptor:
+            sql:
+              BasicBinder: TRACE
   pattern:
     level: "${LOGGING_PATTERN:%p [${spring.application.name}][%X{traceId}]}"
 
@@ -94,4 +101,4 @@ management:
 batch:
   bin-range-gen:
     cron: ${BIN_RANGE_GEN_CRON:-}
-    max-rows-in-files: ${BIN_RANGE_GEN_MAX_ROWS_IN_FILES:1000000}
+    max-rows-in-files: ${BIN_RANGE_GEN_MAX_ROWS_IN_FILES:5000000}
