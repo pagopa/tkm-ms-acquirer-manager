@@ -1,6 +1,9 @@
 package it.gov.pagopa.tkm.ms.acquirermanager.constant;
 
 import com.azure.storage.blob.models.*;
+import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.databind.*;
+import it.gov.pagopa.tkm.ms.acquirermanager.model.dto.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.response.*;
 
@@ -38,5 +41,19 @@ public class DefaultBeans {
             TkmBinRange.builder().circuit(CircuitEnum.AMEX).min("000000000002").max("000000000003").insertDate(INSTANT).build(),
             TkmBinRange.builder().circuit(CircuitEnum.MASTERCARD).min("000000000004").max("000000000005").insertDate(INSTANT).build()
             );
+
+    public final TkmBatchResult BIN_RANGE_BATCH_RESULT = TkmBatchResult.builder()
+                .targetBatch(BatchEnum.BIN_RANGE_GEN)
+                .runDate(INSTANT)
+                .runDurationMillis(0)
+                .runOutcome(true)
+                .build();
+
+    public final TkmBatchResult BIN_RANGE_BATCH_RESULT_FAILED = TkmBatchResult.builder()
+            .targetBatch(BatchEnum.BIN_RANGE_GEN)
+            .runDate(INSTANT)
+            .runDurationMillis(0)
+            .runOutcome(false)
+            .build();
 
 }

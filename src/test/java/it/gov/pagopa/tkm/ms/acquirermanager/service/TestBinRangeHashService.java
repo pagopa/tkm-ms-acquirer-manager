@@ -7,6 +7,7 @@ import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.constant.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.exception.*;
+import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.repository.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.impl.*;
 import org.junit.jupiter.api.*;
@@ -20,6 +21,7 @@ import java.time.*;
 import java.time.format.*;
 import java.util.*;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
@@ -58,8 +60,12 @@ public class TestBinRangeHashService {
     @Mock
     private BatchResultRepository batchResultRepository;
 
-    @Mock
-    private ObjectMapper mapper;
+    @Spy
+    private ObjectMapper mockMapper;
+
+    private final ObjectMapper mapper = new ObjectMapper();
+
+    private final ArgumentCaptor<TkmBatchResult> batchResultArgumentCaptor = ArgumentCaptor.forClass(TkmBatchResult.class);
 
     private DefaultBeans testBeans;
 
@@ -123,7 +129,7 @@ public class TestBinRangeHashService {
     }
 
     @Test
-    void givenBinRanges_generateAndUploadFiles() throws JsonProcessingException {
+    void givenBinRanges_generateAndUploadFiles() {
         when(serviceClientBuilderMock.connectionString(DefaultBeans.TEST_CONNECTION_STRING)).thenReturn(serviceClientBuilderMock);
         when(serviceClientBuilderMock.buildClient()).thenReturn(serviceClientMock);
         when(serviceClientMock.getBlobContainerClient(DefaultBeans.TEST_CONTAINER_NAME)).thenReturn(containerClientMock);
@@ -133,11 +139,15 @@ public class TestBinRangeHashService {
         verify(containerClientMock, times(2)).getBlobClient(anyString());
         verify(blobClientMock, times(2)).upload(any(InputStream.class), anyLong(), anyBoolean());
         verify(blobClientMock, times(2)).setMetadata(anyMap());
-        verify(batchResultRepository).save(any());
+        verify(batchResultRepository).save(batchResultArgumentCaptor.capture());
+        assertThat(batchResultArgumentCaptor.getValue())
+                .usingRecursiveComparison()
+                .ignoringFields("details")
+                .isEqualTo(testBeans.BIN_RANGE_BATCH_RESULT);
     }
 
     @Test
-    void givenNoBinRanges_generateAndUploadEmptyFile() throws JsonProcessingException {
+    void givenNoBinRanges_generateAndUploadEmptyFile() {
         when(serviceClientBuilderMock.connectionString(DefaultBeans.TEST_CONNECTION_STRING)).thenReturn(serviceClientBuilderMock);
         when(serviceClientBuilderMock.buildClient()).thenReturn(serviceClientMock);
         when(serviceClientMock.getBlobContainerClient(DefaultBeans.TEST_CONTAINER_NAME)).thenReturn(containerClientMock);
@@ -147,7 +157,22 @@ public class TestBinRangeHashService {
         verify(containerClientMock).getBlobClient(anyString());
         verify(blobClientMock).upload(any(InputStream.class), anyLong(), anyBoolean());
         verify(blobClientMock).setMetadata(anyMap());
-        verify(batchResultRepository).save(any());
+        verify(batchResultRepository).save(batchResultArgumentCaptor.capture());
+        assertThat(batchResultArgumentCaptor.getValue())
+                .usingRecursiveComparison()
+                .ignoringFields("details")
+                .isEqualTo(testBeans.BIN_RANGE_BATCH_RESULT);
+    }
+
+    @Test
+    void givenError_persistFalseOutcome() {
+        when(serviceClientBuilderMock.connectionString(DefaultBeans.TEST_CONNECTION_STRING)).thenThrow(RuntimeException.class);
+        binRangeHashService.generateBinRangeFiles();
+        verify(batchResultRepository).save(batchResultArgumentCaptor.capture());
+        assertThat(batchResultArgumentCaptor.getValue())
+                .usingRecursiveComparison()
+                .ignoringFields("details")
+                .isEqualTo(testBeans.BIN_RANGE_BATCH_RESULT_FAILED);
     }
 
 }

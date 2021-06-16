@@ -167,6 +167,7 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
         } catch (Exception e) {
             log.error(e);
             batchResult.setRunOutcome(false);
+            batchResult.setDetails("ERROR PROCESSING");
         }
         batchResultRepository.save(batchResult);
         log.info("End of bin range generation batch");
