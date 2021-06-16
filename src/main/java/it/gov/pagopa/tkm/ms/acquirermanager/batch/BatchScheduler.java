@@ -6,18 +6,22 @@ import org.springframework.beans.factory.annotation.*;
 import org.springframework.scheduling.annotation.*;
 import org.springframework.stereotype.*;
 
-import java.io.*;
-
 @Component
-public class FileGenScheduler {
+public class BatchScheduler {
 
     @Autowired
     private BinRangeHashServiceImpl binRangeHashService;
 
     @Scheduled(cron = "${batch.bin-range-gen.cron}")
     @SchedulerLock(name = "Bin_Range_Gen_Task")
-    public void binRangeGenTask() throws IOException {
+    public void binRangeGenTask() {
         binRangeHashService.generateBinRangeFiles();
+    }
+
+    @Scheduled(cron = "${batch.bin-range-retrieval.cron}")
+    @SchedulerLock(name = "Bin_Range_Retrieval_Task")
+    public void binRangeRetrievalTask() throws Exception {
+        binRangeHashService.retrieveVisaBinRanges();
     }
 
 }

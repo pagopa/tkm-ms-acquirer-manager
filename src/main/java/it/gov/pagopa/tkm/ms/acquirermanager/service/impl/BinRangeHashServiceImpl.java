@@ -9,9 +9,10 @@ import com.azure.storage.blob.sas.BlobServiceSasSignatureValues;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import it.gov.pagopa.tkm.constant.TkmDatetimeConstant;
+import it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum;
 import it.gov.pagopa.tkm.ms.acquirermanager.exception.AcquirerDataNotFoundException;
-import it.gov.pagopa.tkm.ms.acquirermanager.model.dto.BatchResultDetails;
+import it.gov.pagopa.tkm.ms.acquirermanager.model.dto.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.TkmBatchResult;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.TkmBinRange;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.response.LinksResponse;
@@ -51,6 +52,9 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
     @Autowired
     private BinRangeRepository binRangeRepository;
 
+    @Autowired
+    private VisaClient visaClient;
+    
     @Autowired
     private BatchResultRepository batchResultRepository;
 
@@ -239,6 +243,15 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
         Files.delete(Paths.get(csvFilePath));
         log.debug("Deleted: " + csvFilePath + " - Exists? " + Files.exists(Paths.get(csvFilePath)));
         return baos.toByteArray();
+    }
+
+    @Override
+    public void retrieveVisaBinRanges() throws Exception {
+        log.info("Start of Visa bin range retrieval batch");
+        List<TkmBinRange> binRanges = visaClient.getBinRanges();
+        log.info(CollectionUtils.size(binRanges) + " bin ranges retrieved");
+        binRangeRepository.saveAll(binRanges);
+        log.info("End of Visa bin range retrieval batch");
     }
 
 }

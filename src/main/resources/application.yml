@@ -64,23 +64,22 @@ keyvault:
 #  readQueuePrvPgpKeyPassphrase: ${${AZURE_KEYVAULT_PROFILE:prod}-readQueuePrvPgpKeyPassphrase:null}
 #  amexClientId: ${${AZURE_KEYVAULT_PROFILE:prod}-amexClientId}
 #  amexClientSecret: ${${AZURE_KEYVAULT_PROFILE:prod}-amexClientSecret}
-#  visaClientId: ${${AZURE_KEYVAULT_PROFILE:prod}-visaClientId}
-#  visaKeyId: ${${AZURE_KEYVAULT_PROFILE:prod}-visaKeyId}
-#  visaKeyStorePassword: ${${AZURE_KEYVAULT_PROFILE:prod}-visaKeyStorePassword}
-#  visaPassword: ${${AZURE_KEYVAULT_PROFILE:prod}-visaPassword}
-#  visaPrivateKey: ${${AZURE_KEYVAULT_PROFILE:prod}-visaPrivateKey}
-#  visaServerCertificate: ${${AZURE_KEYVAULT_PROFILE:prod}-visaServerCertificate}
-#  visaUserId: ${${AZURE_KEYVAULT_PROFILE:prod}-visaUserId}
-#
-#blob-storage:
-#  visaPublicCert: azure-blob://${BLOB_STORAGE_NAME}/Visa_Public_Cert.p12
-#
+  visaClientId: ${${AZURE_KEYVAULT_PROFILE:prod}-visaClientId}
+  visaKeyId: ${${AZURE_KEYVAULT_PROFILE:prod}-visaKeyId}
+  visaKeyStorePassword: ${${AZURE_KEYVAULT_PROFILE:prod}-visaKeyStorePassword}
+  visaPassword: ${${AZURE_KEYVAULT_PROFILE:prod}-visaPassword}
+  visaPrivateKey: ${${AZURE_KEYVAULT_PROFILE:prod}-visaPrivateKey}
+  visaServerCertificate: ${${AZURE_KEYVAULT_PROFILE:prod}-visaServerCertificate}
+  visaUserId: ${${AZURE_KEYVAULT_PROFILE:prod}-visaUserId}
+
+blob-storage:
+  visaPublicCert: azure-blob://${BLOB_STORAGE_BIN_HASH_CONTAINER}/Visa_Public_Cert.p12
+
 #client-urls:
 #  card-manager: ${CARD_MANAGER_URL}
 #
-#circuit-urls:
-#  amex: ${AMEX_URL}
-#  visa: ${VISA_URL}
+circuit-urls:
+  visa: ${VISA_URL}
 
 management:
   health:
@@ -95,3 +94,5 @@ batch:
   bin-range-gen:
     cron: ${BIN_RANGE_GEN_CRON:-}
     max-rows-in-files: ${BIN_RANGE_GEN_MAX_ROWS_IN_FILES:1000000}
+  bin-range-retrieval:
+    cron: ${BIN_RANGE_RETRIEVAL_CRON:-}
