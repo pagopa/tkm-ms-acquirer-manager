@@ -2,7 +2,7 @@ package it.gov.pagopa.tkm.ms.acquirermanager.model.entity;
 
 import it.gov.pagopa.tkm.ms.acquirermanager.constant.*;
 import lombok.*;
-import lombok.experimental.*;
+import lombok.Builder;
 
 import javax.persistence.*;
 import java.time.*;
@@ -10,7 +10,9 @@ import java.time.*;
 @Entity
 @Table(name = "BATCH_RESULT")
 @Data
-@Accessors(chain = true)
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class TkmBatchResult {
 
     @Id

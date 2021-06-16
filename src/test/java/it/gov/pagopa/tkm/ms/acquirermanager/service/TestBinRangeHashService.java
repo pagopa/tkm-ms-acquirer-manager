@@ -3,10 +3,10 @@ package it.gov.pagopa.tkm.ms.acquirermanager.service;
 import com.azure.core.http.rest.*;
 import com.azure.storage.blob.*;
 import com.azure.storage.blob.models.*;
+import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.constant.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.exception.*;
-import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.repository.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.impl.*;
 import org.junit.jupiter.api.*;
@@ -123,7 +123,7 @@ public class TestBinRangeHashService {
     }
 
     @Test
-    void givenBinRanges_generateAndUploadFiles() {
+    void givenBinRanges_generateAndUploadFiles() throws JsonProcessingException {
         when(serviceClientBuilderMock.connectionString(DefaultBeans.TEST_CONNECTION_STRING)).thenReturn(serviceClientBuilderMock);
         when(serviceClientBuilderMock.buildClient()).thenReturn(serviceClientMock);
         when(serviceClientMock.getBlobContainerClient(DefaultBeans.TEST_CONTAINER_NAME)).thenReturn(containerClientMock);
@@ -137,12 +137,12 @@ public class TestBinRangeHashService {
     }
 
     @Test
-    void givenNoBinRanges_generateAndUploadEmptyFile() {
+    void givenNoBinRanges_generateAndUploadEmptyFile() throws JsonProcessingException {
         when(serviceClientBuilderMock.connectionString(DefaultBeans.TEST_CONNECTION_STRING)).thenReturn(serviceClientBuilderMock);
         when(serviceClientBuilderMock.buildClient()).thenReturn(serviceClientMock);
         when(serviceClientMock.getBlobContainerClient(DefaultBeans.TEST_CONTAINER_NAME)).thenReturn(containerClientMock);
         when(containerClientMock.getBlobClient(any())).thenReturn(blobClientMock);
-        when(binRangeRepository.findAll()).thenReturn(Collections.singletonList(new TkmBinRange()));
+        when(binRangeRepository.findAll()).thenReturn(null);
         binRangeHashService.generateBinRangeFiles();
         verify(containerClientMock).getBlobClient(anyString());
         verify(blobClientMock).upload(any(InputStream.class), anyLong(), anyBoolean());
