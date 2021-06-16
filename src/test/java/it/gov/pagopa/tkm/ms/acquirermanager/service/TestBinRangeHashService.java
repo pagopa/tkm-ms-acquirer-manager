@@ -133,7 +133,7 @@ public class TestBinRangeHashService {
         verify(containerClientMock, times(2)).getBlobClient(anyString());
         verify(blobClientMock, times(2)).upload(any(InputStream.class), anyLong(), anyBoolean());
         verify(blobClientMock, times(2)).setMetadata(anyMap());
-        verify(batchResultRepository).saveAll(any());
+        verify(batchResultRepository).save(any());
     }
 
     @Test
@@ -147,7 +147,7 @@ public class TestBinRangeHashService {
         verify(containerClientMock).getBlobClient(anyString());
         verify(blobClientMock).upload(any(InputStream.class), anyLong(), anyBoolean());
         verify(blobClientMock).setMetadata(anyMap());
-        verify(batchResultRepository).saveAll(any());
+        verify(batchResultRepository).save(any());
     }
 
 }
