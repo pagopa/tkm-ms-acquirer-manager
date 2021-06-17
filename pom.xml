@@ -74,6 +74,8 @@
                         <exclude>it/gov/pagopa/tkm/ms/acquirermanager/model/**/*.class</exclude>
                         <exclude>it/gov/pagopa/tkm/ms/acquirermanager/constant/**/*.class</exclude>
                         <exclude>it/gov/pagopa/tkm/ms/acquirermanager/exception/**/*.class</exclude>
+                        <exclude>it/gov/pagopa/tkm/ms/acquirermanager/batch/**/*.class</exclude>
+                        <exclude>it/gov/pagopa/tkm/ms/acquirermanager/thread/**/*.class</exclude>
                         <exclude>it/gov/pagopa/tkm/ms/acquirermanager/AcquirerManagerApplication.class</exclude>
                     </excludes>
                 </configuration>
