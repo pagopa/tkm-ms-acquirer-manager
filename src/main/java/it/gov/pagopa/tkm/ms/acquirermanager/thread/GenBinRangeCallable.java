@@ -12,7 +12,6 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 
 @AllArgsConstructor
-@NoArgsConstructor
 @Log4j2
 public class GenBinRangeCallable implements Callable<BatchResultDetails> {
 

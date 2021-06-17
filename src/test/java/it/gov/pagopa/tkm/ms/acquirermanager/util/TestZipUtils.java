@@ -1,50 +1,37 @@
 package it.gov.pagopa.tkm.ms.acquirermanager.util;
 
-import org.apache.commons.io.*;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.*;
-import org.mockito.junit.jupiter.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.io.*;
-import java.nio.file.*;
-import java.util.*;
-import java.util.zip.*;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ExtendWith(MockitoExtension.class)
-public class TestZipUtils {
+class TestZipUtils {
 
-    private final String tempFilePath = FileUtils.getTempDirectoryPath() + File.separator + "test.csv";
+    @TempDir
+    static Path tempDir;
 
-    @AfterAll
-    void cleanup() throws IOException {
-        Files.delete(Paths.get(tempFilePath));
+    static Path tempFile;
+
+    @BeforeAll
+    void init() throws IOException {
+        tempFile = Files.createFile(tempDir.resolve("test2.txt"));
     }
 
     @Test
-    void givenPath_returnZippedBytes() throws IOException, DataFormatException {
-        File file = new File(tempFilePath);
-        FileUtils.write(file, "test");
-        byte[] zippedFile = ZipUtils.zipFile(tempFilePath);
-        assertEquals(, "test".getBytes());
+    void givenPath_returnZippedBytes() throws IOException {
+        byte[] zippedFile = ZipUtils.zipFile(tempFile.toAbsolutePath().toString());
+        assertEquals(134, zippedFile.length);
     }
 
-    public static byte[] extractZipEntries(byte[] content) throws IOException {
-        ByteArrayInputStream binput = new ByteArrayInputStream(content);
-        ZipInputStream zis = new ZipInputStream(binput);
-        ZipEntry entry;
-        while (null != (entry = zis.getNextEntry())) {
-            FileOutputStream fos = new FileOutputStream(entry.getName());
-            int index;
-            byte[] buffer = new byte[1024];
-            while (0 < (index = zis.read(buffer))) {
-                fos.write(buffer, 0, index);
-            }
-            fos.close();
-            zis.closeEntry();
-        }
-    }
 
 }
