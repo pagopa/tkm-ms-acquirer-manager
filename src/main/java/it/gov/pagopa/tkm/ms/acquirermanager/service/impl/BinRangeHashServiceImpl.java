@@ -6,7 +6,6 @@ import com.azure.storage.blob.models.BlobListDetails;
 import com.azure.storage.blob.models.ListBlobsOptions;
 import com.azure.storage.blob.sas.BlobContainerSasPermission;
 import com.azure.storage.blob.sas.BlobServiceSasSignatureValues;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import it.gov.pagopa.tkm.constant.TkmDatetimeConstant;
 import it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum;
@@ -18,7 +17,7 @@ import it.gov.pagopa.tkm.ms.acquirermanager.repository.BatchResultRepository;
 import it.gov.pagopa.tkm.ms.acquirermanager.repository.BinRangeRepository;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.BinRangeHashService;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.BlobService;
-import it.gov.pagopa.tkm.ms.acquirermanager.service.FileGenerator;
+import it.gov.pagopa.tkm.ms.acquirermanager.service.FileGeneratorService;
 import it.gov.pagopa.tkm.ms.acquirermanager.thread.GenBinRangeCallable;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections.CollectionUtils;
@@ -33,12 +32,9 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.stream.*;
 
 import static it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum.BIN_RANGE_GEN;
 import static it.gov.pagopa.tkm.ms.acquirermanager.constant.BlobMetadataEnum.generationdate;
@@ -72,7 +68,7 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
     private EntityManager entityManager;
 
     @Autowired
-    private FileGenerator fileGenerator;
+    private FileGeneratorService fileGeneratorService;
 
     @Autowired
     private BlobService blobService;
@@ -152,6 +148,37 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
         return NumberUtils.min(10, linksSize * 2);
     }
 
+    private List<BatchResultDetails> executeThreads(Instant now) throws InterruptedException {
+        List<GenBinRangeCallable> genBinRangeCallables = new ArrayList<>();
+        long count = binRangeRepository.count();
+        int ceil;
+        if (count == 0) {
+            ceil = 1;
+            genBinRangeCallables.add(new GenBinRangeCallable(fileGeneratorService, now, blobService, 0, 0, count));
+        } else {
+            int rowInFile = maxRowsInFiles;
+            ceil = (int) Math.ceil(count / (double) maxRowsInFiles);
+            if (ceil > 10) {
+                ceil = 10;
+                rowInFile = (int) Math.ceil(count / (double) ceil);
+            }
+            for (int i = 0; i < ceil; i++) {
+                genBinRangeCallables.add(new GenBinRangeCallable(fileGeneratorService, now, blobService, rowInFile, i, count));
+            }
+        }
+        ExecutorService taskExecutor = Executors.newFixedThreadPool(ceil);
+        List<Future<BatchResultDetails>> detailsFutures = taskExecutor.invokeAll(genBinRangeCallables);
+        awaitTerminationAfterShutdown(taskExecutor);
+        return detailsFutures.stream().map(t -> {
+            try {
+                return t.get();
+            } catch (Exception e) {
+                log.error(e);
+                return null;
+            }
+        }).collect(Collectors.toList());
+    }
+
     @Override
     public void generateBinRangeFiles() {
         log.info("Start of bin range generation batch");
@@ -159,36 +186,19 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
         long start = now.toEpochMilli();
         TkmBatchResult batchResult = TkmBatchResult.builder()
                 .targetBatch(BIN_RANGE_GEN)
+                .executionUuid(UUID.randomUUID())
                 .runDate(now)
                 .runOutcome(true)
                 .build();
-        List<BatchResultDetails> batchResultDetails = new ArrayList<>();
         try {
-            long count = binRangeRepository.count();
-            int rowInFile = maxRowsInFiles;
-            int ceil = (int) Math.ceil(count / (double) maxRowsInFiles);
-            if (ceil > 10) {
-                ceil = 10;
-                rowInFile = (int) Math.ceil(count / (double) ceil);
-            }
-            ExecutorService taskExecutor = Executors.newFixedThreadPool(ceil);
-            List<GenBinRangeCallable> genBinRangeCallables = new ArrayList<>();
-            for (int i = 0; i < ceil; i++) {
-                GenBinRangeCallable genBinRangeCallable = new GenBinRangeCallable(fileGenerator, now, rowInFile, i, blobService);
-                genBinRangeCallables.add(genBinRangeCallable);
-            }
-            taskExecutor.invokeAll(genBinRangeCallables);
-            awaitTerminationAfterShutdown(taskExecutor);
+            List<BatchResultDetails> batchResultDetails = executeThreads(now);
             long duration = Instant.now().toEpochMilli() - start;
             batchResult.setRunDurationMillis(duration);
             batchResult.setDetails(mapper.writeValueAsString(batchResultDetails));
-        } catch (JsonProcessingException je) {
-            log.error("generateBinRangeFiles JsonProcessingException", je);
-            batchResult.setDetails("ERROR PROCESSING");
         } catch (Exception e) {
             log.error(e);
             batchResult.setRunOutcome(false);
-            batchResult.setDetails("ERROR PROCESSING");
+            batchResult.setDetails("ERROR PROCESSING FILES");
         }
         batchResultRepository.save(batchResult);
         log.info("End of bin range generation batch");
@@ -203,6 +213,7 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
         } catch (InterruptedException ex) {
             threadPool.shutdownNow();
             Thread.currentThread().interrupt();
+            throw new RuntimeException();
         }
     }
 

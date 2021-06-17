@@ -6,6 +6,7 @@ import lombok.Builder;
 
 import javax.persistence.*;
 import java.time.*;
+import java.util.*;
 
 @Entity
 @Table(name = "BATCH_RESULT")
@@ -19,6 +20,9 @@ public class TkmBatchResult {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ID", unique = true, nullable = false)
     private Long id;
+
+    @Column(name = "EXECUTION_UUID", unique = true, nullable = false)
+    private UUID executionUuid;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "TARGET_BATCH", nullable = false)

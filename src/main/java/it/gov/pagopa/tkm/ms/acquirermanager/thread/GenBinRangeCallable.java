@@ -1,8 +1,8 @@
 package it.gov.pagopa.tkm.ms.acquirermanager.thread;
 
+import it.gov.pagopa.tkm.ms.acquirermanager.model.dto.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.BlobService;
-import it.gov.pagopa.tkm.ms.acquirermanager.service.FileGenerator;
-import it.gov.pagopa.tkm.ms.acquirermanager.util.ZipUtils;
+import it.gov.pagopa.tkm.ms.acquirermanager.service.FileGeneratorService;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 
@@ -13,22 +13,22 @@ import java.util.concurrent.Callable;
 
 @AllArgsConstructor
 @Log4j2
-public class GenBinRangeCallable implements Callable<Boolean> {
-    private FileGenerator fileGenerator;
-    private Instant instant;
-    int size;
-    int pageAndIndex;
-    private BlobService blobService;
+public class GenBinRangeCallable implements Callable<BatchResultDetails> {
+
+    private final FileGeneratorService fileGeneratorService;
+    private final Instant instant;
+    private final BlobService blobService;
+    private final int size;
+    private final int index;
+    private final long total;
 
     @Override
-    public Boolean call() throws IOException {
+    public BatchResultDetails call() throws IOException {
         UUID uuid = UUID.randomUUID();
-        log.info("start thread " + uuid);
-
-        String filePath = fileGenerator.generateFileWithStream(instant, pageAndIndex, size, pageAndIndex);
-        byte[] zipFile = ZipUtils.zipFile(filePath);
-        blobService.uploadAcquirerFile(zipFile, instant, pageAndIndex);
-        log.info("end thread " + uuid);
-        return true;
+        log.debug("Start of thread " + uuid);
+        BatchResultDetails details = fileGeneratorService.generateFileWithStream(instant, size, index, total, blobService);
+        log.debug("End of thread " + uuid);
+        return details;
     }
+
 }
