@@ -3,7 +3,7 @@ package it.gov.pagopa.tkm.ms.acquirermanager.thread;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.dto.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.BlobService;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.FileGeneratorService;
-import lombok.AllArgsConstructor;
+import lombok.*;
 import lombok.extern.log4j.Log4j2;
 
 import java.io.IOException;
@@ -12,15 +12,16 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 
 @AllArgsConstructor
+@NoArgsConstructor
 @Log4j2
 public class GenBinRangeCallable implements Callable<BatchResultDetails> {
 
-    private final FileGeneratorService fileGeneratorService;
-    private final Instant instant;
-    private final BlobService blobService;
-    private final int size;
-    private final int index;
-    private final long total;
+    private FileGeneratorService fileGeneratorService;
+    private Instant instant;
+    private BlobService blobService;
+    private int size;
+    private int index;
+    private long total;
 
     @Override
     public BatchResultDetails call() throws IOException {

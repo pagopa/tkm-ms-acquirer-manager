@@ -21,7 +21,9 @@ import static it.gov.pagopa.tkm.ms.acquirermanager.constant.BlobMetadataEnum.gen
 @Service
 @Log4j2
 public class BlobServiceImpl implements BlobService {
+
     private final BlobServiceClientBuilder serviceClientBuilder = new BlobServiceClientBuilder();
+
     private final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("uuuuMMdd").withZone(ZoneId.of(TkmDatetimeConstant.DATE_TIME_TIMEZONE));
 
     @Value("${azure.storage.connection-string}")
@@ -47,4 +49,5 @@ public class BlobServiceImpl implements BlobService {
         blobClient.setMetadata(metadata);
         log.debug("Uploaded file " + filename);
     }
+
 }

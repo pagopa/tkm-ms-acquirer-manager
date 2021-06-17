@@ -56,4 +56,12 @@ public class DefaultBeans {
             .runOutcome(false)
             .build();
 
+    public final BatchResultDetails BIN_RANGE_BATCH_RESULT_DETAILS = new BatchResultDetails(
+            "BIN_RANGE_GEN_LOCAL__1", 3, null
+    );
+
+    public final BatchResultDetails BIN_RANGE_BATCH_RESULT_DETAILS_EMPTY = new BatchResultDetails(
+            "BIN_RANGE_GEN_LOCAL__1", 0, null
+    );
+
 }
