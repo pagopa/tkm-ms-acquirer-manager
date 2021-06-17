@@ -5,6 +5,7 @@ import lombok.*;
 import java.util.*;
 
 @Data
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
 public class VisaBinRangeResponse {

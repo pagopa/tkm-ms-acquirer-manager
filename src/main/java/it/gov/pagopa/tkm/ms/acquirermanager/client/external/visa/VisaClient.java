@@ -1,7 +1,6 @@
 package it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import it.gov.pagopa.tkm.constant.TkmDatetimeConstant;
 import it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa.model.request.VisaBinRangeRequest;
 import it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa.model.request.VisaBinRangeRequestData;
 import it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa.model.request.VisaBinRangeRequestHeader;
@@ -24,13 +23,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.PostConstruct;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
-import java.security.cert.CertificateException;
 import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -40,6 +35,7 @@ import java.util.stream.Collectors;
 @Component
 @Log4j2
 public class VisaClient {
+
     @Autowired
     private ObjectMapper mapper;
 
@@ -66,8 +62,8 @@ public class VisaClient {
     private RestTemplate restTemplate;
 
     @PostConstruct
-//TODO Need to add pooling with ssl
-    public void initVisaClient() throws UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, IOException, CertificateException, KeyManagementException {
+    //TODO Need to add pooling with ssl
+    public void init() throws Exception {
         log.info("Set Visa Client with Mutual Auth");
         int timeout = 5000;
         restTemplate = new RestTemplate();
@@ -107,7 +103,7 @@ public class VisaClient {
         return restTemplate.postForObject(retrieveBinRangesUrl, entity, VisaBinRangeResponse.class);
     }
 
-    public List<TkmBinRange> getBinRangesRestTemplate() {
+    public List<TkmBinRange> getBinRanges() {
         List<TkmBinRange> tkmBinRangeList = new ArrayList<>();
         int index = 0;
         do {

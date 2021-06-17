@@ -1,6 +1,7 @@
 package it.gov.pagopa.tkm.ms.acquirermanager.constant;
 
 import com.azure.storage.blob.models.*;
+import it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa.model.response.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.response.*;
 
@@ -37,6 +38,53 @@ public class DefaultBeans {
             TkmBinRange.builder().circuit(CircuitEnum.VISA).min("000000000000").max("000000000001").insertDate(INSTANT).build(),
             TkmBinRange.builder().circuit(CircuitEnum.AMEX).min("000000000002").max("000000000003").insertDate(INSTANT).build(),
             TkmBinRange.builder().circuit(CircuitEnum.MASTERCARD).min("000000000004").max("000000000005").insertDate(INSTANT).build()
+            );
+
+    private final VisaBinRangeResponseData VISA_BIN_RANGE_RESPONSE_DATA_TOKEN = VisaBinRangeResponseData.builder()
+            .binRangeMinNum("0000")
+            .binRangeMaxNum("0001")
+            .binRangePaymentAccountType("T")
+            .build();
+
+    private final VisaBinRangeResponseData VISA_BIN_RANGE_RESPONSE_DATA_PAN = VisaBinRangeResponseData.builder()
+            .binRangeMinNum("0002")
+            .binRangeMaxNum("0003")
+            .binRangePaymentAccountType("P")
+            .build();
+
+    private final VisaBinRangeResponseStatus VISA_BIN_RANGE_RESPONSE_STATUS = VisaBinRangeResponseStatus.builder()
+            .statusCode("CDI000")
+            .build();
+
+    public final VisaBinRangeResponse VISA_BIN_RANGE_RESPONSE = VisaBinRangeResponse.builder()
+            .numRecordsReturned("500")
+            .areNextOffsetRecordsAvailable("Y")
+            .responseData(Arrays.asList(VISA_BIN_RANGE_RESPONSE_DATA_PAN, VISA_BIN_RANGE_RESPONSE_DATA_TOKEN))
+            .responseStatus(VISA_BIN_RANGE_RESPONSE_STATUS)
+            .totalRecordsCount("1000")
+            .build();
+
+    public final VisaBinRangeResponse VISA_BIN_RANGE_RESPONSE_LAST = VisaBinRangeResponse.builder()
+            .numRecordsReturned("500")
+            .areNextOffsetRecordsAvailable("N")
+            .responseData(Arrays.asList(VISA_BIN_RANGE_RESPONSE_DATA_PAN, VISA_BIN_RANGE_RESPONSE_DATA_TOKEN))
+            .responseStatus(VISA_BIN_RANGE_RESPONSE_STATUS)
+            .totalRecordsCount("1000")
+            .build();
+
+    public final List<TkmBinRange> VISA_TKM_BIN_RANGES = Arrays.asList(
+            TkmBinRange.builder()
+                    .circuit(CircuitEnum.VISA)
+                    .min("0000")
+                    .max("0001")
+                    .insertDate(INSTANT)
+                    .build(),
+            TkmBinRange.builder()
+                    .circuit(CircuitEnum.VISA)
+                    .min("0000")
+                    .max("0001")
+                    .insertDate(INSTANT)
+                    .build()
             );
 
 }
