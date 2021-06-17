@@ -1,6 +1,9 @@
 package it.gov.pagopa.tkm.ms.acquirermanager.service.impl;
 
-import com.azure.storage.blob.*;
+import com.azure.storage.blob.BlobClient;
+import com.azure.storage.blob.BlobContainerClient;
+import com.azure.storage.blob.BlobServiceClient;
+import com.azure.storage.blob.BlobServiceClientBuilder;
 import it.gov.pagopa.tkm.constant.TkmDatetimeConstant;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.BlobService;
 import lombok.extern.log4j.Log4j2;
@@ -37,8 +40,10 @@ public class BlobServiceImpl implements BlobService {
 
     @Override
     public void uploadAcquirerFile(byte[] fileByte, Instant instant, String filename, String sha256) {
+        log.info("Upload file " + filename);
         String today = dateFormat.format(instant);
         String directory = String.format("%s/%s/", BIN_RANGE_GEN, today);
+        log.debug("Directory " + directory);
         BlobServiceClient serviceClient = serviceClientBuilder.connectionString(connectionString).buildClient();
         BlobContainerClient client = serviceClient.getBlobContainerClient(containerNameBinHash);
         BlobClient blobClient = client.getBlobClient(directory + filename + ".zip");
@@ -47,7 +52,7 @@ public class BlobServiceImpl implements BlobService {
         metadata.put(generationdate.name(), instant.toString());
         metadata.put(checksumsha256.name(), sha256);
         blobClient.setMetadata(metadata);
-        log.debug("Uploaded file " + filename);
+        log.info("Uploaded file " + filename);
     }
 
 }
