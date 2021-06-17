@@ -1,29 +1,45 @@
 package it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa;
 
-import com.fasterxml.jackson.databind.*;
-import it.gov.pagopa.tkm.constant.*;
-import it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa.model.request.*;
-import it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa.model.response.*;
-import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.*;
-import lombok.extern.log4j.*;
-import org.springframework.beans.factory.annotation.*;
-import org.springframework.core.io.*;
-import org.springframework.stereotype.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import it.gov.pagopa.tkm.constant.TkmDatetimeConstant;
+import it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa.model.request.VisaBinRangeRequest;
+import it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa.model.request.VisaBinRangeRequestData;
+import it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa.model.request.VisaBinRangeRequestHeader;
+import it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa.model.response.VisaBinRangeResponse;
+import it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa.model.response.VisaBinRangeResponseData;
+import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.TkmBinRange;
+import lombok.extern.log4j.Log4j2;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.ssl.SSLContextBuilder;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
 
-import javax.net.ssl.*;
-import java.io.*;
-import java.net.*;
-import java.nio.charset.*;
+import javax.annotation.PostConstruct;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.security.*;
-import java.time.*;
-import java.time.format.*;
-import java.util.*;
-import java.util.stream.*;
+import java.security.cert.CertificateException;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Component
 @Log4j2
 public class VisaClient {
-
     @Autowired
     private ObjectMapper mapper;
 
@@ -45,88 +61,81 @@ public class VisaClient {
     @Value("${circuit-urls.visa}")
     private String retrieveBinRangesUrl;
 
-    private final Integer CHUNK_SIZE = 500;
+    private static final Integer CHUNK_SIZE = 500;
 
-    private final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss.SSS").withZone(ZoneId.of(TkmDatetimeConstant.DATE_TIME_TIMEZONE));
+    private RestTemplate restTemplate;
 
-    public List<TkmBinRange> getBinRanges() throws Exception {
+    @PostConstruct
+//TODO Need to add pooling with ssl
+    public void initVisaClient() throws UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, IOException, CertificateException, KeyManagementException {
+        log.info("Set Visa Client with Mutual Auth");
+        int timeout = 5000;
+        restTemplate = new RestTemplate();
+        char[] chars = keystorePassword.toCharArray();
+        KeyStore clientStore = KeyStore.getInstance("PKCS12");
+        clientStore.load(publicCert.getInputStream(), chars);
+
+        SSLContextBuilder sslContextBuilder = new SSLContextBuilder();
+        sslContextBuilder.loadKeyMaterial(clientStore, chars);
+
+        SSLConnectionSocketFactory sslConnectionSocketFactory = new SSLConnectionSocketFactory(sslContextBuilder.build());
+        CloseableHttpClient httpClient = HttpClients.custom()
+                .setSSLSocketFactory(sslConnectionSocketFactory)
+                .build();
+        HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory(httpClient);
+        requestFactory.setConnectTimeout(timeout);
+        requestFactory.setReadTimeout(timeout);
+
+        restTemplate = new RestTemplate(requestFactory);
+    }
+
+    private VisaBinRangeResponse invokeVisaBinRange(int index) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.add("keyId", keyId);
+        headers.setBasicAuth(userId, password, StandardCharsets.UTF_8);
+
+        VisaBinRangeRequestHeader requestHeader = VisaBinRangeRequestHeader.builder()
+                .requestTS(Instant.now())
+                .requestMessageID(UUID.randomUUID().toString())
+                .build();
+        VisaBinRangeRequestData requestData = new VisaBinRangeRequestData(String.valueOf(index), CHUNK_SIZE.toString());
+        VisaBinRangeRequest visaBinRangeRequest = new VisaBinRangeRequest(requestHeader, requestData);
+
+        HttpEntity<VisaBinRangeRequest> entity = new HttpEntity<>(visaBinRangeRequest, headers);
+        return restTemplate.postForObject(retrieveBinRangesUrl, entity, VisaBinRangeResponse.class);
+    }
+
+    public List<TkmBinRange> getBinRangesRestTemplate() {
         List<TkmBinRange> tkmBinRangeList = new ArrayList<>();
         int index = 0;
-        //TODO LIMIT? RETRY?
-        while (true) {
-            log.info("Calling Visa bin range API");
-            VisaBinRangeResponse response = getBinRangesChunk(index);
-            log.trace(response.toString());
-            log.info(response.getTotalRecordsCount() + " bin ranges total, this response contains " + response.getNumRecordsReturned() + " bin ranges");
-            tkmBinRangeList.addAll(response.getResponseData().stream()
-                    .filter(VisaBinRangeResponseData::isForTokens)
-                    .map(VisaBinRangeResponseData::toTkmBinRange).collect(Collectors.toList()));
-            if (response.hasMore() && "CDI000".equals(response.getResponseStatus().getStatusCode())) {
-                index = index + CHUNK_SIZE;
-            } else {
-                break;
-            }
-        }
+        do {
+            VisaBinRangeResponse visaBinRangeResponse = invokeVisaBinRange(index);
+            tkmBinRangeList.addAll(getBinRangeToken(visaBinRangeResponse));
+            index = getNewIndex(index, visaBinRangeResponse);
+        } while (index != -1);
+
         return tkmBinRangeList;
     }
 
-    private VisaBinRangeResponse getBinRangesChunk(Integer index) throws Exception {
-        VisaBinRangeRequestHeader requestHeader = new VisaBinRangeRequestHeader(
-                dateFormat.format(Instant.now()),
-                UUID.randomUUID().toString()
-        );
-        VisaBinRangeRequestData requestData = new VisaBinRangeRequestData(
-                index.toString(), CHUNK_SIZE.toString()
-        );
-        VisaBinRangeRequest visaBinRangeRequest = new VisaBinRangeRequest(requestHeader, requestData);
-        String reqPayload = mapper.writeValueAsString(visaBinRangeRequest);
-        log.trace(reqPayload);
-        return invokeAPI(reqPayload);
-    }
-
-    private VisaBinRangeResponse invokeAPI(String payload) throws Exception {
-        HttpURLConnection con = (HttpURLConnection) new URL(retrieveBinRangesUrl).openConnection();
-        KeyStore ks = KeyStore.getInstance("PKCS12");
-        ks.load(publicCert.getInputStream(), keystorePassword.toCharArray());
-        KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-        kmf.init(ks, keystorePassword.toCharArray());
-        SSLContext sslContext = SSLContext.getInstance("TLS");
-        sslContext.init(kmf.getKeyManagers(), null, null);
-        if (con instanceof HttpsURLConnection) {
-            ((HttpsURLConnection) con).setSSLSocketFactory(sslContext.getSocketFactory());
-        }
-        con.setRequestMethod("POST");
-        con.setRequestProperty("Content-Type", "application/json");
-        con.setRequestProperty("Accept", "application/json");
-        con.setRequestProperty("keyId", keyId);
-        byte[] encodedAuth = Base64.getEncoder().encode((userId + ":" + password).getBytes(StandardCharsets.UTF_8));
-        String authHeaderValue = "Basic " + new String(encodedAuth);
-        con.setRequestProperty("Authorization", authHeaderValue);
-        if (payload != null && payload.trim().length() > 0) {
-            con.setDoOutput(true);
-            con.setDoInput(true);
-            try (OutputStream os = con.getOutputStream()) {
-                byte[] input = payload.getBytes(StandardCharsets.UTF_8);
-                os.write(input, 0, input.length);
-            }
-        }
-        int status = con.getResponseCode();
-        BufferedReader in;
-        if (status == 200) {
-            in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+    private int getNewIndex(int index, VisaBinRangeResponse visaBinRangeResponse) {
+        if (visaBinRangeResponse != null && visaBinRangeResponse.hasMore()
+                && "CDI000".equals(visaBinRangeResponse.getResponseStatus().getStatusCode())) {
+            index = index + CHUNK_SIZE;
         } else {
-            in = new BufferedReader(new InputStreamReader(con.getErrorStream()));
-            log.error("Two-Way (Mutual) SSL test failed");
+            index = -1;
         }
-        String response;
-        StringBuilder content = new StringBuilder();
-        while ((response = in.readLine()) != null) {
-            content.append(response);
-        }
-        in.close();
-        con.disconnect();
-        String responseAsString = content.toString();
-        return mapper.readValue(responseAsString, VisaBinRangeResponse.class);
+        return index;
     }
 
+    private List<TkmBinRange> getBinRangeToken(VisaBinRangeResponse visaBinRangeResponse) {
+        List<TkmBinRange> collect = new ArrayList<>();
+        if (visaBinRangeResponse != null) {
+            collect = visaBinRangeResponse.getResponseData().stream()
+                    .filter(VisaBinRangeResponseData::isForTokens)
+                    .map(VisaBinRangeResponseData::toTkmBinRange).collect(Collectors.toList());
+        }
+        return collect;
+    }
 }

@@ -73,7 +73,7 @@ keyvault:
   visaUserId: ${${AZURE_KEYVAULT_PROFILE:prod}-visaUserId}
 
 blob-storage:
-  visaPublicCert: azure-blob://${BLOB_STORAGE_BIN_HASH_CONTAINER}/Visa_Public_Cert.p12
+  visaPublicCert: azure-blob://${BLOB_STORAGE_ACQUIRER_CONFIG_CONTAINER}/Visa_Public_Cert.p12
 
 #client-urls:
 #  card-manager: ${CARD_MANAGER_URL}

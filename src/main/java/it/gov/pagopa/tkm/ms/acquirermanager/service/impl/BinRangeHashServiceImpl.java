@@ -250,7 +250,7 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
         log.info("Start of Visa bin range retrieval batch");
         binRangeRepository.deleteByCircuit(CircuitEnum.VISA);
         log.info("Deleted old Visa bin ranges");
-        List<TkmBinRange> binRanges = visaClient.getBinRanges();
+        List<TkmBinRange> binRanges = visaClient.getBinRangesRestTemplate();
         log.info(CollectionUtils.size(binRanges) + " token bin ranges retrieved");
         binRangeRepository.saveAll(binRanges);
         log.info("End of Visa bin range retrieval batch");
