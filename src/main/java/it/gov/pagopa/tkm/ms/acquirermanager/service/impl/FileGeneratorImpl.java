@@ -42,7 +42,7 @@ public class FileGeneratorImpl implements FileGenerator {
 
     @Override
     @Transactional(readOnly = true)
-    public void generateFileWithStream(Instant now, int page, int size, int index) {
+    public String generateFileWithStream(Instant now, int page, int size, int index) {
         String today = dateFormat.format(now);
         String filename = StringUtils.joinWith("_", BIN_RANGE_GEN, profile.toUpperCase(), today, index);
         String lineSeparator = System.lineSeparator();
@@ -65,5 +65,6 @@ public class FileGeneratorImpl implements FileGenerator {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        return tempFilePath;
     }
 }

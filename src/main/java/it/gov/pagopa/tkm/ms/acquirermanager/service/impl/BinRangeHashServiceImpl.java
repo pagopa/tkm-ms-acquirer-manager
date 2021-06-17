@@ -9,22 +9,19 @@ import com.azure.storage.blob.sas.BlobServiceSasSignatureValues;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import it.gov.pagopa.tkm.constant.TkmDatetimeConstant;
-import it.gov.pagopa.tkm.ms.acquirermanager.Thread.GenBinRangeCallable;
 import it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum;
 import it.gov.pagopa.tkm.ms.acquirermanager.exception.AcquirerDataNotFoundException;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.dto.BatchResultDetails;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.TkmBatchResult;
-import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.TkmBinRange;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.response.LinksResponse;
 import it.gov.pagopa.tkm.ms.acquirermanager.repository.BatchResultRepository;
 import it.gov.pagopa.tkm.ms.acquirermanager.repository.BinRangeRepository;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.BinRangeHashService;
+import it.gov.pagopa.tkm.ms.acquirermanager.service.BlobService;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.FileGenerator;
+import it.gov.pagopa.tkm.ms.acquirermanager.thread.GenBinRangeCallable;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections4.ListUtils;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,22 +29,18 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.persistence.EntityManager;
-import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 import static it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum.BIN_RANGE_GEN;
-import static it.gov.pagopa.tkm.ms.acquirermanager.constant.BlobMetadataEnum.checksumsha256;
 import static it.gov.pagopa.tkm.ms.acquirermanager.constant.BlobMetadataEnum.generationdate;
 
 @Service
@@ -80,10 +73,13 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
 
     @Autowired
     private FileGenerator fileGenerator;
+
+    @Autowired
+    private BlobService blobService;
+
+
     private final BlobServiceClientBuilder serviceClientBuilder = new BlobServiceClientBuilder();
-
     private final BlobClientBuilder blobClientBuilder = new BlobClientBuilder();
-
     private final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("uuuuMMdd").withZone(ZoneId.of(TkmDatetimeConstant.DATE_TIME_TIMEZONE));
 
     @Override
@@ -169,11 +165,16 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
         List<BatchResultDetails> batchResultDetails = new ArrayList<>();
         try {
             long count = binRangeRepository.count();
+            int rowInFile = maxRowsInFiles;
             int ceil = (int) Math.ceil(count / (double) maxRowsInFiles);
+            if (ceil > 10) {
+                ceil = 10;
+                rowInFile = (int) Math.ceil(count / (double) ceil);
+            }
             ExecutorService taskExecutor = Executors.newFixedThreadPool(ceil);
             List<GenBinRangeCallable> genBinRangeCallables = new ArrayList<>();
             for (int i = 0; i < ceil; i++) {
-                GenBinRangeCallable genBinRangeCallable = new GenBinRangeCallable(fileGenerator, now, maxRowsInFiles, i, i);
+                GenBinRangeCallable genBinRangeCallable = new GenBinRangeCallable(fileGenerator, now, rowInFile, i, blobService);
                 genBinRangeCallables.add(genBinRangeCallable);
             }
             taskExecutor.invokeAll(genBinRangeCallables);
@@ -196,82 +197,13 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
     private void awaitTerminationAfterShutdown(ExecutorService threadPool) {
         threadPool.shutdown();
         try {
-            if (!threadPool.awaitTermination(300, TimeUnit.SECONDS)) {
+            if (!threadPool.awaitTermination(20, TimeUnit.MINUTES)) {
                 threadPool.shutdownNow();
             }
         } catch (InterruptedException ex) {
             threadPool.shutdownNow();
             Thread.currentThread().interrupt();
         }
-    }
-
-    private void generate(Instant now, List<BatchResultDetails> batchResultDetails) throws IOException {
-        String today = dateFormat.format(now);
-        String directory = String.format("%s/%s/", BIN_RANGE_GEN, today);
-        BlobServiceClient serviceClient = serviceClientBuilder.connectionString(connectionString).buildClient();
-        BlobContainerClient client = serviceClient.getBlobContainerClient(containerName);
-        List<TkmBinRange> binRangesFull = binRangeRepository.findAll();
-        if (CollectionUtils.isEmpty(binRangesFull)) {
-            log.info("No bin ranges found, generating empty file");
-            batchResultDetails.add(writeAndUploadFile(now, today, 1, Collections.emptyList(), client, directory));
-        } else {
-            List<List<TkmBinRange>> binRanges = ListUtils.partition(binRangesFull, maxRowsInFiles);
-            log.info(CollectionUtils.size(binRangesFull) + " bin ranges retrieved, generating " + CollectionUtils.size(binRanges) + " files");
-            int index = 1;
-            for (List<TkmBinRange> chunk : binRanges) {
-                batchResultDetails.add(writeAndUploadFile(now, today, index, chunk, client, directory));
-                index++;
-            }
-        }
-    }
-
-    private BatchResultDetails writeAndUploadFile(Instant now, String today, int index, List<TkmBinRange> chunk, BlobContainerClient client, String directory) throws IOException {
-        String filename = StringUtils.joinWith("_", BIN_RANGE_GEN, profile.toUpperCase(), today, index);
-        byte[] fileContents = writeFile(filename + ".csv", chunk);
-        BlobClient blobClient = client.getBlobClient(directory + filename + ".zip");
-        blobClient.upload(new ByteArrayInputStream(fileContents), fileContents.length, false);
-        String sha256 = DigestUtils.sha256Hex(fileContents);
-        Map<String, String> metadata = new HashMap<>();
-        metadata.put(generationdate.name(), now.toString());
-        metadata.put(checksumsha256.name(), sha256);
-        blobClient.setMetadata(metadata);
-        log.debug("Uploaded: " + filename);
-        return new BatchResultDetails(filename, CollectionUtils.size(chunk), sha256);
-    }
-
-    private byte[] writeFile(String filename, List<TkmBinRange> binRanges) throws IOException {
-        String tempFilePath = FileUtils.getTempDirectoryPath() + File.separator + filename;
-        String lineSeparator = System.lineSeparator();
-        try (FileOutputStream out = new FileOutputStream(tempFilePath)) {
-            for (TkmBinRange binRange : binRanges) {
-                String toWrite = StringUtils.joinWith(";", binRange.getMin(), binRange.getMax()) + lineSeparator;
-                out.write(toWrite.getBytes());
-                log.trace(toWrite);
-            }
-        }
-        log.debug("Written: " + tempFilePath + " - Exists? " + Files.exists(Paths.get(tempFilePath)));
-        return zipFile(tempFilePath, filename);
-    }
-
-    private byte[] zipFile(String csvFilePath, String csvFilename) throws IOException {
-        ZipEntry entry = new ZipEntry(csvFilename);
-        entry.setSize(FileUtils.sizeOf(new File(csvFilePath)));
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ZipOutputStream zos = new ZipOutputStream(baos);
-        zos.putNextEntry(entry);
-        int length;
-        byte[] buffer = new byte[1024];
-        try (FileInputStream in = new FileInputStream(csvFilePath)) {
-            while ((length = in.read(buffer)) > 0) {
-                zos.write(buffer, 0, length);
-            }
-        }
-        zos.closeEntry();
-        zos.close();
-        log.debug("Zipped: " + csvFilePath);
-        Files.delete(Paths.get(csvFilePath));
-        log.debug("Deleted: " + csvFilePath + " - Exists? " + Files.exists(Paths.get(csvFilePath)));
-        return baos.toByteArray();
     }
 
 }
