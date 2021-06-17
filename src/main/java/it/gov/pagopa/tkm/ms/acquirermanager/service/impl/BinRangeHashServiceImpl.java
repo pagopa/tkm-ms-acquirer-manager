@@ -32,9 +32,15 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.stream.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum.BIN_RANGE_GEN;
 import static it.gov.pagopa.tkm.ms.acquirermanager.constant.BlobMetadataEnum.generationdate;
@@ -72,6 +78,7 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
 
     @Autowired
     private BlobService blobService;
+
 
 
     private final BlobServiceClientBuilder serviceClientBuilder = new BlobServiceClientBuilder();
@@ -156,16 +163,9 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
             ceil = 1;
             genBinRangeCallables.add(new GenBinRangeCallable(fileGeneratorService, now, blobService, 0, 0, count));
         } else {
-            int rowInFile = maxRowsInFiles;
-            ceil = (int) Math.ceil(count / (double) maxRowsInFiles);
-            if (ceil > 10) {
-                ceil = 10;
-                rowInFile = (int) Math.ceil(count / (double) ceil);
-            }
-            for (int i = 0; i < ceil; i++) {
-                genBinRangeCallables.add(new GenBinRangeCallable(fileGeneratorService, now, blobService, rowInFile, i, count));
-            }
+            ceil = executeMoreThanZeroRow(now, genBinRangeCallables, count);
         }
+
         ExecutorService taskExecutor = Executors.newFixedThreadPool(ceil);
         List<Future<BatchResultDetails>> detailsFutures = taskExecutor.invokeAll(genBinRangeCallables);
         awaitTerminationAfterShutdown(taskExecutor);
@@ -173,20 +173,35 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
             try {
                 return t.get();
             } catch (Exception e) {
-                log.error(e);
-                return null;
+                log.error("detailsFutures", e);
+                return BatchResultDetails.builder().success(false).build();
             }
         }).collect(Collectors.toList());
     }
 
+    private int executeMoreThanZeroRow(Instant now, List<GenBinRangeCallable> genBinRangeCallables, long count) {
+        int ceil;
+        int rowInFile = maxRowsInFiles;
+        ceil = (int) Math.ceil(count / (double) maxRowsInFiles);
+        if (ceil > 10) {
+            ceil = 10;
+            rowInFile = (int) Math.ceil(count / (double) ceil);
+        }
+        for (int i = 0; i < ceil; i++) {
+            genBinRangeCallables.add(new GenBinRangeCallable(fileGeneratorService, now, blobService, rowInFile, i, count));
+        }
+        return ceil;
+    }
+
     @Override
     public void generateBinRangeFiles() {
-        log.info("Start of bin range generation batch");
+        UUID executionUuid = UUID.randomUUID();
+        log.info("Start of bin range generation batch " + executionUuid);
         Instant now = Instant.now();
         long start = now.toEpochMilli();
         TkmBatchResult batchResult = TkmBatchResult.builder()
                 .targetBatch(BIN_RANGE_GEN)
-                .executionUuid(UUID.randomUUID())
+                .executionUuid(executionUuid)
                 .runDate(now)
                 .runOutcome(true)
                 .build();
@@ -195,6 +210,7 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
             long duration = Instant.now().toEpochMilli() - start;
             batchResult.setRunDurationMillis(duration);
             batchResult.setDetails(mapper.writeValueAsString(batchResultDetails));
+            batchResult.setRunOutcome(batchResultDetails.stream().allMatch(BatchResultDetails::isSuccess));
         } catch (Exception e) {
             log.error(e);
             batchResult.setRunOutcome(false);
@@ -204,7 +220,7 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
         log.info("End of bin range generation batch");
     }
 
-    private void awaitTerminationAfterShutdown(ExecutorService threadPool) {
+    private void awaitTerminationAfterShutdown(ExecutorService threadPool) throws InterruptedException {
         threadPool.shutdown();
         try {
             if (!threadPool.awaitTermination(20, TimeUnit.MINUTES)) {
@@ -213,7 +229,7 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
         } catch (InterruptedException ex) {
             threadPool.shutdownNow();
             Thread.currentThread().interrupt();
-            throw new RuntimeException();
+            throw ex;
         }
     }
 

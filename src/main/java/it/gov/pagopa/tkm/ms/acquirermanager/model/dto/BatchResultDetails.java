@@ -1,6 +1,9 @@
 package it.gov.pagopa.tkm.ms.acquirermanager.model.dto;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @Builder
@@ -13,5 +16,7 @@ public class BatchResultDetails {
     private int fileSize;
 
     private String sha256;
+
+    private boolean success;
 
 }

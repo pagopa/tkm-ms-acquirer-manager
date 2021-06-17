@@ -52,32 +52,40 @@ public class FileGeneratorServiceImpl implements FileGeneratorService {
         String tempFilePath = FileUtils.getTempDirectoryPath() + File.separator + filename + ".csv";
         BatchResultDetails details = BatchResultDetails.builder().fileName(filename).fileSize(size).build();
         if (total == 0) {
-            log.info("No bin ranges found, file will be empty");
-            try (FileOutputStream out = new FileOutputStream(tempFilePath)) {
-                log.debug("Writing file " + filename);
-                out.write(lineSeparator.getBytes());
-            }
+            writeEmptyFile(filename, lineSeparator, tempFilePath);
         } else {
-            try (Stream<TkmBinRange> all = binRangeRepository.getAll(PageRequest.of(index, size, Sort.by("id")));
-                 FileOutputStream out = new FileOutputStream(tempFilePath)) {
-                log.debug("Writing file " + filename);
-                all.forEach(b -> {
-                    String toWrite = StringUtils.joinWith(";", b.getMin(), b.getMax()) + lineSeparator;
-                    try {
-                        out.write(toWrite.getBytes());
-                    } catch (IOException e) {
-                        log.error(e);
-                    }
-                    log.trace(toWrite);
-                    entityManager.detach(b);
-                });
-            }
+            manageStream(size, index, filename, lineSeparator, tempFilePath);
         }
         byte[] zipFile = ZipUtils.zipFile(tempFilePath);
         String sha256 = DigestUtils.sha256Hex(zipFile);
         details.setSha256(sha256);
         blobService.uploadAcquirerFile(zipFile, now, filename, sha256);
         return details;
+    }
+
+    private void writeEmptyFile(String filename, String lineSeparator, String tempFilePath) throws IOException {
+        log.info("No bin ranges found, file will be empty");
+        try (FileOutputStream out = new FileOutputStream(tempFilePath)) {
+            log.debug("Writing file " + filename);
+            out.write(lineSeparator.getBytes());
+        }
+    }
+
+    private void manageStream(int size, int index, String filename, String lineSeparator, String tempFilePath) throws IOException {
+        try (Stream<TkmBinRange> all = binRangeRepository.getAll(PageRequest.of(index, size, Sort.by("id")));
+             FileOutputStream out = new FileOutputStream(tempFilePath)) {
+            log.debug("Writing file " + filename);
+            all.forEach(b -> {
+                String toWrite = StringUtils.joinWith(";", b.getMin(), b.getMax()) + lineSeparator;
+                try {
+                    out.write(toWrite.getBytes());
+                } catch (IOException e) {
+                    log.error(e);
+                }
+                log.trace(toWrite);
+                entityManager.detach(b);
+            });
+        }
     }
 
 }
