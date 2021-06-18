@@ -1,24 +1,37 @@
 package it.gov.pagopa.tkm.ms.acquirermanager.service;
 
-import com.azure.core.http.rest.*;
+import com.azure.core.http.rest.PagedIterable;
 import com.azure.storage.blob.*;
-import com.azure.storage.blob.models.*;
+import com.azure.storage.blob.models.BlobItem;
+import com.azure.storage.blob.models.ListBlobsOptions;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.*;
-import it.gov.pagopa.tkm.ms.acquirermanager.constant.*;
-import it.gov.pagopa.tkm.ms.acquirermanager.exception.*;
-import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.*;
-import it.gov.pagopa.tkm.ms.acquirermanager.repository.*;
-import it.gov.pagopa.tkm.ms.acquirermanager.service.impl.*;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum;
+import it.gov.pagopa.tkm.ms.acquirermanager.constant.DefaultBeans;
+import it.gov.pagopa.tkm.ms.acquirermanager.exception.AcquirerDataNotFoundException;
+import it.gov.pagopa.tkm.ms.acquirermanager.model.dto.BatchResultDetails;
+import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.TkmBatchResult;
+import it.gov.pagopa.tkm.ms.acquirermanager.repository.BatchResultRepository;
+import it.gov.pagopa.tkm.ms.acquirermanager.repository.BinRangeRepository;
+import it.gov.pagopa.tkm.ms.acquirermanager.service.impl.BinRangeHashServiceImpl;
+import it.gov.pagopa.tkm.ms.acquirermanager.thread.GenBinRangeCallable;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
-import org.mockito.junit.jupiter.*;
-import org.springframework.test.util.*;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.cloud.sleuth.Tracer;
+import org.springframework.scheduling.annotation.AsyncResult;
+import org.springframework.test.util.ReflectionTestUtils;
 
-import java.time.*;
-import java.time.format.*;
-import java.util.*;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Collections;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -27,7 +40,7 @@ import static org.mockito.Mockito.*;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ExtendWith(MockitoExtension.class)
-public class TestBinRangeHashService {
+class TestBinRangeHashService {
 
     @InjectMocks
     private BinRangeHashServiceImpl binRangeHashService;
@@ -64,6 +77,13 @@ public class TestBinRangeHashService {
 
     @Spy
     private ObjectMapper mapper;
+
+    @Mock
+    private Tracer tracer;
+
+    @Mock
+    private GenBinRangeCallable genBinRangeCallable;
+
 
     private final ArgumentCaptor<TkmBatchResult> batchResultArgumentCaptor = ArgumentCaptor.forClass(TkmBatchResult.class);
 
@@ -139,6 +159,7 @@ public class TestBinRangeHashService {
     @Test
     void givenBinRanges_persistResult() throws JsonProcessingException {
         when(binRangeRepository.count()).thenReturn(3L);
+        when(genBinRangeCallable.call(any(Instant.class), anyInt(), anyInt(), anyLong())).thenReturn(new AsyncResult<>(BatchResultDetails.builder().success(true).build()));
         binRangeHashService.generateBinRangeFiles();
         verify(batchResultRepository).save(batchResultArgumentCaptor.capture());
         assertThat(batchResultArgumentCaptor.getValue())
@@ -149,6 +170,7 @@ public class TestBinRangeHashService {
 
     @Test
     void givenNoBinRanges_persistResult() throws JsonProcessingException {
+        when(genBinRangeCallable.call(any(Instant.class), anyInt(), anyInt(), anyLong())).thenReturn(new AsyncResult<>(BatchResultDetails.builder().success(true).build()));
         when(binRangeRepository.count()).thenReturn(0L);
         binRangeHashService.generateBinRangeFiles();
         verify(batchResultRepository).save(batchResultArgumentCaptor.capture());

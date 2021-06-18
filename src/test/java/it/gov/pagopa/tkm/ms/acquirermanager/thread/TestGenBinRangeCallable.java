@@ -2,7 +2,6 @@ package it.gov.pagopa.tkm.ms.acquirermanager.thread;
 
 import it.gov.pagopa.tkm.ms.acquirermanager.constant.DefaultBeans;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.dto.BatchResultDetails;
-import it.gov.pagopa.tkm.ms.acquirermanager.service.BlobService;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.impl.FileGeneratorServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,8 +41,16 @@ class TestGenBinRangeCallable {
     @Test
     void whenCalled_returnDetails() throws IOException, ExecutionException, InterruptedException {
         when(fileGeneratorService.generateFileWithStream(any(Instant.class), anyInt(), anyInt(), anyLong(), anyString())).thenReturn(testBeans.BIN_RANGE_BATCH_RESULT_DETAILS);
-        Future<BatchResultDetails> details = genBinRangeCallable.call(Instant.now(), 0, 0, 0L);
+        Future<BatchResultDetails> details = genBinRangeCallable.call(Instant.now(), 3, 0, 0L);
         assertEquals(testBeans.BIN_RANGE_BATCH_RESULT_DETAILS, details.get());
+    }
+
+    @Test
+    void whenCalled_errorGenerateFile() throws IOException, ExecutionException, InterruptedException {
+        String errorMessage = "error";
+        when(fileGeneratorService.generateFileWithStream(any(Instant.class), anyInt(), anyInt(), anyLong(), anyString())).thenThrow(new IOException(errorMessage));
+        Future<BatchResultDetails> details = genBinRangeCallable.call(Instant.now(), 0, 0, 0L);
+        assertEquals(testBeans.BIN_RANGE_BATCH_RESULT_ERROR_DETAILS, details.get());
     }
 
 }

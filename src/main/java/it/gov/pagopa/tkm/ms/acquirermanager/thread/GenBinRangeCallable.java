@@ -2,7 +2,6 @@ package it.gov.pagopa.tkm.ms.acquirermanager.thread;
 
 import it.gov.pagopa.tkm.constant.TkmDatetimeConstant;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.dto.BatchResultDetails;
-import it.gov.pagopa.tkm.ms.acquirermanager.service.BlobService;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.FileGeneratorService;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
@@ -15,7 +14,6 @@ import org.springframework.stereotype.Component;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.UUID;
 import java.util.concurrent.Future;
 
 import static it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum.BIN_RANGE_GEN;

@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.time.Instant;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 @Log4j2
@@ -42,32 +43,36 @@ public class FileGeneratorServiceImpl implements FileGeneratorService {
         log.info("generateFileWithStream of " + filename);
         String lineSeparator = System.lineSeparator();
         String tempFilePath = FileUtils.getTempDirectoryPath() + File.separator + filename;
-        BatchResultDetails details = BatchResultDetails.builder().fileName(filename).fileSize(size).success(true).build();
+        int realFileSize;
         if (total == 0) {
-            writeEmptyFile(filename, lineSeparator, tempFilePath);
+            realFileSize = writeEmptyFile(filename, lineSeparator, tempFilePath);
         } else {
-            manageStream(size, index, filename, lineSeparator, tempFilePath);
+            realFileSize = manageStream(size, index, filename, lineSeparator, tempFilePath);
         }
         byte[] zipFile = ZipUtils.zipFile(tempFilePath);
         String sha256 = DigestUtils.sha256Hex(zipFile);
-        details.setSha256(sha256);
         blobService.uploadAcquirerFile(zipFile, now, filename, sha256);
+        BatchResultDetails details = BatchResultDetails.builder().fileName(filename).fileSize(realFileSize).success(true).build();
+        details.setSha256(sha256);
         return details;
     }
 
-    private void writeEmptyFile(String filename, String lineSeparator, String tempFilePath) throws IOException {
+    private int writeEmptyFile(String filename, String lineSeparator, String tempFilePath) throws IOException {
         log.info("No bin ranges found, file will be empty");
         try (FileOutputStream out = new FileOutputStream(tempFilePath)) {
             log.debug("Writing file " + filename);
             out.write(lineSeparator.getBytes());
         }
+        return 0;
     }
 
-    private void manageStream(int size, int index, String filename, String lineSeparator, String tempFilePath) throws IOException {
+    private int manageStream(int size, int index, String filename, String lineSeparator, String tempFilePath) throws IOException {
+        AtomicInteger numOfRowInFIle = new AtomicInteger();
         try (Stream<TkmBinRange> all = binRangeRepository.getAll(PageRequest.of(index, size, Sort.by("id")));
              FileOutputStream out = new FileOutputStream(tempFilePath)) {
             log.debug("Writing file " + filename);
             all.forEach(b -> {
+                numOfRowInFIle.getAndIncrement();
                 String toWrite = StringUtils.joinWith(";", b.getMin(), b.getMax()) + lineSeparator;
                 try {
                     out.write(toWrite.getBytes());
@@ -78,6 +83,7 @@ public class FileGeneratorServiceImpl implements FileGeneratorService {
                 entityManager.detach(b);
             });
         }
+        return numOfRowInFIle.get();
     }
 
 }
