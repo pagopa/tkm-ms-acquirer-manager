@@ -21,6 +21,7 @@ import it.gov.pagopa.tkm.ms.acquirermanager.service.BinRangeHashService;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.BlobService;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.FileGeneratorService;
 import it.gov.pagopa.tkm.ms.acquirermanager.thread.GenBinRangeCallable;
+import it.gov.pagopa.tkm.ms.acquirermanager.thread.GenHpanHtpkenCallable;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -83,6 +84,10 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
 
     @Autowired
     private GenBinRangeCallable genBinRangeCallable;
+
+    @Autowired
+    private GenHpanHtpkenCallable genHpanHtpkenCallable;
+
 
     @Autowired
     private Tracer tracer;
@@ -193,7 +198,7 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
         }
     }
 
-    private void executeMoreThanZeroHpanHtokenRow(Instant now, List<Future<BatchResultDetails>> genBinRangeCallables, long count) {
+    private void executeMoreThanZeroHpanHtokenRow(Instant now, List<Future<BatchResultDetails>> genHpanHtokenCallables, long count) {
         int ceil;
         int rowInFile = maxRowsInFiles;
         ceil = (int) Math.ceil(count / (double) maxRowsInFiles);
@@ -202,7 +207,7 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
             rowInFile = (int) Math.ceil(count / (double) ceil);
         }
         for (int i = 0; i < ceil; i++) {
-            genBinRangeCallables.add(genBinRangeCallable.call(now, rowInFile, i, count));
+            genHpanHtokenCallables.add(genHpanHtpkenCallable.call(now, rowInFile, i, count));
         }
     }
 

@@ -1,5 +1,6 @@
 package it.gov.pagopa.tkm.ms.acquirermanager.service.impl;
 
+import it.gov.pagopa.tkm.ms.acquirermanager.client.internal.KnowHashesClient;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.dto.BatchResultDetails;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.TkmBinRange;
 import it.gov.pagopa.tkm.ms.acquirermanager.repository.BinRangeRepository;
@@ -21,6 +22,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.time.Instant;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
@@ -94,7 +96,11 @@ public class FileGeneratorServiceImpl implements FileGeneratorService {
 
     private int manageStream(int size, int index, String filename, String lineSeparator, String tempFilePath) throws IOException {
         AtomicInteger numOfRowInFIle = new AtomicInteger();
-        try (Stream<TkmBinRange> all = binRangeRepository.getAll(PageRequest.of(index, size, Sort.by("id")));
+
+
+
+
+        try (Set<String> all =   knowHashesClient.);
              FileOutputStream out = new FileOutputStream(tempFilePath)) {
             log.debug("Writing file " + filename);
             all.forEach(b -> {

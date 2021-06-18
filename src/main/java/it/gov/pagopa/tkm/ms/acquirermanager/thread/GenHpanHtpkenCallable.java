@@ -38,7 +38,7 @@ public class GenHpanHtpkenCallable {
         BatchResultDetails details = BatchResultDetails.builder().fileName(filename).success(false).build();
         try {
             log.debug("Start of thread");
-            details = fileGeneratorService.generateFileWithStream(instant, size, index, total, filename);
+            details = fileGeneratorService.generateHpanHtokenFileWithStream(instant, size, index, total, filename);
             log.debug("End of thread");
         } catch (Exception e) {
             details.setErrorMessage(e.getMessage());
