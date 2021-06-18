@@ -42,6 +42,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import static it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum.BIN_RANGE_GEN;
+import static it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum.BIN_RANGE_RETRIEVAL;
 import static it.gov.pagopa.tkm.ms.acquirermanager.constant.BlobMetadataEnum.checksumsha256;
 import static it.gov.pagopa.tkm.ms.acquirermanager.constant.BlobMetadataEnum.generationdate;
 
@@ -246,12 +247,32 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
     }
 
     @Override
-    public void retrieveVisaBinRanges() throws Exception {
-        log.info("Start of Visa bin range retrieval batch");
-        binRangeRepository.deleteByCircuit(CircuitEnum.VISA);
-        log.info("Deleted old Visa bin ranges");
-        List<TkmBinRange> binRanges = visaClient.getBinRanges();
-        log.info(CollectionUtils.size(binRanges) + " token bin ranges retrieved");
+    public void retrieveVisaBinRanges() throws JsonProcessingException {
+        UUID executionUuid = UUID.randomUUID();
+        log.info("Start of Visa bin range retrieval batch - Execution UUID: " + executionUuid);
+        Instant start = Instant.now();
+        TkmBatchResult result = TkmBatchResult.builder()
+                .targetBatch(BIN_RANGE_RETRIEVAL)
+                .runDate(start)
+                .runOutcome(true)
+                .executionUuid(executionUuid)
+                .build();
+        List<TkmBinRange> binRanges = new ArrayList<>();
+        try {
+            binRangeRepository.deleteByCircuit(CircuitEnum.VISA);
+            log.info("Deleted old Visa bin ranges");
+            binRanges = visaClient.getBinRanges();
+        } catch (Exception e) {
+            log.error(e);
+            result.setRunOutcome(false);
+            result.setDetails("ERROR RETRIEVING");
+        }
+        int size = CollectionUtils.size(binRanges);
+        log.info(size + " token bin ranges retrieved");
+        BatchResultDetails details = BatchResultDetails.builder().fileSize(size).build();
+        result.setDetails(mapper.writeValueAsString(details));
+        result.setRunDurationMillis(Instant.now().toEpochMilli() - start.toEpochMilli());
+        batchResultRepository.save(result);
         binRangeRepository.saveAll(binRanges);
         log.info("End of Visa bin range retrieval batch");
     }

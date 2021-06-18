@@ -98,7 +98,7 @@ public class VisaClient {
                 .build();
         VisaBinRangeRequestData requestData = new VisaBinRangeRequestData(String.valueOf(index), CHUNK_SIZE.toString());
         VisaBinRangeRequest visaBinRangeRequest = new VisaBinRangeRequest(requestHeader, requestData);
-
+        log.trace(visaBinRangeRequest);
         HttpEntity<VisaBinRangeRequest> entity = new HttpEntity<>(visaBinRangeRequest, headers);
         return restTemplate.postForObject(retrieveBinRangesUrl, entity, VisaBinRangeResponse.class);
     }
@@ -107,7 +107,10 @@ public class VisaClient {
         List<TkmBinRange> tkmBinRangeList = new ArrayList<>();
         int index = 0;
         do {
+            log.info("Calling Visa bin range API");
             VisaBinRangeResponse visaBinRangeResponse = invokeVisaBinRange(index);
+            log.trace(visaBinRangeResponse.toString());
+            log.info(visaBinRangeResponse.getTotalRecordsCount() + " bin ranges total, this response contains " + visaBinRangeResponse.getNumRecordsReturned() + " bin ranges");
             tkmBinRangeList.addAll(getBinRangeToken(visaBinRangeResponse));
             index = getNewIndex(index, visaBinRangeResponse);
         } while (index != -1);
