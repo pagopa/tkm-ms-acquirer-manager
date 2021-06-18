@@ -51,6 +51,19 @@ keyvault:
   blobAccountKey: ${${AZURE_KEYVAULT_PROFILE:prod}-blobAccountKey}
   eventhubLogSaslJaasConfig: ${${AZURE_KEYVAULT_PROFILE:prod}-eventhubLogSaslJaasConfig:null}
   acquirerMEventhubReadSaslJaasConfig: ${${AZURE_KEYVAULT_PROFILE:prod}-acquirerMEventhubReadSaslJaasConfig:null}
+  visaClientId: ${${AZURE_KEYVAULT_PROFILE:prod}-visaClientId}
+  visaKeyId: ${${AZURE_KEYVAULT_PROFILE:prod}-visaKeyId}
+  visaKeyStorePassword: ${${AZURE_KEYVAULT_PROFILE:prod}-visaKeyStorePassword}
+  visaPassword: ${${AZURE_KEYVAULT_PROFILE:prod}-visaPassword}
+  visaPrivateKey: ${${AZURE_KEYVAULT_PROFILE:prod}-visaPrivateKey}
+  visaServerCertificate: ${${AZURE_KEYVAULT_PROFILE:prod}-visaServerCertificate}
+  visaUserId: ${${AZURE_KEYVAULT_PROFILE:prod}-visaUserId}
+
+blob-storage:
+  visaPublicCert: azure-blob://${BLOB_STORAGE_ACQUIRER_CONFIG_CONTAINER}/Visa_Public_Cert.p12
+
+circuit-urls:
+  visa: ${VISA_URL}
 
 management:
   health:
@@ -65,3 +78,5 @@ batch:
   bin-range-gen:
     cron: ${BIN_RANGE_GEN_CRON:-}
     max-rows-in-files: ${BIN_RANGE_GEN_MAX_ROWS_IN_FILES:1000000}
+  bin-range-retrieval:
+    cron: ${BIN_RANGE_RETRIEVAL_CRON:-}

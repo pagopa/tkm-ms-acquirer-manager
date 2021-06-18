@@ -9,7 +9,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 @Component
-public class FileGenScheduler {
+public class BatchScheduler {
 
     @Autowired
     private BinRangeHashService binRangeHashService;
@@ -18,6 +18,12 @@ public class FileGenScheduler {
     @SchedulerLock(name = "Bin_Range_Gen_Task")
     public void binRangeGenTask() throws JsonProcessingException {
         binRangeHashService.generateBinRangeFiles();
+    }
+
+    @Scheduled(cron = "${batch.bin-range-retrieval.cron}")
+    @SchedulerLock(name = "Bin_Range_Retrieval_Task")
+    public void binRangeRetrievalTask() throws Exception {
+        binRangeHashService.retrieveVisaBinRanges();
     }
 
 }
