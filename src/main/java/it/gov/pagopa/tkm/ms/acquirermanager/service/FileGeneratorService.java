@@ -8,5 +8,7 @@ import java.time.Instant;
 public interface FileGeneratorService {
 
     BatchResultDetails generateFileWithStream(Instant now, int size, int index, long total, String fileName) throws IOException;
+    BatchResultDetails generateHpanHtokenFileWithStream(Instant now, int size, int index, long total, String fileName) throws IOException;
+
 
 }

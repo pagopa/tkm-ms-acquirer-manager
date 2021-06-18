@@ -57,6 +57,29 @@ public class FileGeneratorServiceImpl implements FileGeneratorService {
         return details;
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public BatchResultDetails generateHpanHtokenFileWithStream(Instant now, int size, int index, long total, String filename) throws IOException {
+        log.info("generateHpanHtokenFileWithStream of " + filename);
+        String lineSeparator = System.lineSeparator();
+        String tempFilePath = FileUtils.getTempDirectoryPath() + File.separator + filename;
+        int realFileSize;
+        if (total == 0) {
+            realFileSize = writeEmptyFile(filename, lineSeparator, tempFilePath);
+        } else {
+            realFileSize = manageStream(size, index, filename, lineSeparator, tempFilePath);
+        }
+        byte[] zipFile = ZipUtils.zipFile(tempFilePath);
+        String sha256 = DigestUtils.sha256Hex(zipFile);
+        blobService.uploadAcquirerFile(zipFile, now, filename, sha256);
+        BatchResultDetails details = BatchResultDetails.builder().fileName(filename).fileSize(realFileSize).success(true).build();
+        details.setSha256(sha256);
+        return details;
+    }
+
+
+
+
     private int writeEmptyFile(String filename, String lineSeparator, String tempFilePath) throws IOException {
         log.info("No bin ranges found, file will be empty");
         try (FileOutputStream out = new FileOutputStream(tempFilePath)) {
@@ -85,5 +108,27 @@ public class FileGeneratorServiceImpl implements FileGeneratorService {
         }
         return numOfRowInFIle.get();
     }
+
+
+    private int manageHpanHtokenStream(int size, int index, String filename, String lineSeparator, String tempFilePath) throws IOException {
+        AtomicInteger numOfRowInFIle = new AtomicInteger();
+        try (Stream<String> all = binRangeRepository.getAll(PageRequest.of(index, size, Sort.by("id")));
+             FileOutputStream out = new FileOutputStream(tempFilePath)) {
+            log.debug("Writing file " + filename);
+            all.forEach(b -> {
+                numOfRowInFIle.getAndIncrement();
+                String toWrite = StringUtils.joinWith(";", b.getMin(), b.getMax()) + lineSeparator;
+                try {
+                    out.write(toWrite.getBytes());
+                } catch (IOException e) {
+                    log.error(e);
+                }
+                log.trace(toWrite);
+                entityManager.detach(b);
+            });
+        }
+        return numOfRowInFIle.get();
+    }
+
 
 }

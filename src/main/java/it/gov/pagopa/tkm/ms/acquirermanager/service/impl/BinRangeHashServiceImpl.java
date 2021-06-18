@@ -8,6 +8,7 @@ import com.azure.storage.blob.sas.BlobContainerSasPermission;
 import com.azure.storage.blob.sas.BlobServiceSasSignatureValues;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import feign.Response;
 import it.gov.pagopa.tkm.constant.TkmDatetimeConstant;
 import it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum;
 import it.gov.pagopa.tkm.ms.acquirermanager.exception.AcquirerDataNotFoundException;
@@ -43,6 +44,7 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import static it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum.BIN_RANGE_GEN;
+import static it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum.HTOKEN_HPAN_GEN;
 import static it.gov.pagopa.tkm.ms.acquirermanager.constant.BlobMetadataEnum.generationdate;
 
 @Service
@@ -191,6 +193,59 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
         }
     }
 
+    private void executeMoreThanZeroHpanHtokenRow(Instant now, List<Future<BatchResultDetails>> genBinRangeCallables, long count) {
+        int ceil;
+        int rowInFile = maxRowsInFiles;
+        ceil = (int) Math.ceil(count / (double) maxRowsInFiles);
+        if (ceil > 10) {
+            ceil = 10;
+            rowInFile = (int) Math.ceil(count / (double) ceil);
+        }
+        for (int i = 0; i < ceil; i++) {
+            genBinRangeCallables.add(genBinRangeCallable.call(now, rowInFile, i, count));
+        }
+    }
+
+
+    private List<BatchResultDetails> executeThreadsHpanHToken(Instant now) {
+        List<Future<BatchResultDetails>> genHpanHtokenCallables = new ArrayList<>();
+        Response response = knowHashesClient.getKnownHashTokenSet(10, 0);
+        List<String> totalNumberPagesHeader = (List<String>) response.headers().get("Total-Number-Pages");
+        String totalNumberPagesHeaderValue = totalNumberPagesHeader.get(0);
+        long totalNumberPages =  Long.parseLong(totalNumberPagesHeaderValue);
+        long itemPerPage = totalNumberPages;
+
+          if (totalNumberPages == 0) {
+            genHpanHtokenCallables.add(genBinRangeCallable.call(now, 0, 0, totalNumberPages));
+        } else {
+            executeMoreThanZeroRow(now, genHpanHtokenCallables, totalNumberPages);
+        }
+        return genHpanHtokenCallables.stream().map(t -> {
+            try {
+                return t.get();
+            } catch (InterruptedException | ExecutionException e) {
+                log.error("detailsFutures", e);
+                Thread.currentThread().interrupt();
+                return BatchResultDetails.builder().success(false).errorMessage(e.getMessage()).build();
+            }
+        }).collect(Collectors.toList());
+    }
+
+
+    private void executeMoreThanZeroRowHpanHtoken(Instant now, List<Future<BatchResultDetails>> genBinRangeCallables, long pages) {
+        int ceil;
+        int rowInFile = maxRowsInFiles;
+        ceil = (int) Math.ceil(count / (double) maxRowsInFiles);
+        if (ceil > 10) {
+            ceil = 10;
+            rowInFile = (int) Math.ceil(count / (double) ceil);
+        }
+        for (int i = 0; i < ceil; i++) {
+            genBinRangeCallables.add(genBinRangeCallable.call(now, rowInFile, i, count));
+        }
+    }
+
+
     @Override
     public void generateBinRangeFiles() throws JsonProcessingException {
         Span span = tracer.currentSpan();
@@ -200,6 +255,28 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
         long start = now.toEpochMilli();
         TkmBatchResult batchResult = TkmBatchResult.builder()
                 .targetBatch(BIN_RANGE_GEN)
+                .executionTraceId(String.valueOf(traceId))
+                .runDate(now)
+                .runOutcome(true)
+                .build();
+        List<BatchResultDetails> batchResultDetails = executeThreads(now);
+        long duration = Instant.now().toEpochMilli() - start;
+        batchResult.setRunDurationMillis(duration);
+        batchResult.setDetails(mapper.writeValueAsString(batchResultDetails));
+        batchResult.setRunOutcome(batchResultDetails.stream().allMatch(BatchResultDetails::isSuccess));
+        batchResultRepository.save(batchResult);
+        log.info("End of bin range generation batch");
+    }
+
+    @Override
+    public void generateHpanHtokenFiles() throws JsonProcessingException {
+        Span span = tracer.currentSpan();
+        String traceId = span != null ? span.context().traceId() : "noTraceId";
+        log.info("Start of hapn htoken generation batch " + traceId);
+        Instant now = Instant.now();
+        long start = now.toEpochMilli();
+        TkmBatchResult batchResult = TkmBatchResult.builder()
+                .targetBatch(HTOKEN_HPAN_GEN)
                 .executionTraceId(String.valueOf(traceId))
                 .runDate(now)
                 .runOutcome(true)

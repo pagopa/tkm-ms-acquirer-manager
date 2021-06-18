@@ -9,5 +9,6 @@ public interface BinRangeHashService {
     LinksResponse getSasLinkResponse(BatchEnum batchEnum);
 
     void generateBinRangeFiles() throws JsonProcessingException;
+    void generateHpanHtokenFiles() throws JsonProcessingException;
 
 }
