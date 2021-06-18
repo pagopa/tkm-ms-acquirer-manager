@@ -262,16 +262,16 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
             binRangeRepository.deleteByCircuit(CircuitEnum.VISA);
             log.info("Deleted old Visa bin ranges");
             binRanges = visaClient.getBinRanges();
+            int size = CollectionUtils.size(binRanges);
+            log.info(size + " token bin ranges retrieved");
+            BatchResultDetails details = BatchResultDetails.builder().fileSize(size).build();
+            result.setDetails(mapper.writeValueAsString(details));
+            result.setRunDurationMillis(Instant.now().toEpochMilli() - start.toEpochMilli());
         } catch (Exception e) {
             log.error(e);
             result.setRunOutcome(false);
             result.setDetails("ERROR RETRIEVING");
         }
-        int size = CollectionUtils.size(binRanges);
-        log.info(size + " token bin ranges retrieved");
-        BatchResultDetails details = BatchResultDetails.builder().fileSize(size).build();
-        result.setDetails(mapper.writeValueAsString(details));
-        result.setRunDurationMillis(Instant.now().toEpochMilli() - start.toEpochMilli());
         batchResultRepository.save(result);
         binRangeRepository.saveAll(binRanges);
         log.info("End of Visa bin range retrieval batch");

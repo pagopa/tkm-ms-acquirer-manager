@@ -2,6 +2,7 @@ package it.gov.pagopa.tkm.ms.acquirermanager.constant;
 
 import com.azure.storage.blob.models.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa.model.response.*;
+import it.gov.pagopa.tkm.ms.acquirermanager.model.dto.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.response.*;
 
@@ -86,5 +87,21 @@ public class DefaultBeans {
                     .insertDate(INSTANT)
                     .build()
             );
+
+    public final TkmBatchResult VISA_BIN_RANGE_RETRIEVAL_BATCH_RESULT = TkmBatchResult.builder()
+            .runOutcome(true)
+            .targetBatch(BatchEnum.BIN_RANGE_RETRIEVAL)
+            .details("{\"fileSize\":3}")
+            .runDate(INSTANT)
+            .runDurationMillis(0)
+            .build();
+
+    public final TkmBatchResult VISA_BIN_RANGE_RETRIEVAL_BATCH_RESULT_FAILED = TkmBatchResult.builder()
+            .runOutcome(false)
+            .targetBatch(BatchEnum.BIN_RANGE_RETRIEVAL)
+            .details("ERROR RETRIEVING")
+            .runDate(INSTANT)
+            .runDurationMillis(0)
+            .build();
 
 }
