@@ -1,6 +1,7 @@
 package it.gov.pagopa.tkm.ms.acquirermanager.constant;
 
 import com.azure.storage.blob.models.*;
+import it.gov.pagopa.tkm.constant.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa.model.response.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.dto.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.*;
@@ -53,13 +54,6 @@ public class DefaultBeans {
             .runDurationMillis(0)
             .runOutcome(true)
             .executionTraceId("traceId")
-            .build();
-
-    public final TkmBatchResult BIN_RANGE_BATCH_RESULT_FAILED = TkmBatchResult.builder()
-            .targetBatch(BatchEnum.BIN_RANGE_GEN)
-            .runDate(INSTANT)
-            .runDurationMillis(0)
-            .runOutcome(false)
             .build();
 
     public final BatchResultDetails BIN_RANGE_BATCH_RESULT_DETAILS = new BatchResultDetails(
@@ -125,7 +119,7 @@ public class DefaultBeans {
     public final TkmBatchResult VISA_BIN_RANGE_RETRIEVAL_BATCH_RESULT = TkmBatchResult.builder()
             .runOutcome(true)
             .targetBatch(BatchEnum.BIN_RANGE_RETRIEVAL)
-            .details("{\"fileSize\":3}")
+            .details("{\"fileSize\":3,\"success\":true}")
             .runDate(INSTANT)
             .runDurationMillis(0)
             .build();
@@ -133,7 +127,7 @@ public class DefaultBeans {
     public final TkmBatchResult VISA_BIN_RANGE_RETRIEVAL_BATCH_RESULT_FAILED = TkmBatchResult.builder()
             .runOutcome(false)
             .targetBatch(BatchEnum.BIN_RANGE_RETRIEVAL)
-            .details("ERROR RETRIEVING")
+            .details("{\"fileSize\":0,\"success\":false}")
             .runDate(INSTANT)
             .runDurationMillis(0)
             .build();

@@ -8,16 +8,19 @@ import com.fasterxml.jackson.databind.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.constant.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.exception.*;
+import it.gov.pagopa.tkm.ms.acquirermanager.model.dto.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.repository.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.impl.*;
+import it.gov.pagopa.tkm.ms.acquirermanager.thread.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.mockito.*;
 import org.mockito.junit.jupiter.*;
+import org.springframework.cloud.sleuth.*;
+import org.springframework.scheduling.annotation.*;
 import org.springframework.test.util.*;
 
-import java.io.*;
 import java.time.*;
 import java.time.format.*;
 import java.util.*;
@@ -86,8 +89,6 @@ class TestBinRangeHashService {
     private final MockedStatic<Instant> instantMockedStatic = mockStatic(Instant.class);
     private final MockedStatic<OffsetDateTime> offsetMockedStatic = mockStatic(OffsetDateTime.class);
     private final MockedStatic<UUID> mockedUuid = mockStatic(UUID.class);
-
-    private final ArgumentCaptor<TkmBatchResult> batchResultArgumentCaptor = ArgumentCaptor.forClass(TkmBatchResult.class);
 
     @BeforeEach
     void init() {
@@ -181,7 +182,7 @@ class TestBinRangeHashService {
         verify(batchResultRepository).save(batchResultArgumentCaptor.capture());
         assertThat(batchResultArgumentCaptor.getValue())
                 .usingRecursiveComparison()
-                .ignoringFields("executionUuid")
+                .ignoringFields("executionTraceId")
                 .isEqualTo(testBeans.VISA_BIN_RANGE_RETRIEVAL_BATCH_RESULT);
     }
 
@@ -192,7 +193,7 @@ class TestBinRangeHashService {
         verify(batchResultRepository).save(batchResultArgumentCaptor.capture());
         assertThat(batchResultArgumentCaptor.getValue())
                 .usingRecursiveComparison()
-                .ignoringFields("executionUuid")
+                .ignoringFields("executionTraceId")
                 .isEqualTo(testBeans.VISA_BIN_RANGE_RETRIEVAL_BATCH_RESULT_FAILED);
     }
 

@@ -13,7 +13,7 @@ import it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.constant.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.exception.AcquirerDataNotFoundException;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.dto.*;
-import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.TkmBatchResult;
+import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.response.LinksResponse;
 import it.gov.pagopa.tkm.ms.acquirermanager.repository.BatchResultRepository;
 import it.gov.pagopa.tkm.ms.acquirermanager.repository.BinRangeRepository;
@@ -27,8 +27,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cloud.sleuth.Span;
-import org.springframework.cloud.sleuth.Tracer;
+import org.springframework.cloud.sleuth.*;
 import org.springframework.stereotype.Service;
 
 import javax.persistence.EntityManager;
@@ -36,16 +35,13 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import static it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum.BIN_RANGE_GEN;
 import static it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum.BIN_RANGE_RETRIEVAL;
-import static it.gov.pagopa.tkm.ms.acquirermanager.constant.BlobMetadataEnum.checksumsha256;
 import static it.gov.pagopa.tkm.ms.acquirermanager.constant.BlobMetadataEnum.generationdate;
 
 @Service
@@ -221,30 +217,32 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
 
     @Override
     public void retrieveVisaBinRanges() throws JsonProcessingException {
-        UUID executionUuid = UUID.randomUUID();
-        log.info("Start of Visa bin range retrieval batch - Execution UUID: " + executionUuid);
+        Span span = tracer.currentSpan();
+        String traceId = span != null ? span.context().traceId() : "noTraceId";
+        log.info("Start of Visa bin range retrieval batch " + traceId);
         Instant start = Instant.now();
         TkmBatchResult result = TkmBatchResult.builder()
                 .targetBatch(BIN_RANGE_RETRIEVAL)
                 .runDate(start)
                 .runOutcome(true)
-                .executionUuid(executionUuid)
+                .executionTraceId(String.valueOf(traceId))
                 .build();
         List<TkmBinRange> binRanges = new ArrayList<>();
+        BatchResultDetails details;
         try {
             binRangeRepository.deleteByCircuit(CircuitEnum.VISA);
             log.info("Deleted old Visa bin ranges");
             binRanges = visaClient.getBinRanges();
             int size = CollectionUtils.size(binRanges);
             log.info(size + " token bin ranges retrieved");
-            BatchResultDetails details = BatchResultDetails.builder().fileSize(size).build();
-            result.setDetails(mapper.writeValueAsString(details));
-            result.setRunDurationMillis(Instant.now().toEpochMilli() - start.toEpochMilli());
+            details = BatchResultDetails.builder().fileSize(size).success(true).build();
         } catch (Exception e) {
             log.error(e);
             result.setRunOutcome(false);
-            result.setDetails("ERROR RETRIEVING");
+            details = BatchResultDetails.builder().success(false).errorMessage(e.getMessage()).build();
         }
+        result.setRunDurationMillis(Instant.now().toEpochMilli() - start.toEpochMilli());
+        result.setDetails(mapper.writeValueAsString(details));
         batchResultRepository.save(result);
         binRangeRepository.saveAll(binRanges);
         log.info("End of Visa bin range retrieval batch");
