@@ -154,6 +154,6 @@
     </distributionManagement>
     <scm>
         <developerConnection>scm:git:https://github.com/pagopa/tkm-ms-acquirer-manager.git</developerConnection>
-        <tag>acquirer-manager-0.0.1</tag>
+        <tag>HEAD</tag>
     </scm>
 </project>
