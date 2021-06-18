@@ -51,11 +51,6 @@ keyvault:
   blobAccountKey: ${${AZURE_KEYVAULT_PROFILE:prod}-blobAccountKey}
   eventhubLogSaslJaasConfig: ${${AZURE_KEYVAULT_PROFILE:prod}-eventhubLogSaslJaasConfig:null}
   acquirerMEventhubReadSaslJaasConfig: ${${AZURE_KEYVAULT_PROFILE:prod}-acquirerMEventhubReadSaslJaasConfig:null}
-#  readQueuePrvPgpKey: ${${AZURE_KEYVAULT_PROFILE:prod}-readQueuePrvPgpKey}
-#  readQueuePubPgpKey: ${${AZURE_KEYVAULT_PROFILE:prod}-readQueuePubPgpKey}
-#  readQueuePrvPgpKeyPassphrase: ${${AZURE_KEYVAULT_PROFILE:prod}-readQueuePrvPgpKeyPassphrase:null}
-#  amexClientId: ${${AZURE_KEYVAULT_PROFILE:prod}-amexClientId}
-#  amexClientSecret: ${${AZURE_KEYVAULT_PROFILE:prod}-amexClientSecret}
   visaClientId: ${${AZURE_KEYVAULT_PROFILE:prod}-visaClientId}
   visaKeyId: ${${AZURE_KEYVAULT_PROFILE:prod}-visaKeyId}
   visaKeyStorePassword: ${${AZURE_KEYVAULT_PROFILE:prod}-visaKeyStorePassword}
@@ -67,9 +62,6 @@ keyvault:
 blob-storage:
   visaPublicCert: azure-blob://${BLOB_STORAGE_ACQUIRER_CONFIG_CONTAINER}/Visa_Public_Cert.p12
 
-#client-urls:
-#  card-manager: ${CARD_MANAGER_URL}
-#
 circuit-urls:
   visa: ${VISA_URL}
 
