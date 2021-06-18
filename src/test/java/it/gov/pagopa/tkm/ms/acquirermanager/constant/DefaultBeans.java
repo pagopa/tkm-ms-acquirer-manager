@@ -1,11 +1,11 @@
 package it.gov.pagopa.tkm.ms.acquirermanager.constant;
 
-import com.azure.storage.blob.models.BlobItem;
-import it.gov.pagopa.tkm.constant.TkmDatetimeConstant;
-import it.gov.pagopa.tkm.ms.acquirermanager.model.dto.BatchResultDetails;
-import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.TkmBatchResult;
-import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.TkmBinRange;
-import it.gov.pagopa.tkm.ms.acquirermanager.model.response.LinksResponse;
+import com.azure.storage.blob.models.*;
+import it.gov.pagopa.tkm.constant.*;
+import it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa.model.response.*;
+import it.gov.pagopa.tkm.ms.acquirermanager.model.dto.*;
+import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.*;
+import it.gov.pagopa.tkm.ms.acquirermanager.model.response.*;
 
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -56,13 +56,6 @@ public class DefaultBeans {
             .executionTraceId("traceId")
             .build();
 
-    public final TkmBatchResult BIN_RANGE_BATCH_RESULT_FAILED = TkmBatchResult.builder()
-            .targetBatch(BatchEnum.BIN_RANGE_GEN)
-            .runDate(INSTANT)
-            .runDurationMillis(0)
-            .runOutcome(false)
-            .build();
-
     public final BatchResultDetails BIN_RANGE_BATCH_RESULT_DETAILS = new BatchResultDetails(
             BIN_RANGE_GEN_LOCAL__1, 3, SHA_256, true, null
     );
@@ -75,5 +68,68 @@ public class DefaultBeans {
     public final BatchResultDetails BIN_RANGE_BATCH_RESULT_DETAILS_EMPTY = new BatchResultDetails(
             BIN_RANGE_GEN_LOCAL__1, 0, null, true, null
     );
+
+    private final VisaBinRangeResponseData VISA_BIN_RANGE_RESPONSE_DATA_TOKEN = VisaBinRangeResponseData.builder()
+            .binRangeMinNum("0000")
+            .binRangeMaxNum("0001")
+            .binRangePaymentAccountType("T")
+            .build();
+
+    private final VisaBinRangeResponseData VISA_BIN_RANGE_RESPONSE_DATA_PAN = VisaBinRangeResponseData.builder()
+            .binRangeMinNum("0002")
+            .binRangeMaxNum("0003")
+            .binRangePaymentAccountType("P")
+            .build();
+
+    private final VisaBinRangeResponseStatus VISA_BIN_RANGE_RESPONSE_STATUS = VisaBinRangeResponseStatus.builder()
+            .statusCode("CDI000")
+            .build();
+
+    public final VisaBinRangeResponse VISA_BIN_RANGE_RESPONSE = VisaBinRangeResponse.builder()
+            .numRecordsReturned("500")
+            .areNextOffsetRecordsAvailable("Y")
+            .responseData(Arrays.asList(VISA_BIN_RANGE_RESPONSE_DATA_PAN, VISA_BIN_RANGE_RESPONSE_DATA_TOKEN))
+            .responseStatus(VISA_BIN_RANGE_RESPONSE_STATUS)
+            .totalRecordsCount("1000")
+            .build();
+
+    public final VisaBinRangeResponse VISA_BIN_RANGE_RESPONSE_LAST = VisaBinRangeResponse.builder()
+            .numRecordsReturned("500")
+            .areNextOffsetRecordsAvailable("N")
+            .responseData(Arrays.asList(VISA_BIN_RANGE_RESPONSE_DATA_PAN, VISA_BIN_RANGE_RESPONSE_DATA_TOKEN))
+            .responseStatus(VISA_BIN_RANGE_RESPONSE_STATUS)
+            .totalRecordsCount("1000")
+            .build();
+
+    public final List<TkmBinRange> VISA_TKM_BIN_RANGES = Arrays.asList(
+            TkmBinRange.builder()
+                    .circuit(CircuitEnum.VISA)
+                    .min("0000")
+                    .max("0001")
+                    .insertDate(INSTANT)
+                    .build(),
+            TkmBinRange.builder()
+                    .circuit(CircuitEnum.VISA)
+                    .min("0000")
+                    .max("0001")
+                    .insertDate(INSTANT)
+                    .build()
+            );
+
+    public final TkmBatchResult VISA_BIN_RANGE_RETRIEVAL_BATCH_RESULT = TkmBatchResult.builder()
+            .runOutcome(true)
+            .targetBatch(BatchEnum.BIN_RANGE_RETRIEVAL)
+            .details("{\"fileSize\":3,\"success\":true}")
+            .runDate(INSTANT)
+            .runDurationMillis(0)
+            .build();
+
+    public final TkmBatchResult VISA_BIN_RANGE_RETRIEVAL_BATCH_RESULT_FAILED = TkmBatchResult.builder()
+            .runOutcome(false)
+            .targetBatch(BatchEnum.BIN_RANGE_RETRIEVAL)
+            .details("{\"fileSize\":0,\"success\":false}")
+            .runDate(INSTANT)
+            .runDurationMillis(0)
+            .build();
 
 }

@@ -9,7 +9,8 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.persistence.*;
-import java.time.Instant;
+import java.time.*;
+import java.util.*;
 
 @Entity
 @Table(name = "BATCH_RESULT")
