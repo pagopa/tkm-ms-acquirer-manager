@@ -10,6 +10,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import feign.Response;
 import it.gov.pagopa.tkm.constant.TkmDatetimeConstant;
+import it.gov.pagopa.tkm.ms.acquirermanager.client.internal.KnowHashesClient;
 import it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum;
 import it.gov.pagopa.tkm.ms.acquirermanager.exception.AcquirerDataNotFoundException;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.dto.BatchResultDetails;
@@ -21,7 +22,7 @@ import it.gov.pagopa.tkm.ms.acquirermanager.service.BinRangeHashService;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.BlobService;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.FileGeneratorService;
 import it.gov.pagopa.tkm.ms.acquirermanager.thread.GenBinRangeCallable;
-import it.gov.pagopa.tkm.ms.acquirermanager.thread.GenHpanHtpkenCallable;
+import it.gov.pagopa.tkm.ms.acquirermanager.thread.GenHpanHtokenCallable;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -86,8 +87,10 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
     private GenBinRangeCallable genBinRangeCallable;
 
     @Autowired
-    private GenHpanHtpkenCallable genHpanHtpkenCallable;
+    private GenHpanHtokenCallable genHpanHtpkenCallable;
 
+    @Autowired
+    private KnowHashesClient knowHashesClient;
 
     @Autowired
     private Tracer tracer;
@@ -95,6 +98,7 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
     private final BlobServiceClientBuilder serviceClientBuilder = new BlobServiceClientBuilder();
     private final BlobClientBuilder blobClientBuilder = new BlobClientBuilder();
     private final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("uuuuMMdd").withZone(ZoneId.of(TkmDatetimeConstant.DATE_TIME_TIMEZONE));
+    private final int MAX_NUMBER_OF_HPAN_HTOKEN = 10;
 
     @Override
     public LinksResponse getSasLinkResponse(BatchEnum batchEnum) {
@@ -198,23 +202,17 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
         }
     }
 
-    private void executeMoreThanZeroHpanHtokenRow(Instant now, List<Future<BatchResultDetails>> genHpanHtokenCallables, long count) {
-        int ceil;
-        int rowInFile = maxRowsInFiles;
-        ceil = (int) Math.ceil(count / (double) maxRowsInFiles);
-        if (ceil > 10) {
-            ceil = 10;
-            rowInFile = (int) Math.ceil(count / (double) ceil);
-        }
-        for (int i = 0; i < ceil; i++) {
-            genHpanHtokenCallables.add(genHpanHtpkenCallable.call(now, rowInFile, i, count));
+    private void executeMoreThanZeroHpanHtokenRow(Instant now, List<Future<BatchResultDetails>> genHpanHtokenCallables,
+                                                  long numberOfPages, int maxNumberInPage) {
+        for (int i = 0; i < numberOfPages; i++) {
+            genHpanHtokenCallables.add(genHpanHtpkenCallable.call(now, maxNumberInPage, i, numberOfPages));
         }
     }
 
+    private List<BatchResultDetails> executeThreadsHpanHtoken(Instant now) {
 
-    private List<BatchResultDetails> executeThreadsHpanHToken(Instant now) {
-        List<Future<BatchResultDetails>> genHpanHtokenCallables = new ArrayList<>();
-        Response response = knowHashesClient.getKnownHashTokenSet(10, 0);
+       List<Future<BatchResultDetails>> genHpanHtokenCallables = new ArrayList<>();
+        Response response = knowHashesClient.getKnownHashTokenSet(MAX_NUMBER_OF_HPAN_HTOKEN, 0);
         List<String> totalNumberPagesHeader = (List<String>) response.headers().get("Total-Number-Pages");
         String totalNumberPagesHeaderValue = totalNumberPagesHeader.get(0);
         long totalNumberPages =  Long.parseLong(totalNumberPagesHeaderValue);
@@ -223,7 +221,7 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
           if (totalNumberPages == 0) {
             genHpanHtokenCallables.add(genBinRangeCallable.call(now, 0, 0, totalNumberPages));
         } else {
-            executeMoreThanZeroRow(now, genHpanHtokenCallables, totalNumberPages);
+            executeMoreThanZeroHpanHtokenRow(now, genHpanHtokenCallables, totalNumberPages, MAX_NUMBER_OF_HPAN_HTOKEN );
         }
         return genHpanHtokenCallables.stream().map(t -> {
             try {
@@ -234,20 +232,6 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
                 return BatchResultDetails.builder().success(false).errorMessage(e.getMessage()).build();
             }
         }).collect(Collectors.toList());
-    }
-
-
-    private void executeMoreThanZeroRowHpanHtoken(Instant now, List<Future<BatchResultDetails>> genBinRangeCallables, long pages) {
-        int ceil;
-        int rowInFile = maxRowsInFiles;
-        ceil = (int) Math.ceil(count / (double) maxRowsInFiles);
-        if (ceil > 10) {
-            ceil = 10;
-            rowInFile = (int) Math.ceil(count / (double) ceil);
-        }
-        for (int i = 0; i < ceil; i++) {
-            genBinRangeCallables.add(genBinRangeCallable.call(now, rowInFile, i, count));
-        }
     }
 
 

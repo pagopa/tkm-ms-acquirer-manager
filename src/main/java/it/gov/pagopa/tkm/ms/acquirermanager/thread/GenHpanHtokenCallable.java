@@ -21,7 +21,7 @@ import static it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum.HTOKEN_HPA
 
 @Log4j2
 @Component
-public class GenHpanHtpkenCallable {
+public class GenHpanHtokenCallable {
 
     @Autowired
     private FileGeneratorService fileGeneratorService;
@@ -32,13 +32,13 @@ public class GenHpanHtpkenCallable {
     private final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("uuuuMMdd").withZone(ZoneId.of(TkmDatetimeConstant.DATE_TIME_TIMEZONE));
 
     @Async
-    public Future<BatchResultDetails> call(Instant instant, int size, int index, long total) {
+    public Future<BatchResultDetails> call(Instant instant, int maxItemPerPage, int pageNumber, long total) {
         String today = dateFormat.format(instant);
-        String filename = StringUtils.joinWith("_", HTOKEN_HPAN_GEN, profile.toUpperCase(), today, index + 1) + ".csv";
+        String filename = StringUtils.joinWith("_", HTOKEN_HPAN_GEN, profile.toUpperCase(), today, pageNumber + 1) + ".csv";
         BatchResultDetails details = BatchResultDetails.builder().fileName(filename).success(false).build();
         try {
             log.debug("Start of thread");
-            details = fileGeneratorService.generateHpanHtokenFileWithStream(instant, size, index, total, filename);
+            details = fileGeneratorService.generateHpanHtokenFileWithStream(instant, maxItemPerPage, pageNumber, total, filename);
             log.debug("End of thread");
         } catch (Exception e) {
             details.setErrorMessage(e.getMessage());

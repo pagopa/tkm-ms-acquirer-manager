@@ -1,5 +1,8 @@
 package it.gov.pagopa.tkm.ms.acquirermanager.service.impl;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import feign.Response;
 import it.gov.pagopa.tkm.ms.acquirermanager.client.internal.KnowHashesClient;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.dto.BatchResultDetails;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.TkmBinRange;
@@ -64,7 +67,7 @@ public class FileGeneratorServiceImpl implements FileGeneratorService {
 
     @Override
     @Transactional(readOnly = true)
-    public BatchResultDetails generateHpanHtokenFileWithStream(Instant now, int size, int index, long total, String filename) throws IOException {
+    public BatchResultDetails generateHpanHtokenFileWithStream(Instant now, int maxItemPerPage, int pagenumber, long total, String filename) throws IOException {
         log.info("generateHpanHtokenFileWithStream of " + filename);
         String lineSeparator = System.lineSeparator();
         String tempFilePath = FileUtils.getTempDirectoryPath() + File.separator + filename;
@@ -72,7 +75,7 @@ public class FileGeneratorServiceImpl implements FileGeneratorService {
         if (total == 0) {
             realFileSize = writeEmptyFile(filename, lineSeparator, tempFilePath);
         } else {
-            realFileSize = manageStream(size, index, filename, lineSeparator, tempFilePath);
+            realFileSize = manageStreamHpanHtoken(maxItemPerPage, pagenumber, filename, lineSeparator, tempFilePath);
         }
         byte[] zipFile = ZipUtils.zipFile(tempFilePath);
         String sha256 = DigestUtils.sha256Hex(zipFile);
@@ -96,13 +99,11 @@ public class FileGeneratorServiceImpl implements FileGeneratorService {
 
     private int manageStream(int size, int index, String filename, String lineSeparator, String tempFilePath) throws IOException {
         AtomicInteger numOfRowInFIle = new AtomicInteger();
+        try (Stream<TkmBinRange> all = binRangeRepository.getAll(PageRequest.of(index, size, Sort.by("id")));
 
-
-
-
-        try (Set<String> all =   knowHashesClient.);
              FileOutputStream out = new FileOutputStream(tempFilePath)) {
             log.debug("Writing file " + filename);
+
             all.forEach(b -> {
                 numOfRowInFIle.getAndIncrement();
                 String toWrite = StringUtils.joinWith(";", b.getMin(), b.getMax()) + lineSeparator;
@@ -119,14 +120,20 @@ public class FileGeneratorServiceImpl implements FileGeneratorService {
     }
 
 
-    private int manageHpanHtokenStream(int size, int index, String filename, String lineSeparator, String tempFilePath) throws IOException {
+    private int manageStreamHpanHtoken( int maxItemPerPage, int pageNumber, String filename, String lineSeparator, String tempFilePath) throws IOException {
         AtomicInteger numOfRowInFIle = new AtomicInteger();
-        try (Stream<String> all = binRangeRepository.getAll(PageRequest.of(index, size, Sort.by("id")));
-             FileOutputStream out = new FileOutputStream(tempFilePath)) {
-            log.debug("Writing file " + filename);
-            all.forEach(b -> {
+        ObjectMapper mapper = new ObjectMapper();
+
+        try (Response response  =knowHashesClient.getKnownHashPanSet(maxItemPerPage, pageNumber);
+                 FileOutputStream out = new FileOutputStream(tempFilePath)){
+
+                String responseBody = response.body().toString();
+                Set<String> values = mapper.readValue(responseBody, new TypeReference<Set<String>>(){});
+
+                log.debug("Writing file " + filename);
+            values.forEach(b -> {
                 numOfRowInFIle.getAndIncrement();
-                String toWrite = StringUtils.joinWith(";", b.getMin(), b.getMax()) + lineSeparator;
+                String toWrite = StringUtils.joinWith(";", b) + lineSeparator;
                 try {
                     out.write(toWrite.getBytes());
                 } catch (IOException e) {
