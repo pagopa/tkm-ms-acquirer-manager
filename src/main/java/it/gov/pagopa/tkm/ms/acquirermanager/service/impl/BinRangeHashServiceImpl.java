@@ -14,32 +14,34 @@ import it.gov.pagopa.tkm.ms.acquirermanager.constant.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.exception.AcquirerDataNotFoundException;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.dto.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.TkmBatchResult;
-import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.TkmBinRange;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.response.LinksResponse;
 import it.gov.pagopa.tkm.ms.acquirermanager.repository.BatchResultRepository;
 import it.gov.pagopa.tkm.ms.acquirermanager.repository.BinRangeRepository;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.BinRangeHashService;
+import it.gov.pagopa.tkm.ms.acquirermanager.service.BlobService;
+import it.gov.pagopa.tkm.ms.acquirermanager.service.FileGeneratorService;
+import it.gov.pagopa.tkm.ms.acquirermanager.thread.GenBinRangeCallable;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections4.ListUtils;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.sleuth.Span;
+import org.springframework.cloud.sleuth.Tracer;
 import org.springframework.stereotype.Service;
 
-import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import javax.persistence.EntityManager;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.stream.Collectors;
 
 import static it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum.BIN_RANGE_GEN;
 import static it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum.BIN_RANGE_RETRIEVAL;
@@ -74,10 +76,23 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
     @Value("${AZURE_KEYVAULT_PROFILE}")
     private String profile;
 
+    @Autowired
+    private EntityManager entityManager;
+
+    @Autowired
+    private FileGeneratorService fileGeneratorService;
+
+    @Autowired
+    private BlobService blobService;
+
+    @Autowired
+    private GenBinRangeCallable genBinRangeCallable;
+
+    @Autowired
+    private Tracer tracer;
+
     private final BlobServiceClientBuilder serviceClientBuilder = new BlobServiceClientBuilder();
-
     private final BlobClientBuilder blobClientBuilder = new BlobClientBuilder();
-
     private final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("uuuuMMdd").withZone(ZoneId.of(TkmDatetimeConstant.DATE_TIME_TIMEZONE));
 
     @Override
@@ -150,100 +165,58 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
         return NumberUtils.min(10, linksSize * 2);
     }
 
+    private List<BatchResultDetails> executeThreads(Instant now) {
+        List<Future<BatchResultDetails>> genBinRangeCallables = new ArrayList<>();
+        long count = binRangeRepository.count();
+        if (count == 0) {
+            genBinRangeCallables.add(genBinRangeCallable.call(now, 0, 0, count));
+        } else {
+            executeMoreThanZeroRow(now, genBinRangeCallables, count);
+        }
+        return genBinRangeCallables.stream().map(t -> {
+            try {
+                return t.get();
+            } catch (InterruptedException | ExecutionException e) {
+                log.error("detailsFutures", e);
+                Thread.currentThread().interrupt();
+                return BatchResultDetails.builder().success(false).errorMessage(e.getMessage()).build();
+            }
+        }).collect(Collectors.toList());
+    }
+
+    private void executeMoreThanZeroRow(Instant now, List<Future<BatchResultDetails>> genBinRangeCallables, long count) {
+        int ceil;
+        int rowInFile = maxRowsInFiles;
+        ceil = (int) Math.ceil(count / (double) maxRowsInFiles);
+        if (ceil > 10) {
+            ceil = 10;
+            rowInFile = (int) Math.ceil(count / (double) ceil);
+        }
+        for (int i = 0; i < ceil; i++) {
+            genBinRangeCallables.add(genBinRangeCallable.call(now, rowInFile, i, count));
+        }
+    }
+
     @Override
-    public void generateBinRangeFiles() {
-        log.info("Start of bin range generation batch");
+    public void generateBinRangeFiles() throws JsonProcessingException {
+        Span span = tracer.currentSpan();
+        String traceId = span != null ? span.context().traceId() : "noTraceId";
+        log.info("Start of bin range generation batch " + traceId);
         Instant now = Instant.now();
         long start = now.toEpochMilli();
         TkmBatchResult batchResult = TkmBatchResult.builder()
                 .targetBatch(BIN_RANGE_GEN)
+                .executionTraceId(String.valueOf(traceId))
                 .runDate(now)
                 .runOutcome(true)
                 .build();
-        List<BatchResultDetails> batchResultDetails = new ArrayList<>();
-        try {
-            generate(now, batchResultDetails);
-            long duration = Instant.now().toEpochMilli() - start;
-            batchResult.setRunDurationMillis(duration);
-            batchResult.setDetails(mapper.writeValueAsString(batchResultDetails));
-        } catch (JsonProcessingException je) {
-            log.error("generateBinRangeFiles JsonProcessingException", je);
-            batchResult.setDetails("ERROR PROCESSING");
-        } catch (Exception e) {
-            log.error(e);
-            batchResult.setRunOutcome(false);
-        }
+        List<BatchResultDetails> batchResultDetails = executeThreads(now);
+        long duration = Instant.now().toEpochMilli() - start;
+        batchResult.setRunDurationMillis(duration);
+        batchResult.setDetails(mapper.writeValueAsString(batchResultDetails));
+        batchResult.setRunOutcome(batchResultDetails.stream().allMatch(BatchResultDetails::isSuccess));
         batchResultRepository.save(batchResult);
         log.info("End of bin range generation batch");
-    }
-
-    private void generate(Instant now, List<BatchResultDetails> batchResultDetails) throws IOException {
-        String today = dateFormat.format(now);
-        String directory = String.format("%s/%s/", BIN_RANGE_GEN, today);
-        BlobServiceClient serviceClient = serviceClientBuilder.connectionString(connectionString).buildClient();
-        BlobContainerClient client = serviceClient.getBlobContainerClient(containerName);
-        List<TkmBinRange> binRangesFull = binRangeRepository.findAll();
-        if (CollectionUtils.isEmpty(binRangesFull)) {
-            log.info("No bin ranges found, generating empty file");
-            batchResultDetails.add(writeAndUploadFile(now, today, 1, Collections.emptyList(), client, directory));
-        } else {
-            List<List<TkmBinRange>> binRanges = ListUtils.partition(binRangesFull, maxRowsInFiles);
-            log.info(CollectionUtils.size(binRangesFull) + " bin ranges retrieved, generating " + CollectionUtils.size(binRanges) + " files");
-            int index = 1;
-            for (List<TkmBinRange> chunk : binRanges) {
-                batchResultDetails.add(writeAndUploadFile(now, today, index, chunk, client, directory));
-                index++;
-            }
-        }
-    }
-
-    private BatchResultDetails writeAndUploadFile(Instant now, String today, int index, List<TkmBinRange> chunk, BlobContainerClient client, String directory) throws IOException {
-        String filename = StringUtils.joinWith("_", BIN_RANGE_GEN, profile.toUpperCase(), today, index);
-        byte[] fileContents = writeFile(filename + ".csv", chunk);
-        BlobClient blobClient = client.getBlobClient(directory + filename + ".zip");
-        blobClient.upload(new ByteArrayInputStream(fileContents), fileContents.length, false);
-        String sha256 = DigestUtils.sha256Hex(fileContents);
-        Map<String, String> metadata = new HashMap<>();
-        metadata.put(generationdate.name(), now.toString());
-        metadata.put(checksumsha256.name(), sha256);
-        blobClient.setMetadata(metadata);
-        log.debug("Uploaded: " + filename);
-        return new BatchResultDetails(filename, CollectionUtils.size(chunk), sha256);
-    }
-
-    private byte[] writeFile(String filename, List<TkmBinRange> binRanges) throws IOException {
-        String tempFilePath = FileUtils.getTempDirectoryPath() + File.separator + filename;
-        String lineSeparator = System.lineSeparator();
-        try (FileOutputStream out = new FileOutputStream(tempFilePath)) {
-            for (TkmBinRange binRange : binRanges) {
-                String toWrite = StringUtils.joinWith(";", binRange.getMin(), binRange.getMax()) + lineSeparator;
-                out.write(toWrite.getBytes());
-                log.trace(toWrite);
-            }
-        }
-        log.debug("Written: " + tempFilePath + " - Exists? " + Files.exists(Paths.get(tempFilePath)));
-        return zipFile(tempFilePath, filename);
-    }
-
-    private byte[] zipFile(String csvFilePath, String csvFilename) throws IOException {
-        ZipEntry entry = new ZipEntry(csvFilename);
-        entry.setSize(FileUtils.sizeOf(new File(csvFilePath)));
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ZipOutputStream zos = new ZipOutputStream(baos);
-        zos.putNextEntry(entry);
-        int length;
-        byte[] buffer = new byte[1024];
-        try (FileInputStream in = new FileInputStream(csvFilePath)) {
-            while ((length = in.read(buffer)) > 0) {
-                zos.write(buffer, 0, length);
-            }
-        }
-        zos.closeEntry();
-        zos.close();
-        log.debug("Zipped: " + csvFilePath);
-        Files.delete(Paths.get(csvFilePath));
-        log.debug("Deleted: " + csvFilePath + " - Exists? " + Files.exists(Paths.get(csvFilePath)));
-        return baos.toByteArray();
     }
 
     @Override

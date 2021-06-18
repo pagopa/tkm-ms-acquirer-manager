@@ -1,6 +1,6 @@
 package it.gov.pagopa.tkm.ms.acquirermanager.service;
 
-import com.azure.core.http.rest.*;
+import com.azure.core.http.rest.PagedIterable;
 import com.azure.storage.blob.*;
 import com.azure.storage.blob.models.*;
 import com.fasterxml.jackson.core.*;
@@ -29,7 +29,7 @@ import static org.mockito.Mockito.*;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ExtendWith(MockitoExtension.class)
-public class TestBinRangeHashService {
+class TestBinRangeHashService {
 
     @InjectMocks
     private BinRangeHashServiceImpl binRangeHashService;
@@ -62,15 +62,30 @@ public class TestBinRangeHashService {
     private BatchResultRepository batchResultRepository;
 
     @Mock
+    private FileGeneratorService fileGeneratorService;
+    
+    @Mock
     private VisaClient visaClient;
 
     @Spy
     private ObjectMapper mapper;
 
+    @Mock
+    private Tracer tracer;
+
+    @Mock
+    private GenBinRangeCallable genBinRangeCallable;
+
+
+    private final ArgumentCaptor<TkmBatchResult> batchResultArgumentCaptor = ArgumentCaptor.forClass(TkmBatchResult.class);
+
+    private static final UUID UUID_TEST = UUID.fromString("c1f77e6e-8fc7-42d2-8128-58ca293e3b42");
+
     private DefaultBeans testBeans;
 
     private final MockedStatic<Instant> instantMockedStatic = mockStatic(Instant.class);
     private final MockedStatic<OffsetDateTime> offsetMockedStatic = mockStatic(OffsetDateTime.class);
+    private final MockedStatic<UUID> mockedUuid = mockStatic(UUID.class);
 
     private final ArgumentCaptor<TkmBatchResult> batchResultArgumentCaptor = ArgumentCaptor.forClass(TkmBatchResult.class);
 
@@ -79,6 +94,7 @@ public class TestBinRangeHashService {
         testBeans = new DefaultBeans();
         instantMockedStatic.when(Instant::now).thenReturn(DefaultBeans.INSTANT);
         offsetMockedStatic.when(OffsetDateTime::now).thenReturn(DefaultBeans.OFFSET_DATE_TIME);
+        mockedUuid.when(UUID::randomUUID).thenReturn(UUID_TEST);
         ReflectionTestUtils.setField(binRangeHashService, "connectionString", DefaultBeans.TEST_CONNECTION_STRING);
         ReflectionTestUtils.setField(binRangeHashService, "containerName", DefaultBeans.TEST_CONTAINER_NAME);
         ReflectionTestUtils.setField(binRangeHashService, "dateFormat", dateFormatMock);
@@ -93,6 +109,8 @@ public class TestBinRangeHashService {
         instantMockedStatic.close();
         offsetMockedStatic.close();
     }
+
+    //BIN RANGE FILE RETRIEVAL
 
     private void startupAssumptions(boolean shouldThrowException) {
         when(serviceClientBuilderMock.connectionString(DefaultBeans.TEST_CONNECTION_STRING)).thenReturn(serviceClientBuilderMock);
@@ -130,32 +148,30 @@ public class TestBinRangeHashService {
         assertThrows(AcquirerDataNotFoundException.class, () -> binRangeHashService.getSasLinkResponse(BatchEnum.HTOKEN_HPAN_GEN));
     }
 
+    //BIN RANGE FILE GENERATION
+
     @Test
-    void givenBinRanges_generateAndUploadFiles() throws JsonProcessingException {
-        when(serviceClientBuilderMock.connectionString(DefaultBeans.TEST_CONNECTION_STRING)).thenReturn(serviceClientBuilderMock);
-        when(serviceClientBuilderMock.buildClient()).thenReturn(serviceClientMock);
-        when(serviceClientMock.getBlobContainerClient(DefaultBeans.TEST_CONTAINER_NAME)).thenReturn(containerClientMock);
-        when(containerClientMock.getBlobClient(any())).thenReturn(blobClientMock);
-        when(binRangeRepository.findAll()).thenReturn(testBeans.TKM_BIN_RANGES);
+    void givenBinRanges_persistResult() throws JsonProcessingException {
+        when(binRangeRepository.count()).thenReturn(3L);
+        when(genBinRangeCallable.call(any(Instant.class), anyInt(), anyInt(), anyLong())).thenReturn(new AsyncResult<>(BatchResultDetails.builder().success(true).build()));
         binRangeHashService.generateBinRangeFiles();
-        verify(containerClientMock, times(2)).getBlobClient(anyString());
-        verify(blobClientMock, times(2)).upload(any(InputStream.class), anyLong(), anyBoolean());
-        verify(blobClientMock, times(2)).setMetadata(anyMap());
-        verify(batchResultRepository).save(any());
+        verify(batchResultRepository).save(batchResultArgumentCaptor.capture());
+        assertThat(batchResultArgumentCaptor.getValue())
+                .usingRecursiveComparison()
+                .ignoringFields("details", "executionTraceId")
+                .isEqualTo(testBeans.BIN_RANGE_BATCH_RESULT);
     }
 
     @Test
-    void givenNoBinRanges_generateAndUploadEmptyFile() throws JsonProcessingException {
-        when(serviceClientBuilderMock.connectionString(DefaultBeans.TEST_CONNECTION_STRING)).thenReturn(serviceClientBuilderMock);
-        when(serviceClientBuilderMock.buildClient()).thenReturn(serviceClientMock);
-        when(serviceClientMock.getBlobContainerClient(DefaultBeans.TEST_CONTAINER_NAME)).thenReturn(containerClientMock);
-        when(containerClientMock.getBlobClient(any())).thenReturn(blobClientMock);
-        when(binRangeRepository.findAll()).thenReturn(null);
+    void givenNoBinRanges_persistResult() throws JsonProcessingException {
+        when(genBinRangeCallable.call(any(Instant.class), anyInt(), anyInt(), anyLong())).thenReturn(new AsyncResult<>(BatchResultDetails.builder().success(true).build()));
+        when(binRangeRepository.count()).thenReturn(0L);
         binRangeHashService.generateBinRangeFiles();
-        verify(containerClientMock).getBlobClient(anyString());
-        verify(blobClientMock).upload(any(InputStream.class), anyLong(), anyBoolean());
-        verify(blobClientMock).setMetadata(anyMap());
-        verify(batchResultRepository).save(any());
+        verify(batchResultRepository).save(batchResultArgumentCaptor.capture());
+        assertThat(batchResultArgumentCaptor.getValue())
+                .usingRecursiveComparison()
+                .ignoringFields("details", "executionTraceId")
+                .isEqualTo(testBeans.BIN_RANGE_BATCH_RESULT);
     }
 
     @Test
