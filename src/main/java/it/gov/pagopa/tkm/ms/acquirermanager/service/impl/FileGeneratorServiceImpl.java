@@ -25,7 +25,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.Phaser;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
@@ -67,7 +69,8 @@ public class FileGeneratorServiceImpl implements FileGeneratorService {
 
     @Override
     @Transactional(readOnly = true)
-    public BatchResultDetails generateHpanHtokenFileWithStream(Instant now, int maxItemPerPage, int pagenumber, long total, String filename) throws IOException {
+    public BatchResultDetails generateHpanHtokenFileWithStream(Instant now, int maxItemPerPage, int pagenumber,
+                                                               long total, String filename, int fromPage, int toPage) throws IOException {
         log.info("\n ::::: generateHpanHtokenFileWithStream of " + filename);
         String lineSeparator = System.lineSeparator();
         String tempFilePath = FileUtils.getTempDirectoryPath() + File.separator + filename;
@@ -75,9 +78,10 @@ public class FileGeneratorServiceImpl implements FileGeneratorService {
         if (total == 0) {
             realFileSize = writeEmptyFile(filename, lineSeparator, tempFilePath);
         } else {
-            realFileSize = manageStreamHpanHtoken(maxItemPerPage, pagenumber, filename, lineSeparator, tempFilePath);
+            realFileSize = manageStreamHpanHtoken(maxItemPerPage, pagenumber, filename, lineSeparator, tempFilePath, fromPage, toPage);
         }
         byte[] zipFile = ZipUtils.zipFile(tempFilePath);
+        System.out.println("\n \n :::::: zipFile.length "+ zipFile.length);
         String sha256 = DigestUtils.sha256Hex(zipFile);
         blobService.uploadAcquirerFile(zipFile, now, filename, sha256);
         BatchResultDetails details = BatchResultDetails.builder().fileName(filename).fileSize(realFileSize).success(true).build();
@@ -120,17 +124,21 @@ public class FileGeneratorServiceImpl implements FileGeneratorService {
     }
 
 
-    private int manageStreamHpanHtoken( int maxItemPerPage, int pageNumber, String filename, String lineSeparator, String tempFilePath) throws IOException {
+    private int manageStreamHpanHtoken( int maxItemPerPage, int pageNumber, String filename, String lineSeparator, String tempFilePath,
+                                        int fromPage, int toPage) throws IOException {
         AtomicInteger numOfRowInFIle = new AtomicInteger();
         ObjectMapper mapper = new ObjectMapper();
-
-        try (Response response  =knowHashesClient.getKnownHashPanSet(maxItemPerPage, pageNumber);
-                 FileOutputStream out = new FileOutputStream(tempFilePath)){
-
+        Set<String> values= new HashSet<>();
+        try (FileOutputStream out = new FileOutputStream(tempFilePath)) {
+            for (int a = fromPage; a < toPage; a++) {
+                Response response = knowHashesClient.getKnownHashPanSet(maxItemPerPage, pageNumber);
                 String responseBody = response.body().toString();
-                Set<String> values = mapper.readValue(responseBody, new TypeReference<Set<String>>(){});
+                Set<String> pageValues = mapper.readValue(responseBody, new TypeReference<Set<String>>() {
+                });
+                values.addAll(pageValues);
+            }
 
-                log.debug("Writing file " + filename);
+            log.debug("Writing file " + filename);
             values.forEach(b -> {
                 numOfRowInFIle.getAndIncrement();
                 String toWrite = StringUtils.joinWith(";", b) + lineSeparator;

@@ -32,13 +32,13 @@ public class GenHpanHtokenCallable {
     private final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("uuuuMMdd").withZone(ZoneId.of(TkmDatetimeConstant.DATE_TIME_TIMEZONE));
 
     @Async
-    public Future<BatchResultDetails> call(Instant instant, int maxItemPerPage, int pageNumber, long total) {
+    public Future<BatchResultDetails> call(Instant instant, int maxItemPerPage, int pageNumber, long total, int fromPage, int toPage) {
         String today = dateFormat.format(instant);
         String filename = StringUtils.joinWith("_", HTOKEN_HPAN_GEN, profile.toUpperCase(), today, pageNumber + 1) + ".csv";
         BatchResultDetails details = BatchResultDetails.builder().fileName(filename).success(false).build();
         try {
             log.debug("Start of thread");
-            details = fileGeneratorService.generateHpanHtokenFileWithStream(instant, maxItemPerPage, pageNumber, total, filename);
+            details = fileGeneratorService.generateHpanHtokenFileWithStream(instant, maxItemPerPage, pageNumber, total, filename, fromPage, toPage);
             log.debug("End of thread");
         } catch (Exception e) {
             details.setErrorMessage(e.getMessage());

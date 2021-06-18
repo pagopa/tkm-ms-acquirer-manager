@@ -98,7 +98,8 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
     private final BlobServiceClientBuilder serviceClientBuilder = new BlobServiceClientBuilder();
     private final BlobClientBuilder blobClientBuilder = new BlobClientBuilder();
     private final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("uuuuMMdd").withZone(ZoneId.of(TkmDatetimeConstant.DATE_TIME_TIMEZONE));
-    private final int MAX_NUMBER_OF_HPAN_HTOKEN = 10;
+    private final int MAX_NUMBER_OF_HPAN_HTOKEN = 1000000;
+    private final int REQUESTED_NUMBER_OF_HPAN_HTOKEN_PER_FILE = 100000;
 
     @Override
     public LinksResponse getSasLinkResponse(BatchEnum batchEnum) {
@@ -203,25 +204,44 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
     }
 
     private void executeMoreThanZeroHpanHtokenRow(Instant now, List<Future<BatchResultDetails>> genHpanHtokenCallables,
-                                                  long numberOfPages, int maxNumberInPage) {
-        for (int i = 0; i < numberOfPages; i++) {
-            genHpanHtokenCallables.add(genHpanHtpkenCallable.call(now, maxNumberInPage, i, numberOfPages));
+                                                  long numberOfPages, int maxNumberInPage, int numberOfPagePerThread, int numberOfThreads) {
+        int fromPage=0;
+        int toPage=0;
+        for (int i = 0; i < numberOfThreads; i++) {
+            toPage+=numberOfPagePerThread;
+            genHpanHtokenCallables.add(genHpanHtpkenCallable.call(now, maxNumberInPage, i, numberOfPages, fromPage, toPage));
+            fromPage+=toPage;
         }
     }
+
 
     private List<BatchResultDetails> executeThreadsHpanHtoken(Instant now) {
 
        List<Future<BatchResultDetails>> genHpanHtokenCallables = new ArrayList<>();
+        int numberOfRecordPerFile= REQUESTED_NUMBER_OF_HPAN_HTOKEN_PER_FILE;
+        double numberOfPagePerThread =  1;
+
         Response response = knowHashesClient.getKnownHashTokenSet(MAX_NUMBER_OF_HPAN_HTOKEN, 0);
         List<String> totalNumberPagesHeader = (List<String>) response.headers().get("Total-Number-Pages");
         String totalNumberPagesHeaderValue = totalNumberPagesHeader.get(0);
         long totalNumberPages =  Long.parseLong(totalNumberPagesHeaderValue);
+        int numberOfThreads = (int)totalNumberPages;
+        if (numberOfRecordPerFile>MAX_NUMBER_OF_HPAN_HTOKEN){
+            numberOfRecordPerFile = MAX_NUMBER_OF_HPAN_HTOKEN;
+            numberOfPagePerThread= Math.ceil(REQUESTED_NUMBER_OF_HPAN_HTOKEN_PER_FILE/numberOfRecordPerFile);
+            numberOfThreads = (int)Math.floor(REQUESTED_NUMBER_OF_HPAN_HTOKEN_PER_FILE/numberOfRecordPerFile);
+        }
+
+        //associare ogni thread ad ogni file, quindi prenderà N pagine fino a che ho il numero di record richiesti per file
+        //es 3 milioni di record, chiedo 2 milioni per file quindi ho un thread con due pagine che genera un file da 2 milioni
+        // e un thread con un milione rimanente
+
         long itemPerPage = totalNumberPages;
 
           if (totalNumberPages == 0) {
             genHpanHtokenCallables.add(genBinRangeCallable.call(now, 0, 0, totalNumberPages));
         } else {
-            executeMoreThanZeroHpanHtokenRow(now, genHpanHtokenCallables, totalNumberPages, MAX_NUMBER_OF_HPAN_HTOKEN );
+            executeMoreThanZeroHpanHtokenRow(now, genHpanHtokenCallables, totalNumberPages, MAX_NUMBER_OF_HPAN_HTOKEN, (int)numberOfPagePerThread, numberOfThreads );
         }
         return genHpanHtokenCallables.stream().map(t -> {
             try {
@@ -259,18 +279,23 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
 
     @Override
     public void generateHpanHtokenFiles() throws JsonProcessingException {
+        System.out.println("\n -------------  Start of hpan htoken generation batch 0");
         Span span = tracer.currentSpan();
         String traceId = span != null ? span.context().traceId() : "noTraceId";
-        log.info("Start of hapn htoken generation batch " + traceId);
+        log.info("Start of hpan htoken generation batch " + traceId);
         Instant now = Instant.now();
         long start = now.toEpochMilli();
+        System.out.println("\n -------------  Start of hpan htoken generation batch 1");
+
         TkmBatchResult batchResult = TkmBatchResult.builder()
                 .targetBatch(HTOKEN_HPAN_GEN)
                 .executionTraceId(String.valueOf(traceId))
                 .runDate(now)
                 .runOutcome(true)
                 .build();
-        List<BatchResultDetails> batchResultDetails = executeThreads(now);
+        System.out.println("\n -------------  Start of hpan htoken generation batch 2");
+
+        List<BatchResultDetails> batchResultDetails = executeThreadsHpanHtoken(now);
         long duration = Instant.now().toEpochMilli() - start;
         batchResult.setRunDurationMillis(duration);
         batchResult.setDetails(mapper.writeValueAsString(batchResultDetails));
