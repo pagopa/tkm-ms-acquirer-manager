@@ -37,6 +37,9 @@ public class FileGeneratorServiceImpl implements FileGeneratorService {
     @Autowired
     private BlobService blobService;
 
+    @Autowired
+    private KnowHashesClient knowHashesClient;
+
     @Override
     @Transactional(readOnly = true)
     public BatchResultDetails generateFileWithStream(Instant now, int size, int index, long total, String filename) throws IOException {
