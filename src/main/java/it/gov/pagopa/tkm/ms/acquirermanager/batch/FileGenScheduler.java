@@ -20,4 +20,11 @@ public class FileGenScheduler {
         binRangeHashService.generateBinRangeFiles();
     }
 
+    //TODO CHANGE CRON
+    @Scheduled(cron = "0/30 * * * * ?")
+    @SchedulerLock(name = "Hpan_Htoken_Gen_Task")
+    public void hpanHtokenGenTask() throws JsonProcessingException {
+        binRangeHashService.generateHpanHtokenFiles();
+    }
+
 }

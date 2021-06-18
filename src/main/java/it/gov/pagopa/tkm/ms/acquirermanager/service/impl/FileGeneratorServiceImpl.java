@@ -68,7 +68,7 @@ public class FileGeneratorServiceImpl implements FileGeneratorService {
     @Override
     @Transactional(readOnly = true)
     public BatchResultDetails generateHpanHtokenFileWithStream(Instant now, int maxItemPerPage, int pagenumber, long total, String filename) throws IOException {
-        log.info("generateHpanHtokenFileWithStream of " + filename);
+        log.info("\n ::::: generateHpanHtokenFileWithStream of " + filename);
         String lineSeparator = System.lineSeparator();
         String tempFilePath = FileUtils.getTempDirectoryPath() + File.separator + filename;
         int realFileSize;
