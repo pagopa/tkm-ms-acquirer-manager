@@ -7,6 +7,6 @@ import java.time.Instant;
 
 public interface FileGeneratorService {
 
-    BatchResultDetails generateFileWithStream(Instant now, int size, int index, long total, BlobService blobService) throws IOException;
+    BatchResultDetails generateFileWithStream(Instant now, int size, int index, long total, String fileName) throws IOException;
 
 }

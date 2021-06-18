@@ -3,6 +3,7 @@ package it.gov.pagopa.tkm.ms.acquirermanager.service;
 import com.azure.core.http.rest.*;
 import com.azure.storage.blob.*;
 import com.azure.storage.blob.models.*;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.constant.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.exception.*;
@@ -136,24 +137,24 @@ public class TestBinRangeHashService {
     //BIN RANGE FILE GENERATION
 
     @Test
-    void givenBinRanges_persistResult() {
+    void givenBinRanges_persistResult() throws JsonProcessingException {
         when(binRangeRepository.count()).thenReturn(3L);
         binRangeHashService.generateBinRangeFiles();
         verify(batchResultRepository).save(batchResultArgumentCaptor.capture());
         assertThat(batchResultArgumentCaptor.getValue())
                 .usingRecursiveComparison()
-                .ignoringFields("details", "executionUuid")
+                .ignoringFields("details", "executionTraceId")
                 .isEqualTo(testBeans.BIN_RANGE_BATCH_RESULT);
     }
 
     @Test
-    void givenNoBinRanges_persistResult() {
+    void givenNoBinRanges_persistResult() throws JsonProcessingException {
         when(binRangeRepository.count()).thenReturn(0L);
         binRangeHashService.generateBinRangeFiles();
         verify(batchResultRepository).save(batchResultArgumentCaptor.capture());
         assertThat(batchResultArgumentCaptor.getValue())
                 .usingRecursiveComparison()
-                .ignoringFields("details", "executionUuid")
+                .ignoringFields("details", "executionTraceId")
                 .isEqualTo(testBeans.BIN_RANGE_BATCH_RESULT);
     }
 

@@ -58,11 +58,11 @@ public class DefaultBeans {
             .build();
 
     public final BatchResultDetails BIN_RANGE_BATCH_RESULT_DETAILS = new BatchResultDetails(
-            "BIN_RANGE_GEN_LOCAL__1", 3, SHA_256, true
+            "BIN_RANGE_GEN_LOCAL__1", 3, SHA_256, true, null
     );
 
     public final BatchResultDetails BIN_RANGE_BATCH_RESULT_DETAILS_EMPTY = new BatchResultDetails(
-            "BIN_RANGE_GEN_LOCAL__1", 0, null, true
+            "BIN_RANGE_GEN_LOCAL__1", 0, null, true, null
     );
 
 }
