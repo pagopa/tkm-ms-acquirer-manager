@@ -235,7 +235,7 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
             binRanges = visaClient.getBinRanges();
             int size = CollectionUtils.size(binRanges);
             log.info(size + " token bin ranges retrieved");
-            details = BatchResultDetails.builder().fileSize(size).success(true).build();
+            details = BatchResultDetails.builder().numberOfRows(size).success(true).build();
         } catch (Exception e) {
             log.error(e);
             result.setRunOutcome(false);
