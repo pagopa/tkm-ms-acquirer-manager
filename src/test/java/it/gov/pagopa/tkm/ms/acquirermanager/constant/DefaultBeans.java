@@ -119,7 +119,7 @@ public class DefaultBeans {
     public final TkmBatchResult VISA_BIN_RANGE_RETRIEVAL_BATCH_RESULT = TkmBatchResult.builder()
             .runOutcome(true)
             .targetBatch(BatchEnum.BIN_RANGE_RETRIEVAL)
-            .details("{\"fileSize\":3,\"success\":true}")
+            .details("{\"numberOfRows\":3,\"success\":true}")
             .runDate(INSTANT)
             .runDurationMillis(0)
             .build();
@@ -127,7 +127,7 @@ public class DefaultBeans {
     public final TkmBatchResult VISA_BIN_RANGE_RETRIEVAL_BATCH_RESULT_FAILED = TkmBatchResult.builder()
             .runOutcome(false)
             .targetBatch(BatchEnum.BIN_RANGE_RETRIEVAL)
-            .details("{\"fileSize\":0,\"success\":false}")
+            .details("{\"numberOfRows\":0,\"success\":false}")
             .runDate(INSTANT)
             .runDurationMillis(0)
             .build();

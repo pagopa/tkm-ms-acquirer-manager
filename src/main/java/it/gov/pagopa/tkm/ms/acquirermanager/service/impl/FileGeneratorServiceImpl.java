@@ -52,7 +52,7 @@ public class FileGeneratorServiceImpl implements FileGeneratorService {
         byte[] zipFile = ZipUtils.zipFile(tempFilePath);
         String sha256 = DigestUtils.sha256Hex(zipFile);
         blobService.uploadAcquirerFile(zipFile, now, filename, sha256);
-        BatchResultDetails details = BatchResultDetails.builder().fileName(filename).fileSize(realFileSize).success(true).build();
+        BatchResultDetails details = BatchResultDetails.builder().fileName(filename).numberOfRows(realFileSize).success(true).build();
         details.setSha256(sha256);
         return details;
     }
