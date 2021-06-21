@@ -80,3 +80,5 @@ batch:
     max-rows-in-files: ${BIN_RANGE_GEN_MAX_ROWS_IN_FILES:1000000}
   bin-range-retrieval:
     cron: ${BIN_RANGE_RETRIEVAL_CRON:-}
+  htoken-hpan-copy:
+    cron: ${HTOKEN_HPAN_COPY_CRON:-}

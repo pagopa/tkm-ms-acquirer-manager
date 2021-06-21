@@ -1,5 +1,6 @@
 package it.gov.pagopa.tkm.ms.acquirermanager.service.impl;
 
+import it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.dto.BatchResultDetails;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.TkmBinRange;
 import it.gov.pagopa.tkm.ms.acquirermanager.repository.BinRangeRepository;
@@ -51,7 +52,7 @@ public class FileGeneratorServiceImpl implements FileGeneratorService {
         }
         byte[] zipFile = ZipUtils.zipFile(tempFilePath);
         String sha256 = DigestUtils.sha256Hex(zipFile);
-        blobService.uploadAcquirerFile(zipFile, now, filename, sha256);
+        blobService.uploadAcquirerFile(zipFile, now, filename, sha256, BatchEnum.BIN_RANGE_GEN);
         BatchResultDetails details = BatchResultDetails.builder().fileName(filename).numberOfRows(realFileSize).success(true).build();
         details.setSha256(sha256);
         return details;

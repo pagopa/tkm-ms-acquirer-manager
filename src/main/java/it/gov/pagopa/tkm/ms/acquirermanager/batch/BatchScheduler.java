@@ -2,17 +2,21 @@ package it.gov.pagopa.tkm.ms.acquirermanager.batch;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.BinRangeHashService;
-import it.gov.pagopa.tkm.ms.acquirermanager.service.impl.BinRangeHashServiceImpl;
+import it.gov.pagopa.tkm.ms.acquirermanager.service.HpanHtokenCopyService;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+
+import java.io.IOException;
 
 @Component
 public class BatchScheduler {
 
     @Autowired
     private BinRangeHashService binRangeHashService;
+    @Autowired
+    private HpanHtokenCopyService hpanHtokenCopyService;
 
     @Scheduled(cron = "${batch.bin-range-gen.cron}")
     @SchedulerLock(name = "Bin_Range_Gen_Task")
@@ -26,4 +30,9 @@ public class BatchScheduler {
         binRangeHashService.retrieveVisaBinRanges();
     }
 
+    @Scheduled(cron = "${batch.htoken-hpan-copy.cron}")
+    @SchedulerLock(name = "HToken_HPan_Copy")
+    public void copyHtokenHpanToAcquirerFolder(){
+        hpanHtokenCopyService.copyHpanHtokenFiles();
+    }
 }
