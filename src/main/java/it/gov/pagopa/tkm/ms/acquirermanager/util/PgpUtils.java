@@ -94,7 +94,7 @@ public class PgpUtils {
         }
     }
 
-    public static PGPPublicKey readPublicKey(byte[] publicKeyByte) throws IOException, PGPException {
+    private static PGPPublicKey readPublicKey(byte[] publicKeyByte) throws IOException, PGPException {
         InputStream decoderStream = PGPUtil.getDecoderStream(new ByteArrayInputStream(publicKeyByte));
         PGPPublicKeyRingCollection keyRingCollection = new PGPPublicKeyRingCollection(decoderStream, new JcaKeyFingerprintCalculator());
 
