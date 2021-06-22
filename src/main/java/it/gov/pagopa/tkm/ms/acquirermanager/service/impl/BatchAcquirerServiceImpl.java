@@ -73,7 +73,7 @@ public class BatchAcquirerServiceImpl implements BatchAcquirerService {
         } catch (Exception e) {
             BatchResultDetails build = BatchResultDetails.builder().errorMessage(e.getMessage()).success(false).build();
             batchResultDetailsLis.add(build);
-            log.error(e);
+            log.error("Failed queueBatchAcquirerResult on download", e);
         }
         saveBatchResult(now, batchResultDetailsLis);
     }
@@ -96,7 +96,7 @@ public class BatchAcquirerServiceImpl implements BatchAcquirerService {
             PgpUtils.decrypt(fileInputPgp, pgpPrivateKey, pgpPassPhrase, fileOutputClear);
             build.setSuccess(true);
         } catch (Exception e) {
-            log.error("Failed to elaborate: " + zipFilePath, e);
+            log.error("Failed queueBatchAcquirerResult to elaborate: " + zipFilePath, e);
             build.setErrorMessage(e.getMessage());
         } finally {
             deleteDirectoryQuietly(workingDir);
