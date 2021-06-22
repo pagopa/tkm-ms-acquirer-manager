@@ -6,6 +6,7 @@ import it.gov.pagopa.tkm.ms.acquirermanager.util.PgpUtils;
 import it.gov.pagopa.tkm.ms.acquirermanager.util.ZipUtils;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.io.FileUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
@@ -15,7 +16,10 @@ import java.nio.file.Paths;
 @Log4j2
 public class BatchAcquirerServiceImpl implements BatchAcquirerService {
 
+    @Value("${keyvault.acquirerPgpPrivateKey}")
     private char[] pgpPassPhrase;
+
+    @Value("${keyvault.acquirerPgpPrivateKeyPassphrase}")
     private byte[] pgpPrivateKey;
 
     @Override

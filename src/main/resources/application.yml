@@ -58,6 +58,9 @@ keyvault:
   visaPrivateKey: ${${AZURE_KEYVAULT_PROFILE:prod}-visaPrivateKey}
   visaServerCertificate: ${${AZURE_KEYVAULT_PROFILE:prod}-visaServerCertificate}
   visaUserId: ${${AZURE_KEYVAULT_PROFILE:prod}-visaUserId}
+  acquirerPgpPrivateKey: ${${AZURE_KEYVAULT_PROFILE:prod}-acquirerPgpPrivateKey}
+  acquirerPgpPrivateKeyPassphrase: ${${AZURE_KEYVAULT_PROFILE:prod}-acquirerPgpPrivateKeyPassphrase}
+  readQueuePubPgpKey: ${${AZURE_KEYVAULT_PROFILE:prod}-readQueuePubPgpKey}
 
 blob-storage:
   visaPublicCert: azure-blob://${BLOB_STORAGE_ACQUIRER_CONFIG_CONTAINER}/Visa_Public_Cert.p12
@@ -81,4 +84,4 @@ batch:
   bin-range-retrieval:
     cron: ${BIN_RANGE_RETRIEVAL_CRON:-}
   queue-batch-acquirer-result:
-    cron: ${QUEUE-BATCH-ACQUIRER-RESULT-CRON:-}
+    cron: ${QUEUE_BATCH_ACQUIRER_RESULT_CRON:-}
