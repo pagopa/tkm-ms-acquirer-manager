@@ -31,12 +31,6 @@ public class ProducerServiceImpl implements ProducerService {
     @Value("${keyvault.readQueuePubPgpKey}")
     private byte[] readQueuePubPgpKey;
 
-    @PostConstruct
-    public void init() {
-        JavaTimeModule module = new JavaTimeModule();
-        mapper.registerModule(module);
-    }
-
     public void sendMessage(ReadQueue readQueue) throws JsonProcessingException, PGPException {
         String message = mapper.writeValueAsString(readQueue);
         log.info("Forwarding message to queue: " + message);

@@ -1,7 +1,7 @@
 package it.gov.pagopa.tkm.ms.acquirermanager.model.dto;
 
 
-import com.univocity.parsers.annotations.Parsed;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,6 +11,7 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ReadQueue {
 
     private String taxCode;
