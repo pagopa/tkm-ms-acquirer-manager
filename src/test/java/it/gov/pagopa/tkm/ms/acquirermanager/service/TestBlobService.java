@@ -1,6 +1,7 @@
 package it.gov.pagopa.tkm.ms.acquirermanager.service;
 
 import com.azure.storage.blob.*;
+import com.azure.storage.blob.specialized.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum;
 import it.gov.pagopa.tkm.ms.acquirermanager.constant.DefaultBeans;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.impl.BlobServiceImpl;
@@ -41,13 +42,13 @@ public class TestBlobService {
     private BlobClient blobClientMock;
 
     @Mock
-    private DateTimeFormatter dateFormatMock;
+    private AppendBlobClient appendBlobClientMock;
 
-    private DefaultBeans testBeans;
+    @Mock
+    private DateTimeFormatter dateFormatMock;
 
     @BeforeEach
     void init() {
-        testBeans = new DefaultBeans();
         ReflectionTestUtils.setField(blobService, "containerNameBinHash", DefaultBeans.TEST_CONTAINER_NAME);
         ReflectionTestUtils.setField(blobService, "connectionString", DefaultBeans.TEST_CONNECTION_STRING);
         ReflectionTestUtils.setField(blobService, "profile", "local");
@@ -60,6 +61,7 @@ public class TestBlobService {
         when(serviceClientBuilderMock.buildClient()).thenReturn(serviceClientMock);
         when(serviceClientMock.getBlobContainerClient(DefaultBeans.TEST_CONTAINER_NAME)).thenReturn(containerClientMock);
         when(containerClientMock.getBlobClient(any())).thenReturn(blobClientMock);
+        when(blobClientMock.getAppendBlobClient()).thenReturn(appendBlobClientMock);
         blobService.uploadFile(new byte[]{}, DefaultBeans.INSTANT, "filename", "sha", BatchEnum.BIN_RANGE_GEN);
         verify(blobClientMock).upload(any(InputStream.class), anyLong(), anyBoolean());
         verify(blobClientMock).setMetadata(anyMap());

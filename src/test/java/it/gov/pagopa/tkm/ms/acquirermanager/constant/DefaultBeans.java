@@ -32,7 +32,8 @@ public class DefaultBeans {
 
     public final List<BlobItem> BLOB_LIST = Collections.singletonList(BLOB);
     private static final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("uuuuMMdd").withZone(ZoneId.of(TkmDatetimeConstant.DATE_TIME_TIMEZONE));
-    public static final String BIN_RANGE_GEN_LOCAL__1 = "BIN_RANGE_GEN_TEST_" + dateFormat.format(Instant.now()) + "_1.csv";
+    public static final String BIN_RANGE_GEN_LOCAL__1 = "BIN_RANGE_GEN_LOCAL_" + dateFormat.format(Instant.now()) + "_1.csv";
+    public static final String BIN_RANGE_GEN_LOCAL__1_NO_DATE = "BIN_RANGE_GEN_LOCAL_19700101_1.csv";
 
     public final LinksResponse LINKS_RESPONSE = LinksResponse.builder()
             .fileLinks(Collections.singletonList("null/TESTNAME?null"))
@@ -60,13 +61,20 @@ public class DefaultBeans {
             BIN_RANGE_GEN_LOCAL__1, 3, SHA_256, true, null
     );
 
+    public final BatchResultDetails BIN_RANGE_BATCH_RESULT_DETAILS_NO_DATE = new BatchResultDetails(
+            BIN_RANGE_GEN_LOCAL__1_NO_DATE, 3, SHA_256, true, null
+    );
+
     public final BatchResultDetails BIN_RANGE_BATCH_RESULT_ERROR_DETAILS = new BatchResultDetails(
             BIN_RANGE_GEN_LOCAL__1, 0, null, false, "error"
     );
 
-
     public final BatchResultDetails BIN_RANGE_BATCH_RESULT_DETAILS_EMPTY = new BatchResultDetails(
             BIN_RANGE_GEN_LOCAL__1, 0, null, true, null
+    );
+
+    public final BatchResultDetails BIN_RANGE_BATCH_RESULT_DETAILS_EMPTY_NO_DATE = new BatchResultDetails(
+            BIN_RANGE_GEN_LOCAL__1_NO_DATE, 0, null, true, null
     );
 
     private final VisaBinRangeResponseData VISA_BIN_RANGE_RESPONSE_DATA_TOKEN = VisaBinRangeResponseData.builder()
@@ -127,7 +135,7 @@ public class DefaultBeans {
     public final TkmBatchResult VISA_BIN_RANGE_RETRIEVAL_BATCH_RESULT_FAILED = TkmBatchResult.builder()
             .runOutcome(false)
             .targetBatch(BatchEnum.BIN_RANGE_RETRIEVAL)
-            .details("{\"numberOfRows\":0,\"success\":false}")
+            .details("{\"success\":false}")
             .runDate(INSTANT)
             .runDurationMillis(0)
             .build();

@@ -84,7 +84,7 @@ class TestBinRangeService {
 
     private static final UUID UUID_TEST = UUID.fromString("c1f77e6e-8fc7-42d2-8128-58ca293e3b42");
 
-    private DefaultBeans testBeans;
+    private final DefaultBeans testBeans = new DefaultBeans();
 
     private final MockedStatic<Instant> instantMockedStatic = mockStatic(Instant.class);
     private final MockedStatic<OffsetDateTime> offsetMockedStatic = mockStatic(OffsetDateTime.class);
@@ -92,7 +92,6 @@ class TestBinRangeService {
 
     @BeforeEach
     void init() {
-        testBeans = new DefaultBeans();
         instantMockedStatic.when(Instant::now).thenReturn(DefaultBeans.INSTANT);
         offsetMockedStatic.when(OffsetDateTime::now).thenReturn(DefaultBeans.OFFSET_DATE_TIME);
         mockedUuid.when(UUID::randomUUID).thenReturn(UUID_TEST);
@@ -102,7 +101,6 @@ class TestBinRangeService {
         ReflectionTestUtils.setField(binRangeHashService, "serviceClientBuilder", serviceClientBuilderMock);
         ReflectionTestUtils.setField(binRangeHashService, "blobClientBuilder", blobClientBuilderMock);
         ReflectionTestUtils.setField(binRangeHashService, "maxRowsInFiles", 2);
-        ReflectionTestUtils.setField(binRangeHashService, "profile", "local");
     }
 
     @AfterAll

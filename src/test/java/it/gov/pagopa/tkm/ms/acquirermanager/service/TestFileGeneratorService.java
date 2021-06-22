@@ -14,6 +14,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.test.util.*;
 
 import javax.persistence.EntityManager;
 import java.io.IOException;
@@ -43,13 +44,14 @@ class TestFileGeneratorService {
     @BeforeEach
     void init() {
         testBeans = new DefaultBeans();
+        ReflectionTestUtils.setField(fileGeneratorService, "profile", "local");
     }
 
     @Test
     void givenBinRangeStream_generateFile() throws IOException {
         when(binRangeRepository.getAll(any(PageRequest.class))).thenReturn(testBeans.TKM_BIN_RANGES.stream());
         BatchResultDetails details = fileGeneratorService.generateBinRangesFile(DefaultBeans.INSTANT, 5, 0, 5);
-        assertThat(testBeans.BIN_RANGE_BATCH_RESULT_DETAILS)
+        assertThat(testBeans.BIN_RANGE_BATCH_RESULT_DETAILS_NO_DATE)
                 .usingRecursiveComparison()
                 .ignoringFields("sha256")
                 .isEqualTo(details);
@@ -60,7 +62,7 @@ class TestFileGeneratorService {
     @Test
     void givenNoBinRanges_generateFile() throws IOException {
         BatchResultDetails details = fileGeneratorService.generateBinRangesFile(DefaultBeans.INSTANT, 0, 0, 0);
-        assertThat(testBeans.BIN_RANGE_BATCH_RESULT_DETAILS_EMPTY)
+        assertThat(testBeans.BIN_RANGE_BATCH_RESULT_DETAILS_EMPTY_NO_DATE)
                 .usingRecursiveComparison()
                 .ignoringFields("sha256")
                 .isEqualTo(details);
