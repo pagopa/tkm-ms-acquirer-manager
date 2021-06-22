@@ -26,10 +26,11 @@ public class DefaultBeans {
 
     public static final Instant INSTANT = Instant.EPOCH;
     public static final OffsetDateTime OFFSET_DATE_TIME = OffsetDateTime.MIN.plus(1000002030, ChronoUnit.YEARS);
+    public static final String TESTNAME = "TESTNAME_date";
 
     private final Map<String, String> GENERATION_DATE_METADATA = new HashMap<>(Collections.singletonMap(generationdate.name(), INSTANT.toString()));
 
-    private final BlobItem BLOB = new BlobItem().setMetadata(GENERATION_DATE_METADATA).setName("TESTNAME");
+    private final BlobItem BLOB = new BlobItem().setMetadata(GENERATION_DATE_METADATA).setName(TESTNAME);
 
     public final List<BlobItem> BLOB_LIST = Collections.singletonList(BLOB);
     private static final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("uuuuMMdd").withZone(ZoneId.of(TkmDatetimeConstant.DATE_TIME_TIMEZONE));

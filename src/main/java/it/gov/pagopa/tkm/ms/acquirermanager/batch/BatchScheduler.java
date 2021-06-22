@@ -15,7 +15,7 @@ public class BatchScheduler {
 
     @Autowired
     private KnownHashesService knownHashesService;
-    
+
     @Autowired
     private KnownHashesCopyService knownHashesCopyService;
 
@@ -39,7 +39,7 @@ public class BatchScheduler {
 
     @Scheduled(cron = "${batch.known-hashes-copy.cron}")
     @SchedulerLock(name = "Known_Hashes_Copy_Task")
-    public void copyKnownHashesToAcquirerFolder(){
+    public void copyKnownHashesToAcquirerFolder() {
         knownHashesCopyService.copyKnownHashesFiles();
     }
 }

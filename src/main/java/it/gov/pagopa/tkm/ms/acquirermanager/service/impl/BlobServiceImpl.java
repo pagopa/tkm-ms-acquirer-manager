@@ -8,7 +8,8 @@ import com.azure.storage.blob.models.BlobItem;
 import com.azure.storage.blob.models.BlobListDetails;
 import com.azure.storage.blob.models.ListBlobsOptions;
 import it.gov.pagopa.tkm.constant.TkmDatetimeConstant;
-import it.gov.pagopa.tkm.ms.acquirermanager.constant.*;
+import it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum;
+import it.gov.pagopa.tkm.ms.acquirermanager.constant.DirectoryNames;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.BlobService;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
@@ -56,6 +57,7 @@ public class BlobServiceImpl implements BlobService {
             case KNOWN_HASHES_COPY:
                 directory = getDirectoryName(now, batch);
                 blobName = directory + filename + ".zip";
+                break;
             case KNOWN_HASHES_GEN:
                 directory = String.format("%s/%s/", batch, DirectoryNames.ALL_HASHES);
                 blobName = directory + filename;
@@ -67,9 +69,11 @@ public class BlobServiceImpl implements BlobService {
         switch (batch) {
             case BIN_RANGE_GEN:
                 blobClient.upload(new ByteArrayInputStream(fileByte), fileByte.length, false);
+                break;
             case KNOWN_HASHES_GEN:
                 blobClient.getAppendBlobClient().create();
                 blobClient.getAppendBlobClient().appendBlock(new ByteArrayInputStream(fileByte), fileByte.length);
+                break;
         }
         Map<String, String> metadata = new HashMap<>();
         metadata.put(generationdate.name(), now.toString());
