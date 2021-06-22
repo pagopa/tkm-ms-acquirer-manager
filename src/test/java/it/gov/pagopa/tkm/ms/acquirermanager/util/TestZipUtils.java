@@ -37,6 +37,7 @@ class TestZipUtils {
         assertEquals(134, zippedFile.length);
     }
 
+    @SuppressWarnings("UnstableApiUsage")
     @Test
     void unzipFile_success() throws IOException {
         String tempFileZip = Files.createFile(tempDir.resolve(random.nextInt() + ".zip")).toAbsolutePath().toString();
