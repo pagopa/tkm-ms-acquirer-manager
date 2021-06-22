@@ -33,7 +33,7 @@ public class TkmHashOffset {
     private int lastHashesFileRowCount;
 
     public int getFreeSpots(int maxRowsInFiles) {
-        return lastHashesFileFilename == null ? 0 : maxRowsInFiles - lastHashesFileRowCount;
+        return (lastHashesFileFilename == null || maxRowsInFiles < lastHashesFileRowCount) ? 0 : maxRowsInFiles - lastHashesFileRowCount;
     }
 
     public void increaseIndex() {

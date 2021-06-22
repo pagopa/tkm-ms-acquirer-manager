@@ -14,6 +14,7 @@ import it.gov.pagopa.tkm.ms.acquirermanager.repository.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.*;
 import lombok.extern.log4j.*;
 import org.apache.commons.collections4.*;
+import org.apache.commons.lang3.*;
 import org.springframework.beans.factory.annotation.*;
 import org.springframework.cloud.sleuth.*;
 import org.springframework.stereotype.*;
@@ -60,24 +61,6 @@ public class KnownHashesServiceImpl implements KnownHashesService {
     private String containerName;
 
     private final BlobServiceClientBuilder serviceClientBuilder = new BlobServiceClientBuilder();
-
-    private BlobItem getLastGeneratedFile(String filename) {
-        BlobServiceClient serviceClient = serviceClientBuilder.connectionString(connectionString).buildClient();
-        BlobContainerClient client = serviceClient.getBlobContainerClient(containerName);
-        String completePath = String.format("%s/%s/%s", KNOWN_HASHES_GEN, DirectoryNames.ALL_HASHES, filename);
-        log.info("Looking for file: " + completePath);
-        BlobListDetails blobListDetails = new BlobListDetails().setRetrieveMetadata(true);
-        ListBlobsOptions listBlobsOptions = new ListBlobsOptions()
-                .setPrefix(completePath)
-                .setDetails(blobListDetails);
-        List<BlobItem> blobItemList = new ArrayList<>();
-        client.listBlobsByHierarchy("/", listBlobsOptions, null).iterator().forEachRemaining(blobItemList::add);
-        if (CollectionUtils.isEmpty(blobItemList)) {
-            log.warn("No files found for given filename");
-            throw new AcquirerDataNotFoundException();
-        }
-        return blobItemList.get(0);
-    }
 
     @Override
     public void generateKnownHashesFiles() throws JsonProcessingException {
@@ -136,7 +119,7 @@ public class KnownHashesServiceImpl implements KnownHashesService {
         }
         lastOffset.setLastHashesFileIndex(index);
         lastOffset.setLastHashesFileFilename(newFileDetails.getFileName());
-        lastOffset.setLastHashesFileRowCount(newFileDetails.getNumberOfRows());
+        lastOffset.setLastHashesFileRowCount(ObjectUtils.firstNonNull(newFileDetails.getNumberOfRows(), 0));
         return newFileDetails;
     }
 
@@ -165,6 +148,24 @@ public class KnownHashesServiceImpl implements KnownHashesService {
         BlobContainerClient client = serviceClient.getBlobContainerClient(containerName);
         BlobClient blobClient = client.getBlobClient(file.getName());
         blobClient.getAppendBlobClient().appendBlock(new ByteArrayInputStream(hashesAsBytes), hashesAsBytes.length);
+    }
+
+    private BlobItem getLastGeneratedFile(String filename) {
+        BlobServiceClient serviceClient = serviceClientBuilder.connectionString(connectionString).buildClient();
+        BlobContainerClient client = serviceClient.getBlobContainerClient(containerName);
+        String completePath = String.format("%s/%s/%s", KNOWN_HASHES_GEN, DirectoryNames.ALL_HASHES, filename);
+        log.info("Looking for file: " + completePath);
+        BlobListDetails blobListDetails = new BlobListDetails().setRetrieveMetadata(true);
+        ListBlobsOptions listBlobsOptions = new ListBlobsOptions()
+                .setPrefix(completePath)
+                .setDetails(blobListDetails);
+        List<BlobItem> blobItemList = new ArrayList<>();
+        client.listBlobsByHierarchy("/", listBlobsOptions, null).iterator().forEachRemaining(blobItemList::add);
+        if (CollectionUtils.isEmpty(blobItemList)) {
+            log.warn("No files found for given filename");
+            throw new AcquirerDataNotFoundException();
+        }
+        return blobItemList.get(0);
     }
 
 }

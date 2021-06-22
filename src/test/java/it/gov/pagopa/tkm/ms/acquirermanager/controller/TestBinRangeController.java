@@ -28,7 +28,7 @@ public class TestBinRangeController {
     private BinRangeControllerImpl binRangeController;
 
     @Mock
-    private BinRangeServiceImpl binRangeHashService;
+    private BinRangeServiceImpl binRangeService;
 
     private final ObjectMapper mapper = new ObjectMapper();
 
@@ -54,7 +54,7 @@ public class TestBinRangeController {
 
     @Test
     void givenValidBinRangeRequest_returnBinRangeResponse() throws Exception {
-        when(binRangeHashService.getSasLinkResponse(BatchEnum.BIN_RANGE_GEN)).thenReturn(testBeans.LINKS_RESPONSE);
+        when(binRangeService.getSasLinkResponse(BatchEnum.BIN_RANGE_GEN)).thenReturn(testBeans.LINKS_RESPONSE);
         mockMvc.perform(
                 get(ApiEndpoints.BIN_RANGE_BASE_PATH + LINK))
                 .andExpect(status().isOk())

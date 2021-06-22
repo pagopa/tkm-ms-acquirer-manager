@@ -35,7 +35,7 @@ import static org.mockito.Mockito.*;
 class TestBinRangeService {
 
     @InjectMocks
-    private BinRangeServiceImpl binRangeHashService;
+    private BinRangeServiceImpl binRangeService;
 
     @Mock
     private BlobServiceClientBuilder serviceClientBuilderMock;
@@ -95,12 +95,12 @@ class TestBinRangeService {
         instantMockedStatic.when(Instant::now).thenReturn(DefaultBeans.INSTANT);
         offsetMockedStatic.when(OffsetDateTime::now).thenReturn(DefaultBeans.OFFSET_DATE_TIME);
         mockedUuid.when(UUID::randomUUID).thenReturn(UUID_TEST);
-        ReflectionTestUtils.setField(binRangeHashService, "connectionString", DefaultBeans.TEST_CONNECTION_STRING);
-        ReflectionTestUtils.setField(binRangeHashService, "containerName", DefaultBeans.TEST_CONTAINER_NAME);
-        ReflectionTestUtils.setField(binRangeHashService, "dateFormat", dateFormatMock);
-        ReflectionTestUtils.setField(binRangeHashService, "serviceClientBuilder", serviceClientBuilderMock);
-        ReflectionTestUtils.setField(binRangeHashService, "blobClientBuilder", blobClientBuilderMock);
-        ReflectionTestUtils.setField(binRangeHashService, "maxRowsInFiles", 2);
+        ReflectionTestUtils.setField(binRangeService, "connectionString", DefaultBeans.TEST_CONNECTION_STRING);
+        ReflectionTestUtils.setField(binRangeService, "containerName", DefaultBeans.TEST_CONTAINER_NAME);
+        ReflectionTestUtils.setField(binRangeService, "dateFormat", dateFormatMock);
+        ReflectionTestUtils.setField(binRangeService, "serviceClientBuilder", serviceClientBuilderMock);
+        ReflectionTestUtils.setField(binRangeService, "blobClientBuilder", blobClientBuilderMock);
+        ReflectionTestUtils.setField(binRangeService, "maxRowsInFiles", 2);
     }
 
     @AfterAll
@@ -129,22 +129,22 @@ class TestBinRangeService {
     void givenExistingFile_returnLinksResponseBinRanges() {
         startupAssumptions(false);
         when(pagedIterableMock.iterator()).thenReturn(testBeans.BLOB_LIST.iterator());
-        assertEquals(testBeans.LINKS_RESPONSE, binRangeHashService.getSasLinkResponse(BatchEnum.BIN_RANGE_GEN));
+        assertEquals(testBeans.LINKS_RESPONSE, binRangeService.getSasLinkResponse(BatchEnum.BIN_RANGE_GEN));
     }
 
     @Test
     void givenExistingFile_returnLinksResponseHashes() {
         startupAssumptions(false);
         when(pagedIterableMock.iterator()).thenReturn(testBeans.BLOB_LIST.iterator());
-        assertEquals(testBeans.LINKS_RESPONSE, binRangeHashService.getSasLinkResponse(BatchEnum.KNOWN_HASHES_GEN));
+        assertEquals(testBeans.LINKS_RESPONSE, binRangeService.getSasLinkResponse(BatchEnum.KNOWN_HASHES_GEN));
     }
 
     @Test
     void givenNoFiles_expectNotFoundException() {
         startupAssumptions(true);
         when(pagedIterableMock.iterator()).thenReturn(Collections.emptyIterator());
-        assertThrows(AcquirerDataNotFoundException.class, () -> binRangeHashService.getSasLinkResponse(BatchEnum.BIN_RANGE_GEN));
-        assertThrows(AcquirerDataNotFoundException.class, () -> binRangeHashService.getSasLinkResponse(BatchEnum.KNOWN_HASHES_GEN));
+        assertThrows(AcquirerDataNotFoundException.class, () -> binRangeService.getSasLinkResponse(BatchEnum.BIN_RANGE_GEN));
+        assertThrows(AcquirerDataNotFoundException.class, () -> binRangeService.getSasLinkResponse(BatchEnum.KNOWN_HASHES_GEN));
     }
 
     //BIN RANGE FILE GENERATION
@@ -153,7 +153,7 @@ class TestBinRangeService {
     void givenBinRanges_persistResult() throws JsonProcessingException {
         when(binRangeRepository.count()).thenReturn(3L);
         when(genBinRangeCallable.call(any(Instant.class), anyInt(), anyInt(), anyLong())).thenReturn(new AsyncResult<>(BatchResultDetails.builder().success(true).build()));
-        binRangeHashService.generateBinRangeFiles();
+        binRangeService.generateBinRangeFiles();
         verify(batchResultRepository).save(batchResultArgumentCaptor.capture());
         assertThat(batchResultArgumentCaptor.getValue())
                 .usingRecursiveComparison()
@@ -165,7 +165,7 @@ class TestBinRangeService {
     void givenNoBinRanges_persistResult() throws JsonProcessingException {
         when(genBinRangeCallable.call(any(Instant.class), anyInt(), anyInt(), anyLong())).thenReturn(new AsyncResult<>(BatchResultDetails.builder().success(true).build()));
         when(binRangeRepository.count()).thenReturn(0L);
-        binRangeHashService.generateBinRangeFiles();
+        binRangeService.generateBinRangeFiles();
         verify(batchResultRepository).save(batchResultArgumentCaptor.capture());
         assertThat(batchResultArgumentCaptor.getValue())
                 .usingRecursiveComparison()
@@ -176,7 +176,7 @@ class TestBinRangeService {
     @Test
     void callVisaApiAndWriteResult() throws JsonProcessingException {
         when(visaClient.getBinRanges()).thenReturn(testBeans.TKM_BIN_RANGES);
-        binRangeHashService.retrieveVisaBinRanges();
+        binRangeService.retrieveVisaBinRanges();
         verify(batchResultRepository).save(batchResultArgumentCaptor.capture());
         assertThat(batchResultArgumentCaptor.getValue())
                 .usingRecursiveComparison()
@@ -187,7 +187,7 @@ class TestBinRangeService {
     @Test
     void givenVisaApiError_writeFalseOutcome() throws JsonProcessingException {
         when(visaClient.getBinRanges()).thenThrow(new RuntimeException());
-        binRangeHashService.retrieveVisaBinRanges();
+        binRangeService.retrieveVisaBinRanges();
         verify(batchResultRepository).save(batchResultArgumentCaptor.capture());
         assertThat(batchResultArgumentCaptor.getValue())
                 .usingRecursiveComparison()
