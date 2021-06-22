@@ -61,6 +61,8 @@ keyvault:
   acquirerPgpPrivateKey: ${${AZURE_KEYVAULT_PROFILE:prod}-acquirerPgpPrivateKey}
   acquirerPgpPrivateKeyPassphrase: ${${AZURE_KEYVAULT_PROFILE:prod}-acquirerPgpPrivateKeyPassphrase}
   readQueuePubPgpKey: ${${AZURE_KEYVAULT_PROFILE:prod}-readQueuePubPgpKey}
+  sftpPassPhrase: ${${AZURE_KEYVAULT_PROFILE:prod}-sftpPassPhrase}
+  sftpPrivateKey: ${${AZURE_KEYVAULT_PROFILE:prod}-sftpPrivateKey}
 
 blob-storage:
   visaPublicCert: azure-blob://${BLOB_STORAGE_ACQUIRER_CONFIG_CONTAINER}/Visa_Public_Cert.p12
@@ -85,3 +87,12 @@ batch:
     cron: ${BIN_RANGE_RETRIEVAL_CRON:-}
   queue-batch-acquirer-result:
     cron: ${QUEUE_BATCH_ACQUIRER_RESULT_CRON:-}
+
+sftp:
+  sftpHostname: ${SFTP_SIA_HOSTNAME}
+  sftpPort: ${SFTP_SIA_PORT}
+  sftpUser: ${SFTP_SIA_USER}
+  sftpPrivateKey: ${keyvault.sftpPrivateKey}
+  sftpPassPhrase: ${keyvault.sftpPassPhrase}
+  sftpFolder: ${SFTP_SIA_FOLDER}
+  sftpFilesPattern: ${SFTP_SIA_FILE_PATTERN:^TKM\..*\.zip$}

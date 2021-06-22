@@ -69,13 +69,16 @@
             <version>4.9.1</version>
             <scope>test</scope>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/com.opencsv/opencsv -->
         <dependency>
             <groupId>com.opencsv</groupId>
             <artifactId>opencsv</artifactId>
             <version>3.3</version>
         </dependency>
-
+        <dependency>
+            <groupId>com.hierynomus</groupId>
+            <artifactId>sshj</artifactId>
+            <version>0.31.0</version>
+        </dependency>
     </dependencies>
 
     <build>

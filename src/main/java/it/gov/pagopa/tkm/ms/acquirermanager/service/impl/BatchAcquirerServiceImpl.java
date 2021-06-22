@@ -2,10 +2,13 @@ package it.gov.pagopa.tkm.ms.acquirermanager.service.impl;
 
 import it.gov.pagopa.tkm.ms.acquirermanager.service.BatchAcquirerService;
 import it.gov.pagopa.tkm.ms.acquirermanager.util.PgpUtils;
+import it.gov.pagopa.tkm.ms.acquirermanager.util.SftpUtils;
 import it.gov.pagopa.tkm.ms.acquirermanager.util.ZipUtils;
 import lombok.extern.log4j.Log4j2;
+import net.schmizz.sshj.sftp.RemoteResourceInfo;
 import org.apache.commons.collections4.IterableUtils;
 import org.apache.commons.io.FileUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -24,18 +27,44 @@ public class BatchAcquirerServiceImpl implements BatchAcquirerService {
     @Value("${keyvault.acquirerPgpPrivateKey}")
     private byte[] pgpPrivateKey;
 
+    @Value("${keyvault.sftpPassPhrase}")
+    private char[] sftpPassPhrase;
+
+    @Value("${keyvault.sftpPrivateKey}")
+    private byte[] sftpPrivateKey;
+
+    @Autowired
+    private SftpUtils sftpUtils;
+
     @Override
     public void queueBatchAcquirerResult() {
-
-        log.info("Read and unzip file");
-        String zipFilePath = "C:\\Users\\a09u\\OneDrive - GFT Technologies SE\\Desktop\\ToDel\\acquirer.zip";
-        workOnFile(zipFilePath);
+        try {
+            log.info("Read and unzip files");
+            List<RemoteResourceInfo> remoteResourceInfos = sftpUtils.listFile();
+            log.debug("Remote files " + remoteResourceInfos);
+            for (RemoteResourceInfo remoteFile : remoteResourceInfos) {
+                String workingDir = FileUtils.getTempDirectoryPath() + File.separator + UUID.randomUUID();
+                createWorkingDir(workingDir);
+                log.debug("Working dir " + workingDir);
+                String zipFilePath = workingDir + File.separator + remoteFile.getName();
+                sftpUtils.downloadFile(remoteFile.getPath(), zipFilePath);
+                workOnFile(zipFilePath, workingDir);
+            }
+        } catch (Exception e) {
+            log.error(e);
+        }
     }
 
-    private void workOnFile(String zipFilePath) {
-        String destDirectory = FileUtils.getTempDirectoryPath() + File.separator + UUID.randomUUID();
+    private void createWorkingDir(String workingDir) throws IOException {
+        boolean mkdirs = new File(workingDir).mkdirs();
+        if (!mkdirs) {
+            throw new IOException("Cannot Create folder " + workingDir);
+        }
+    }
+
+    private void workOnFile(String zipFilePath, String workingDir) {
         try {
-            List<String> files = getUnzippedFile(zipFilePath, destDirectory);
+            List<String> files = getUnzippedFile(zipFilePath, workingDir);
             log.debug("Unzipped file to " + files);
             String fileInputPgp = files.get(0);
             String fileOutputClear = fileInputPgp + ".clear";
@@ -44,7 +73,7 @@ public class BatchAcquirerServiceImpl implements BatchAcquirerService {
         } catch (Exception e) {
             log.error("Failed to elaborate: " + zipFilePath, e);
         } finally {
-            deleteDirectoryQuietly(destDirectory);
+            deleteDirectoryQuietly(workingDir);
         }
     }
 
