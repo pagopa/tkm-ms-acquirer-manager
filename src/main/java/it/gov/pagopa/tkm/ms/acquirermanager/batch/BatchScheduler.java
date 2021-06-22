@@ -8,8 +8,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
-
 @Component
 public class BatchScheduler {
 
@@ -32,7 +30,7 @@ public class BatchScheduler {
 
     @Scheduled(cron = "${batch.queue-batch-acquirer-result.cron}")
     @SchedulerLock(name = "Queue_Batch_Acquirer_Result_Task")
-    public void queueBatchAcquirerResultTask() throws Exception {
+    public void queueBatchAcquirerResultTask() {
         batchAcquirerService.queueBatchAcquirerResult();
     }
 }
