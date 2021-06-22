@@ -54,6 +54,7 @@ class TestPgpUtils {
     @TempDir
     static Path tempDir;
 
+    @SuppressWarnings("UnstableApiUsage")
     @BeforeAll
     void init() throws IOException {
         privateKey = ByteStreams.toByteArray(new ClassPathResource("junit_pgp_private.asc").getInputStream());
