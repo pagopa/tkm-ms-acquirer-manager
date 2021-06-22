@@ -70,9 +70,9 @@ public class PgpUtils {
             final ByteArrayOutputStream bOut = new ByteArrayOutputStream();
             final PGPLiteralDataGenerator literal = new PGPLiteralDataGenerator();
             final PGPCompressedDataGenerator comData = new PGPCompressedDataGenerator(CompressionAlgorithmTags.ZIP);
-            try (final OutputStream pOut =
-                         literal.open(comData.open(bOut), PGPLiteralData.BINARY, "filename", in.available(), new Date())) {
+            try (final OutputStream pOut = literal.open(comData.open(bOut), PGPLiteralData.BINARY, "filename", in.available(), new Date())) {
                 Streams.pipeAll(in, pOut);
+                comData.close();
             }
             final byte[] bytes = bOut.toByteArray();
             final PGPEncryptedDataGenerator generator = new PGPEncryptedDataGenerator(
@@ -93,6 +93,7 @@ public class PgpUtils {
             throw new PGPException("Error in encrypt", e);
         }
     }
+
 
     private static PGPPublicKey readPublicKey(byte[] publicKeyByte) throws IOException, PGPException {
         InputStream decoderStream = PGPUtil.getDecoderStream(new ByteArrayInputStream(publicKeyByte));
