@@ -28,8 +28,8 @@ public class BatchAcquirerServiceImpl implements BatchAcquirerService {
         File pgpFile = new File(destDirectory+"TKM.12345.TKNLST.20210621.105000.001.csv.pgp");
         byte[] pgpFileByteArray = FileUtils.readFileToByteArray(pgpFile);
         //decrypt pgp csv file
-        byte[] decryptedFileBytes = PgpUtils.decrypt(pgpFileByteArray, pgpPrivateKey, pgpPassPhrase);
-        writeCSVFileFromByteArray(decryptedFileBytes);
+//        byte[] decryptedFileBytes = PgpUtils.decrypt(pgpFileByteArray, pgpPrivateKey, pgpPassPhrase);
+//        writeCSVFileFromByteArray(decryptedFileBytes);
         //parse csv file
         String filePath = "";
         parseCSVFile(filePath);

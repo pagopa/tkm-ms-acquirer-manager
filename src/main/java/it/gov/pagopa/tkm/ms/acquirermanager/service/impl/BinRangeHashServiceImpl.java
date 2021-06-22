@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import it.gov.pagopa.tkm.constant.TkmDatetimeConstant;
 import it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.constant.*;
+import it.gov.pagopa.tkm.ms.acquirermanager.constant.CircuitEnum;
 import it.gov.pagopa.tkm.ms.acquirermanager.exception.AcquirerDataNotFoundException;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.dto.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.*;
