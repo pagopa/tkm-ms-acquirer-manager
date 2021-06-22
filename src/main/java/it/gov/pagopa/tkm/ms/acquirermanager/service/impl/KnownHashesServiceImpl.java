@@ -88,27 +88,34 @@ public class KnownHashesServiceImpl implements KnownHashesService {
         List<BatchResultDetails> details = new ArrayList<>();
         List<TkmHashOffset> offsets = hashOffsetRepository.findAll();
         TkmHashOffset lastOffset = CollectionUtils.isEmpty(offsets) ? new TkmHashOffset() : offsets.get(0);
-        KnownHashesResponse hashesResponse = cardManagerClient.getKnownHpans(maxRecordsInApiCall, lastOffset.getLastHpanOffset(), lastOffset.getLastHtokenOffset());
+        log.info("Calling Card Manager for known hashes");
+        KnownHashesResponse hashesResponse = cardManagerClient.getKnownHashes(maxRecordsInApiCall, lastOffset.getLastHpanOffset(), lastOffset.getLastHtokenOffset());
         List<String> hashes = ListUtils.union(hashesResponse.getHpans(), hashesResponse.getHtokens());
+        log.info(hashes.size() + " hashes retrieved");
         lastOffset.setLastHpanOffset(lastOffset.getLastHpanOffset() + CollectionUtils.size(hashesResponse.getHpans()));
         lastOffset.setLastHtokenOffset(lastOffset.getLastHtokenOffset() + CollectionUtils.size(hashesResponse.getHtokens()));
         int freeSpotsInLastFile = lastOffset.getFreeSpots(maxRowsInFiles);
         if (freeSpotsInLastFile > 0) {
-            details.add(manageExistingFile(lastOffset, hashes, freeSpotsInLastFile));
+            BatchResultDetails lastFileDetails = manageExistingFile(lastOffset, hashes, freeSpotsInLastFile);
+            details.add(lastFileDetails);
         }
         List<String> remainingHashes = hashes.stream().skip(freeSpotsInLastFile).collect(Collectors.toList());
         if (CollectionUtils.isNotEmpty(remainingHashes)) {
             List<List<String>> partitionedHashes = ListUtils.partition(remainingHashes, maxRowsInFiles);
             for (List<String> chunk : partitionedHashes) {
                 lastOffset.increaseIndex();
-                details.add(manageNewFile(chunk, now, lastOffset.getLastHashesFileIndex(), lastOffset));
+                BatchResultDetails newFileDetails = manageNewFile(chunk, now, lastOffset.getLastHashesFileIndex(), lastOffset);
+                details.add(newFileDetails);
             }
         }
+        log.trace(lastOffset);
         hashOffsetRepository.save(lastOffset);
         return details;
     }
 
     private BatchResultDetails manageNewFile(List<String> remainingHashes, Instant now, int index, TkmHashOffset lastOffset) {
+        log.info("Writing " + remainingHashes.size() + " hashes to new file");
+        log.trace(remainingHashes);
         BatchResultDetails newFileDetails = new BatchResultDetails();
         try {
             newFileDetails = fileGeneratorService.generateKnownHashesFile(now, index, remainingHashes);
@@ -124,10 +131,12 @@ public class KnownHashesServiceImpl implements KnownHashesService {
     }
 
     private BatchResultDetails manageExistingFile(TkmHashOffset lastOffset, List<String> hashes, int freeSpotsInLastFile) {
+        log.info("Last generated hashes file has " + freeSpotsInLastFile + " free spots, filling them up");
         String filename = lastOffset.getLastHashesFileFilename();
         BatchResultDetails lastFileDetails = BatchResultDetails.builder().success(true).fileName(filename).build();
         try {
             BlobItem lastFile = getLastGeneratedFile(filename);
+            log.info("Found " + lastFile.getName());
             List<String> hashesSublist = hashes.stream().limit(freeSpotsInLastFile).collect(Collectors.toList());
             updateFile(lastFile, hashesSublist);
             int newRowCount = lastOffset.getLastHashesFileRowCount() + hashesSublist.size();
@@ -143,11 +152,14 @@ public class KnownHashesServiceImpl implements KnownHashesService {
     }
 
     private void updateFile(BlobItem file, List<String> hashes) {
+        log.info("Updating file " + file.getName());
         byte[] hashesAsBytes = hashes.stream().collect(Collectors.joining(System.lineSeparator())).getBytes();
+        log.trace(hashesAsBytes);
         BlobServiceClient serviceClient = serviceClientBuilder.connectionString(connectionString).buildClient();
         BlobContainerClient client = serviceClient.getBlobContainerClient(containerName);
         BlobClient blobClient = client.getBlobClient(file.getName());
         blobClient.getAppendBlobClient().appendBlock(new ByteArrayInputStream(hashesAsBytes), hashesAsBytes.length);
+        log.info("File updated");
     }
 
     private BlobItem getLastGeneratedFile(String filename) {

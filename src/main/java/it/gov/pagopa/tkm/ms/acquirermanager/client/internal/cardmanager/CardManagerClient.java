@@ -10,7 +10,7 @@ import static it.gov.pagopa.tkm.ms.acquirermanager.constant.ApiParams.*;
 public interface CardManagerClient {
 
     @GetMapping("/known-hashes")
-    KnownHashesResponse getKnownHpans(
+    KnownHashesResponse getKnownHashes(
             @RequestParam(value = MAX_NUMBER_OF_RECORDS_PARAM)
             Integer maxRecords,
             @RequestParam(value = HPAN_OFFSET_PARAM)

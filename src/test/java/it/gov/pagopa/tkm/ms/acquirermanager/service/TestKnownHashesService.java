@@ -92,7 +92,7 @@ public class TestKnownHashesService {
 
     @Test
     void givenKnownHashesAndNoExistingFiles_persistResult() throws JsonProcessingException {
-        when(cardManagerClient.getKnownHpans(anyInt(), anyInt(), anyInt())).thenReturn(testBeans.KNOWN_HASHES_RESPONSE);
+        when(cardManagerClient.getKnownHashes(anyInt(), anyInt(), anyInt())).thenReturn(testBeans.KNOWN_HASHES_RESPONSE);
         when(fileGeneratorService.generateKnownHashesFile(any(Instant.class), anyInt(), anyList())).thenReturn(testBeans.KNOWN_HASHES_BATCH_RESULT_DETAILS);
         knownHashesService.generateKnownHashesFiles();
         verify(batchResultRepository).save(batchResultArgumentCaptor.capture());
@@ -105,7 +105,7 @@ public class TestKnownHashesService {
     @Test
     void givenKnownHashesAndExistingFile_persistResult() throws JsonProcessingException {
         when(hashOffsetRepository.findAll()).thenReturn(Collections.singletonList(testBeans.HASH_OFFSET));
-        when(cardManagerClient.getKnownHpans(anyInt(), anyInt(), anyInt())).thenReturn(testBeans.KNOWN_HASHES_RESPONSE);
+        when(cardManagerClient.getKnownHashes(anyInt(), anyInt(), anyInt())).thenReturn(testBeans.KNOWN_HASHES_RESPONSE);
         when(serviceClientBuilder.connectionString(DefaultBeans.TEST_CONNECTION_STRING)).thenReturn(serviceClientBuilder);
         when(serviceClientBuilder.buildClient()).thenReturn(serviceClient);
         when(serviceClient.getBlobContainerClient(DefaultBeans.TEST_CONTAINER_NAME)).thenReturn(containerClient);
@@ -124,7 +124,7 @@ public class TestKnownHashesService {
 
     @Test
     void givenException_persistFalseResult() throws JsonProcessingException {
-        when(cardManagerClient.getKnownHpans(anyInt(), anyInt(), anyInt())).thenReturn(testBeans.KNOWN_HASHES_RESPONSE);
+        when(cardManagerClient.getKnownHashes(anyInt(), anyInt(), anyInt())).thenReturn(testBeans.KNOWN_HASHES_RESPONSE);
         when(fileGeneratorService.generateKnownHashesFile(any(Instant.class), anyInt(), anyList())).thenThrow(new RuntimeException());
         knownHashesService.generateKnownHashesFiles();
         verify(batchResultRepository).save(batchResultArgumentCaptor.capture());
