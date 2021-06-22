@@ -31,7 +31,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.sleuth.*;
 import org.springframework.stereotype.Service;
 
-import javax.persistence.EntityManager;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -72,9 +71,6 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
 
     @Value("${AZURE_KEYVAULT_PROFILE}")
     private String profile;
-
-    @Autowired
-    private EntityManager entityManager;
 
     @Autowired
     private FileGeneratorService fileGeneratorService;
