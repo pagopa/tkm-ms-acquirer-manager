@@ -6,6 +6,8 @@ import org.apache.commons.io.FileUtils;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -39,7 +41,9 @@ public class ZipUtils {
         return baos.toByteArray();
     }
 
-    public static void unzipFile(String zipFilePath, String destDirectory) throws IOException {
+    public static List<String> unzipFile(String zipFilePath, String destDirectory) throws IOException {
+        List<String> files = new ArrayList<>();
+
         File destDir = new File(destDirectory);
         if (!destDir.exists()) {
             destDir.mkdir();
@@ -53,6 +57,7 @@ public class ZipUtils {
                 if (!entry.isDirectory()) {
                     // if the entry is a file, extracts it
                     extractFile(zipIn, filePath);
+                    files.add(filePath);
                 } else {
                     // if the entry is a directory, make the directory
                     File dir = new File(filePath);
@@ -62,6 +67,7 @@ public class ZipUtils {
                 entry = zipIn.getNextEntry();
             }
         }
+        return files;
     }
 
     private static void extractFile(ZipInputStream zipIn, String filePath) throws IOException {
