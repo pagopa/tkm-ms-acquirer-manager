@@ -2,12 +2,12 @@ package it.gov.pagopa.tkm.ms.acquirermanager.service.impl;
 
 import com.azure.storage.blob.models.BlobItem;
 import it.gov.pagopa.tkm.constant.TkmDatetimeConstant;
-import it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum;
+import it.gov.pagopa.tkm.ms.acquirermanager.constant.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.dto.BatchResultDetails;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.TkmBatchResult;
 import it.gov.pagopa.tkm.ms.acquirermanager.repository.BatchResultRepository;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.BlobService;
-import it.gov.pagopa.tkm.ms.acquirermanager.service.HpanHtokenCopyService;
+import it.gov.pagopa.tkm.ms.acquirermanager.service.KnownHashesCopyService;
 import it.gov.pagopa.tkm.ms.acquirermanager.util.ObjectMapperUtils;
 import it.gov.pagopa.tkm.ms.acquirermanager.util.ZipUtils;
 import lombok.extern.log4j.Log4j2;
@@ -31,7 +31,7 @@ import java.util.List;
 
 @Log4j2
 @Service
-public class HpanHtokenCopyServiceImpl implements HpanHtokenCopyService {
+public class KnownHashesCopyServiceImpl implements KnownHashesCopyService {
     @Autowired
     private BlobService blobService;
 
@@ -46,21 +46,19 @@ public class HpanHtokenCopyServiceImpl implements HpanHtokenCopyService {
 
     private final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("uuuuMMdd").withZone(ZoneId.of(TkmDatetimeConstant.DATE_TIME_TIMEZONE));
 
-    private static final String HPAN_HTOKEN_TMP_FOLDER = "HPAN_HTOKEN_TMP";
-
     @PostConstruct
     public void init() throws IOException {
-        Files.createDirectories(Paths.get(FileUtils.getTempDirectoryPath() + File.separator + HPAN_HTOKEN_TMP_FOLDER));
+        Files.createDirectories(Paths.get(FileUtils.getTempDirectoryPath() + File.separator + DirectoryNames.ALL_HASHES));
     }
 
     @Override
-    public void copyHpanHtokenFiles() {
+    public void copyKnownHashesFiles() {
         Instant now = Instant.now();
         List<BatchResultDetails> batchResultDetails = new ArrayList<>();
-        List<BlobItem> hpanHtokenTmp = blobService.getBlobItemsInFolderHashingTmp(HPAN_HTOKEN_TMP_FOLDER);
-        blobService.deleteTodayFolder(now, BatchEnum.HTOKEN_HPAN_GEN);
-        log.debug("Found: " + hpanHtokenTmp);
-        for (BlobItem blobItem : hpanHtokenTmp) {
+        List<BlobItem> knownHashesTmp = blobService.getBlobItemsInFolderHashingTmp(DirectoryNames.ALL_HASHES.name());
+        blobService.deleteTodayFolder(now, BatchEnum.KNOWN_HASHES_GEN);
+        log.debug("Found: " + knownHashesTmp);
+        for (BlobItem blobItem : knownHashesTmp) {
             batchResultDetails.add(copyFileToDestinationForAcquirer(now, blobItem));
         }
         saveBatchResult(now, batchResultDetails);
@@ -72,7 +70,7 @@ public class HpanHtokenCopyServiceImpl implements HpanHtokenCopyService {
         TkmBatchResult build = TkmBatchResult.builder()
                 .runDate(now)
                 .executionTraceId(traceId)
-                .targetBatch(BatchEnum.HTOKEN_HPAN_COPY)
+                .targetBatch(BatchEnum.KNOWN_HASHES_COPY)
                 .runOutcome(batchResultDetails.stream().allMatch(BatchResultDetails::isSuccess))
                 .details(mapperUtils.toJsonOrNull(batchResultDetails))
                 .runDurationMillis(Instant.now().toEpochMilli() - now.toEpochMilli())
@@ -94,7 +92,7 @@ public class HpanHtokenCopyServiceImpl implements HpanHtokenCopyService {
             String sha256 = DigestUtils.sha256Hex(zipFile);
             batchResultDetails.setSha256(sha256);
             log.debug("Sha256: " + sha256);
-            String uploadedFile = blobService.uploadAcquirerFile(zipFile, now, new File(newFileName).getName(), sha256, BatchEnum.HTOKEN_HPAN_GEN);
+            String uploadedFile = blobService.uploadFile(zipFile, now, new File(newFileName).getName(), sha256, BatchEnum.KNOWN_HASHES_COPY);
             batchResultDetails.setFileName(uploadedFile);
             batchResultDetails.setSuccess(true);
         } catch (Exception e) {

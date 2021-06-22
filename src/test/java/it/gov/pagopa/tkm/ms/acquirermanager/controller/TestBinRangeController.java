@@ -28,7 +28,7 @@ public class TestBinRangeController {
     private BinRangeControllerImpl binRangeController;
 
     @Mock
-    private BinRangeHashServiceImpl binRangeHashService;
+    private BinRangeServiceImpl binRangeHashService;
 
     private final ObjectMapper mapper = new ObjectMapper();
 

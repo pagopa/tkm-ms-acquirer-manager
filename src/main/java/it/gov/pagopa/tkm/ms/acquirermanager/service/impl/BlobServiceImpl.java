@@ -8,7 +8,7 @@ import com.azure.storage.blob.models.BlobItem;
 import com.azure.storage.blob.models.BlobListDetails;
 import com.azure.storage.blob.models.ListBlobsOptions;
 import it.gov.pagopa.tkm.constant.TkmDatetimeConstant;
-import it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum;
+import it.gov.pagopa.tkm.ms.acquirermanager.constant.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.BlobService;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
@@ -47,16 +47,32 @@ public class BlobServiceImpl implements BlobService {
     private String profile;
 
     @Override
-    public String uploadAcquirerFile(byte[] fileByte, Instant instant, String filename, String sha256, BatchEnum batchEnum) {
-        String directory = getDirectoryName(instant, batchEnum);
-        log.debug("Directory " + directory);
-        String blobName = directory + filename + ".zip";
-        log.info("Upload file " + blobName);
-        BlobContainerClient client = getBlobContainerClient();
+    public String uploadFile(byte[] fileByte, Instant now, String filename, String sha256, BatchEnum batch) {
+        log.info("Uploading file " + filename);
+        String directory = null;
+        String blobName = null;
+        switch (batch) {
+            case BIN_RANGE_GEN:
+            case KNOWN_HASHES_COPY:
+                directory = getDirectoryName(now, batch);
+                blobName = directory + filename + ".zip";
+            case KNOWN_HASHES_GEN:
+                directory = String.format("%s/%s/", batch, DirectoryNames.ALL_HASHES);
+                blobName = directory + filename;
+        }
+        log.debug("Uploading to directory " + directory);
+        BlobServiceClient serviceClient = serviceClientBuilder.connectionString(connectionString).buildClient();
+        BlobContainerClient client = serviceClient.getBlobContainerClient(containerNameBinHash);
         BlobClient blobClient = client.getBlobClient(blobName);
-        blobClient.upload(new ByteArrayInputStream(fileByte), fileByte.length, false);
+        switch (batch) {
+            case BIN_RANGE_GEN:
+                blobClient.upload(new ByteArrayInputStream(fileByte), fileByte.length, false);
+            case KNOWN_HASHES_GEN:
+                blobClient.getAppendBlobClient().create();
+                blobClient.getAppendBlobClient().appendBlock(new ByteArrayInputStream(fileByte), fileByte.length);
+        }
         Map<String, String> metadata = new HashMap<>();
-        metadata.put(generationdate.name(), instant.toString());
+        metadata.put(generationdate.name(), now.toString());
         metadata.put(checksumsha256.name(), sha256);
         blobClient.setMetadata(metadata);
         log.info("Uploaded file " + blobName);

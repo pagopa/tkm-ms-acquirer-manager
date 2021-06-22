@@ -17,9 +17,7 @@ import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.response.LinksResponse;
 import it.gov.pagopa.tkm.ms.acquirermanager.repository.BatchResultRepository;
 import it.gov.pagopa.tkm.ms.acquirermanager.repository.BinRangeRepository;
-import it.gov.pagopa.tkm.ms.acquirermanager.service.BinRangeHashService;
-import it.gov.pagopa.tkm.ms.acquirermanager.service.BlobService;
-import it.gov.pagopa.tkm.ms.acquirermanager.service.FileGeneratorService;
+import it.gov.pagopa.tkm.ms.acquirermanager.service.BinRangeService;
 import it.gov.pagopa.tkm.ms.acquirermanager.thread.GenBinRangeCallable;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections.CollectionUtils;
@@ -30,7 +28,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.sleuth.*;
 import org.springframework.stereotype.Service;
 
-import javax.persistence.EntityManager;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -46,7 +43,7 @@ import static it.gov.pagopa.tkm.ms.acquirermanager.constant.BlobMetadataEnum.gen
 
 @Service
 @Log4j2
-public class BinRangeHashServiceImpl implements BinRangeHashService {
+public class BinRangeServiceImpl implements BinRangeService {
 
     @Autowired
     private BinRangeRepository binRangeRepository;
@@ -68,18 +65,6 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
 
     @Value("${batch.bin-range-gen.max-rows-in-files}")
     private int maxRowsInFiles;
-
-    @Value("${AZURE_KEYVAULT_PROFILE}")
-    private String profile;
-
-    @Autowired
-    private EntityManager entityManager;
-
-    @Autowired
-    private FileGeneratorService fileGeneratorService;
-
-    @Autowired
-    private BlobService blobService;
 
     @Autowired
     private GenBinRangeCallable genBinRangeCallable;
@@ -167,7 +152,7 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
         if (count == 0) {
             genBinRangeCallables.add(genBinRangeCallable.call(now, 0, 0, count));
         } else {
-            executeMoreThanZeroRow(now, genBinRangeCallables, count);
+            executeMoreThanZeroRows(now, genBinRangeCallables, count);
         }
         return genBinRangeCallables.stream().map(t -> {
             try {
@@ -180,7 +165,7 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
         }).collect(Collectors.toList());
     }
 
-    private void executeMoreThanZeroRow(Instant now, List<Future<BatchResultDetails>> genBinRangeCallables, long count) {
+    private void executeMoreThanZeroRows(Instant now, List<Future<BatchResultDetails>> genBinRangeCallables, long count) {
         int ceil;
         int rowInFile = maxRowsInFiles;
         ceil = (int) Math.ceil(count / (double) maxRowsInFiles);

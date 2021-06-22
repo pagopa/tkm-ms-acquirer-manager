@@ -32,10 +32,10 @@ import static org.mockito.Mockito.*;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ExtendWith(MockitoExtension.class)
-class TestBinRangeHashService {
+class TestBinRangeService {
 
     @InjectMocks
-    private BinRangeHashServiceImpl binRangeHashService;
+    private BinRangeServiceImpl binRangeHashService;
 
     @Mock
     private BlobServiceClientBuilder serviceClientBuilderMock;
@@ -138,7 +138,7 @@ class TestBinRangeHashService {
     void givenExistingFile_returnLinksResponseHashes() {
         startupAssumptions(false);
         when(pagedIterableMock.iterator()).thenReturn(testBeans.BLOB_LIST.iterator());
-        assertEquals(testBeans.LINKS_RESPONSE, binRangeHashService.getSasLinkResponse(BatchEnum.HTOKEN_HPAN_GEN));
+        assertEquals(testBeans.LINKS_RESPONSE, binRangeHashService.getSasLinkResponse(BatchEnum.KNOWN_HASHES_GEN));
     }
 
     @Test
@@ -146,7 +146,7 @@ class TestBinRangeHashService {
         startupAssumptions(true);
         when(pagedIterableMock.iterator()).thenReturn(Collections.emptyIterator());
         assertThrows(AcquirerDataNotFoundException.class, () -> binRangeHashService.getSasLinkResponse(BatchEnum.BIN_RANGE_GEN));
-        assertThrows(AcquirerDataNotFoundException.class, () -> binRangeHashService.getSasLinkResponse(BatchEnum.HTOKEN_HPAN_GEN));
+        assertThrows(AcquirerDataNotFoundException.class, () -> binRangeHashService.getSasLinkResponse(BatchEnum.KNOWN_HASHES_GEN));
     }
 
     //BIN RANGE FILE GENERATION

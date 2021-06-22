@@ -18,7 +18,6 @@ import org.springframework.data.domain.PageRequest;
 import javax.persistence.EntityManager;
 import java.io.IOException;
 
-import static it.gov.pagopa.tkm.ms.acquirermanager.constant.DefaultBeans.BIN_RANGE_GEN_LOCAL__1;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -49,7 +48,7 @@ class TestFileGeneratorService {
     @Test
     void givenBinRangeStream_generateFile() throws IOException {
         when(binRangeRepository.getAll(any(PageRequest.class))).thenReturn(testBeans.TKM_BIN_RANGES.stream());
-        BatchResultDetails details = fileGeneratorService.generateFileWithStream(DefaultBeans.INSTANT, 5, 0, 5, BIN_RANGE_GEN_LOCAL__1);
+        BatchResultDetails details = fileGeneratorService.generateBinRangesFile(DefaultBeans.INSTANT, 5, 0, 5);
         assertThat(testBeans.BIN_RANGE_BATCH_RESULT_DETAILS)
                 .usingRecursiveComparison()
                 .ignoringFields("sha256")
@@ -60,7 +59,7 @@ class TestFileGeneratorService {
 
     @Test
     void givenNoBinRanges_generateFile() throws IOException {
-        BatchResultDetails details = fileGeneratorService.generateFileWithStream(DefaultBeans.INSTANT, 0, 0, 0, BIN_RANGE_GEN_LOCAL__1);
+        BatchResultDetails details = fileGeneratorService.generateBinRangesFile(DefaultBeans.INSTANT, 0, 0, 0);
         assertThat(testBeans.BIN_RANGE_BATCH_RESULT_DETAILS_EMPTY)
                 .usingRecursiveComparison()
                 .ignoringFields("sha256")

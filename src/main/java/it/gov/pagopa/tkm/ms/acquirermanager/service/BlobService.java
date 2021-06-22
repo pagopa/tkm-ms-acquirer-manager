@@ -1,14 +1,14 @@
 package it.gov.pagopa.tkm.ms.acquirermanager.service;
 
-import com.azure.storage.blob.models.BlobItem;
-import it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum;
+import com.azure.storage.blob.models.*;
+import it.gov.pagopa.tkm.ms.acquirermanager.constant.*;
 
 import java.time.Instant;
 import java.util.List;
 
 public interface BlobService {
 
-    String uploadAcquirerFile(byte[] fileByte, Instant instant, String filename, String sha256, BatchEnum batchEnum);
+    String uploadFile(byte[] fileByte, Instant instant, String filename, String sha256, BatchEnum batch);
 
     void downloadFileHashingTmp(String remotePathFile, String localPathFileOut);
 

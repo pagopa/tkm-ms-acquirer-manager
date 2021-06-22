@@ -28,7 +28,7 @@ public class TestKnownHashesController {
     private KnownHashesControllerImpl KnownHashesController;
 
     @Mock
-    private BinRangeHashServiceImpl binRangeHashService;
+    private BinRangeServiceImpl binRangeHashService;
 
     private final ObjectMapper mapper = new ObjectMapper();
 
@@ -54,7 +54,7 @@ public class TestKnownHashesController {
 
     @Test
     void givenValidKnownHashesRequest_returnKnownHashesResponse() throws Exception {
-        when(binRangeHashService.getSasLinkResponse(BatchEnum.HTOKEN_HPAN_GEN)).thenReturn(testBeans.LINKS_RESPONSE);
+        when(binRangeHashService.getSasLinkResponse(BatchEnum.KNOWN_HASHES_GEN)).thenReturn(testBeans.LINKS_RESPONSE);
         mockMvc.perform(
                 get(ApiEndpoints.HTOKEN_HPAN_BASE_PATH + LINK))
                 .andExpect(status().isOk())

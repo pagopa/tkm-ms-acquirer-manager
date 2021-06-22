@@ -2,7 +2,7 @@ package it.gov.pagopa.tkm.ms.acquirermanager.constant;
 
 public enum BatchEnum {
     BIN_RANGE_GEN,
-    HTOKEN_HPAN_GEN,
+    KNOWN_HASHES_GEN,
     BIN_RANGE_RETRIEVAL,
-    HTOKEN_HPAN_COPY
+    KNOWN_HASHES_COPY
 }
