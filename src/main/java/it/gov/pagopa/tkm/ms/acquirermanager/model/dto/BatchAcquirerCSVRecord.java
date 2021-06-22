@@ -1,23 +1,22 @@
 package it.gov.pagopa.tkm.ms.acquirermanager.model.dto;
 
-
 import com.univocity.parsers.annotations.Parsed;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ReadQueue {
+public class BatchAcquirerCSVRecord {
 
-    private String taxCode;
-    private String pan;
-    private String hpan;
-    private String par;
+    @Parsed(index = 0)
+    private String token;
+
+    @Parsed(index = 1)
     private CircuitEnum circuit;
-    private List<Token> tokens;
+
+    @Parsed(index = 2)
+    private String par;
 
 }
