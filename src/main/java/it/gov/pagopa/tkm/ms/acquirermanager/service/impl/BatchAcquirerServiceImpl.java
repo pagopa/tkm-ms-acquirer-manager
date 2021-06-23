@@ -27,14 +27,12 @@ import org.springframework.cloud.sleuth.Span;
 import org.springframework.cloud.sleuth.Tracer;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.io.*;
 
 @Service
 @Log4j2
@@ -110,6 +108,7 @@ public class BatchAcquirerServiceImpl implements BatchAcquirerService {
             List<BatchAcquirerCSVRecord> parsedRows = parseCSVFile(fileOutputClear);
             sendToQueue(parsedRows);
             build.setSuccess(true);
+            log.info("Sent");
         } catch (Exception e) {
             log.error("Failed queueBatchAcquirerResult to elaborate: " + zipFilePath, e);
             build.setErrorMessage(e.getMessage());
@@ -121,6 +120,9 @@ public class BatchAcquirerServiceImpl implements BatchAcquirerService {
 
     private void sendToQueue(List<BatchAcquirerCSVRecord> parsedRows) throws JsonProcessingException, PGPException {
         for (BatchAcquirerCSVRecord row : parsedRows) {
+            if (!row.getCircuit().isAllowedValue())
+                continue;
+
             ReadQueue message = new ReadQueue();
             message.setCircuit(row.getCircuit());
             message.setPar(row.getPar());
@@ -153,7 +155,7 @@ public class BatchAcquirerServiceImpl implements BatchAcquirerService {
                 new File(filePath)), StandardCharsets.UTF_8);
         BeanListProcessor<BatchAcquirerCSVRecord> rowProcessor = new BeanListProcessor<>(BatchAcquirerCSVRecord.class);
         CsvParserSettings settings = new CsvParserSettings();
-        settings.setHeaderExtractionEnabled(true);
+        settings.setHeaderExtractionEnabled(false);
         settings.setProcessor(rowProcessor);
         settings.getFormat().setDelimiter(";");
         CsvParser parser = new CsvParser(settings);
