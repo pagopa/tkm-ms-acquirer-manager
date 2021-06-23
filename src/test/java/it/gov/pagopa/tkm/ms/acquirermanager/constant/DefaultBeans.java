@@ -39,7 +39,7 @@ public class DefaultBeans {
     public static final String BIN_RANGE_GEN_LOCAL__1_NO_DATE = "BIN_RANGE_GEN_LOCAL_19700101_1.csv";
 
     public final LinksResponse LINKS_RESPONSE = LinksResponse.builder()
-            .fileLinks(Collections.singletonList("null/TESTNAME?null"))
+            .fileLinks(Collections.singletonList("null/" + TESTNAME + "?null"))
             .numberOfFiles(1)
             .availableUntil(null)
             .generationDate(null)
@@ -137,7 +137,7 @@ public class DefaultBeans {
                     .max("0001")
                     .insertDate(INSTANT)
                     .build()
-            );
+    );
 
     public final TkmBatchResult VISA_BIN_RANGE_RETRIEVAL_BATCH_RESULT = TkmBatchResult.builder()
             .runOutcome(true)

@@ -1,7 +1,10 @@
 package it.gov.pagopa.tkm.ms.acquirermanager.service;
 
+import com.azure.core.http.rest.PagedIterable;
 import com.azure.storage.blob.*;
-import com.azure.storage.blob.specialized.*;
+import com.azure.storage.blob.models.BlobItem;
+import com.azure.storage.blob.models.ListBlobsOptions;
+import com.azure.storage.blob.specialized.AppendBlobClient;
 import it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum;
 import it.gov.pagopa.tkm.ms.acquirermanager.constant.DefaultBeans;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.impl.BlobServiceImpl;
@@ -15,13 +18,16 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.InputStream;
+import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.mockito.Mockito.*;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ExtendWith(MockitoExtension.class)
-public class TestBlobService {
+class TestBlobService {
 
     @InjectMocks
     private BlobServiceImpl blobService;
@@ -47,6 +53,11 @@ public class TestBlobService {
     @Mock
     private DateTimeFormatter dateFormatMock;
 
+    @Mock
+    private PagedIterable<BlobItem> pagedIterable;
+
+    private DefaultBeans defaultBeans = new DefaultBeans();
+
     @BeforeEach
     void init() {
         ReflectionTestUtils.setField(blobService, "containerNameBinHash", DefaultBeans.TEST_CONTAINER_NAME);
@@ -61,10 +72,45 @@ public class TestBlobService {
         when(serviceClientBuilderMock.buildClient()).thenReturn(serviceClientMock);
         when(serviceClientMock.getBlobContainerClient(DefaultBeans.TEST_CONTAINER_NAME)).thenReturn(containerClientMock);
         when(containerClientMock.getBlobClient(any())).thenReturn(blobClientMock);
-        when(blobClientMock.getAppendBlobClient()).thenReturn(appendBlobClientMock);
         blobService.uploadFile(new byte[]{}, DefaultBeans.INSTANT, "filename", "sha", BatchEnum.BIN_RANGE_GEN);
         verify(blobClientMock).upload(any(InputStream.class), anyLong(), anyBoolean());
         verify(blobClientMock).setMetadata(anyMap());
     }
 
+    @Test
+    void downloadFileHashingTmp_success() {
+        when(serviceClientBuilderMock.connectionString(DefaultBeans.TEST_CONNECTION_STRING)).thenReturn(serviceClientBuilderMock);
+        when(serviceClientBuilderMock.buildClient()).thenReturn(serviceClientMock);
+        when(serviceClientMock.getBlobContainerClient(DefaultBeans.TEST_CONTAINER_NAME)).thenReturn(containerClientMock);
+        when(containerClientMock.getBlobClient(any())).thenReturn(blobClientMock);
+        String localPath = "localPath";
+        blobService.downloadFileHashingTmp("remotePath", localPath);
+        verify(blobClientMock).downloadToFile(eq(localPath), eq(true));
+    }
+
+    @Test
+    void getBlobItemsInFolderHashingTmp_success() {
+        when(serviceClientBuilderMock.connectionString(DefaultBeans.TEST_CONNECTION_STRING)).thenReturn(serviceClientBuilderMock);
+        when(serviceClientBuilderMock.buildClient()).thenReturn(serviceClientMock);
+        when(serviceClientMock.getBlobContainerClient(DefaultBeans.TEST_CONTAINER_NAME)).thenReturn(containerClientMock);
+        when(containerClientMock.listBlobsByHierarchy(anyString(), any(ListBlobsOptions.class), any())).thenReturn(pagedIterable);
+        when(pagedIterable.iterator()).thenReturn(defaultBeans.BLOB_LIST.iterator());
+
+        List<BlobItem> items = blobService.getBlobItemsInFolderHashingTmp("items");
+        assertIterableEquals(defaultBeans.BLOB_LIST, items);
+    }
+
+    @Test
+    void deleteTodayFolder_success() {
+        when(serviceClientBuilderMock.connectionString(DefaultBeans.TEST_CONNECTION_STRING)).thenReturn(serviceClientBuilderMock);
+        when(serviceClientBuilderMock.buildClient()).thenReturn(serviceClientMock);
+        when(serviceClientMock.getBlobContainerClient(DefaultBeans.TEST_CONTAINER_NAME)).thenReturn(containerClientMock);
+        when(containerClientMock.listBlobsByHierarchy(anyString(), any(ListBlobsOptions.class), any())).thenReturn(pagedIterable);
+        when(pagedIterable.iterator()).thenReturn(defaultBeans.BLOB_LIST.iterator());
+        when(containerClientMock.getBlobClient(any())).thenReturn(blobClientMock);
+
+        blobService.deleteTodayFolder(Instant.now(), BatchEnum.BIN_RANGE_GEN);
+        verify(blobClientMock).delete();
+
+    }
 }
