@@ -18,7 +18,7 @@ public class PgpUtils {
     private PgpUtils() {
     }
 
-    private static final BouncyCastleProvider provider = new BouncyCastleProvider();
+//    private static final BouncyCastleProvider provider = new BouncyCastleProvider();
 
     public static void decrypt(String fileInput, byte[] privateKeyBytes, char[] passphraseChars, String fileOutput) throws IOException, PGPException {
         try (BufferedInputStream inputStream = new BufferedInputStream(new FileInputStream(fileInput))) {
@@ -38,13 +38,13 @@ public class PgpUtils {
                 publicKeyEncryptedData = (PGPPublicKeyEncryptedData) iterator.next();
                 PGPSecretKey secretKey = secretKeyRingCollection.getSecretKey(publicKeyEncryptedData.getKeyID());
                 if (secretKey != null) {
-                    privateKey = secretKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider(provider).build(passphraseChars));
+                    privateKey = secretKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider( new BouncyCastleProvider()).build(passphraseChars));
                 }
             }
             if (privateKey == null) {
                 throw new IllegalArgumentException("Secret key for message not found.");
             }
-            InputStream decryptedMessageStream = publicKeyEncryptedData.getDataStream(new JcePublicKeyDataDecryptorFactoryBuilder().setProvider(provider).build(privateKey));
+            InputStream decryptedMessageStream = publicKeyEncryptedData.getDataStream(new JcePublicKeyDataDecryptorFactoryBuilder().setProvider( new BouncyCastleProvider()).build(privateKey));
             PGPObjectFactory decryptedObjectFactory = new PGPObjectFactory(decryptedMessageStream, new JcaKeyFingerprintCalculator());
             Object nextObject = decryptedObjectFactory.nextObject();
             if (nextObject instanceof PGPCompressedData) {

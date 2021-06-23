@@ -1,6 +1,7 @@
 package it.gov.pagopa.tkm.ms.acquirermanager.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.collect.Lists;
 import com.univocity.parsers.common.processor.BeanListProcessor;
 import com.univocity.parsers.csv.CsvParser;
 import com.univocity.parsers.csv.CsvParserSettings;
@@ -12,6 +13,7 @@ import it.gov.pagopa.tkm.ms.acquirermanager.model.dto.Token;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.TkmBatchResult;
 import it.gov.pagopa.tkm.ms.acquirermanager.repository.BatchResultRepository;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.BatchAcquirerService;
+import it.gov.pagopa.tkm.ms.acquirermanager.thread.SendBatchAcquirerRecordToQueue;
 import it.gov.pagopa.tkm.ms.acquirermanager.util.ObjectMapperUtils;
 import it.gov.pagopa.tkm.ms.acquirermanager.util.PgpUtils;
 import it.gov.pagopa.tkm.ms.acquirermanager.util.SftpUtils;
@@ -33,6 +35,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.Future;
 
 @Service
 @Log4j2
@@ -64,6 +67,9 @@ public class BatchAcquirerServiceImpl implements BatchAcquirerService {
 
     @Autowired
     private ProducerServiceImpl producerService;
+
+    @Autowired
+    private SendBatchAcquirerRecordToQueue sendBatchAcquirerRecordToQueue;
 
     @Override
     public void queueBatchAcquirerResult() {
@@ -106,7 +112,20 @@ public class BatchAcquirerServiceImpl implements BatchAcquirerService {
             log.debug("File decrypted " + fileOutputClear);
             PgpUtils.decrypt(fileInputPgp, pgpPrivateKey, pgpPassPhrase, fileOutputClear);
             List<BatchAcquirerCSVRecord> parsedRows = parseCSVFile(fileOutputClear);
-            sendToQueue(parsedRows);
+            List<List<BatchAcquirerCSVRecord>> partition = Lists.partition(parsedRows, 50000);
+            Future<Void> voidFuture = sendBatchAcquirerRecordToQueue.sendToQueue(partition.get(0));
+            Future<Void> voidFuture1 = sendBatchAcquirerRecordToQueue.sendToQueue(partition.get(1));
+            Future<Void> voidFuture2 = sendBatchAcquirerRecordToQueue.sendToQueue(partition.get(2));
+            Future<Void> voidFuture3 = sendBatchAcquirerRecordToQueue.sendToQueue(partition.get(4));
+            Future<Void> voidFuture4 = sendBatchAcquirerRecordToQueue.sendToQueue(partition.get(5));
+            Future<Void> voidFuture5 = sendBatchAcquirerRecordToQueue.sendToQueue(partition.get(6));
+
+            voidFuture.get();
+            voidFuture1.get();
+            voidFuture2.get();
+            voidFuture3.get();
+            voidFuture4.get();
+            voidFuture5.get();
             build.setSuccess(true);
             log.info("Sent");
         } catch (Exception e) {
@@ -119,6 +138,9 @@ public class BatchAcquirerServiceImpl implements BatchAcquirerService {
     }
 
     private void sendToQueue(List<BatchAcquirerCSVRecord> parsedRows) throws JsonProcessingException, PGPException {
+        String s = UUID.randomUUID().toString();
+        Instant now = Instant.now();
+        int count = 0;
         for (BatchAcquirerCSVRecord row : parsedRows) {
             if (!row.getCircuit().isAllowedValue())
                 continue;
@@ -130,6 +152,14 @@ public class BatchAcquirerServiceImpl implements BatchAcquirerService {
             tokens.add(new Token(row.getToken(), null));
             message.setTokens(tokens);
             producerService.sendMessage(message);
+            count++;
+            Instant now2 = Instant.now();
+            long l = now2.toEpochMilli() - now.toEpochMilli();
+            if (l >= 1000) {
+                now = now2;
+                System.out.println("Count " + s + ": " + l + " " + count);
+                count = 0;
+            }
         }
     }
 
