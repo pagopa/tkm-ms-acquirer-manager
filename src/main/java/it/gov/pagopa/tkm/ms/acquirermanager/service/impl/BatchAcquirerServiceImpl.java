@@ -70,25 +70,25 @@ public class BatchAcquirerServiceImpl implements BatchAcquirerService {
     @Override
     public void queueBatchAcquirerResult() {
         Instant now = Instant.now();
-        List<BatchResultDetails> batchResultDetailsLis = new ArrayList<>();
+        List<BatchResultDetails> batchResultDetailsList = new ArrayList<>();
         try {
             log.info("Read and unzip files");
-            List<RemoteResourceInfo> remoteResourceInfos = sftpUtils.listFile();
-            log.debug("Remote files " + remoteResourceInfos);
-            for (RemoteResourceInfo remoteFile : remoteResourceInfos) {
+            List<RemoteResourceInfo> remoteResourceInfo = sftpUtils.listFile();
+            log.debug("Remote files " + remoteResourceInfo);
+            for (RemoteResourceInfo remoteFile : remoteResourceInfo) {
                 String workingDir = FileUtils.getTempDirectoryPath() + File.separator + UUID.randomUUID();
                 createWorkingDir(workingDir);
                 log.debug("Working dir " + workingDir);
                 String zipFilePath = workingDir + File.separator + remoteFile.getName();
                 sftpUtils.downloadFile(remoteFile.getPath(), zipFilePath);
-                batchResultDetailsLis.add(workOnFile(zipFilePath, workingDir));
+                batchResultDetailsList.add(workOnFile(zipFilePath, workingDir));
             }
         } catch (Exception e) {
             BatchResultDetails build = BatchResultDetails.builder().errorMessage(e.getMessage()).success(false).build();
-            batchResultDetailsLis.add(build);
+            batchResultDetailsList.add(build);
             log.error("Failed queueBatchAcquirerResult on download", e);
         }
-        saveBatchResult(now, batchResultDetailsLis);
+        saveBatchResult(now, batchResultDetailsList);
     }
 
     private void createWorkingDir(String workingDir) throws IOException {
@@ -149,8 +149,7 @@ public class BatchAcquirerServiceImpl implements BatchAcquirerService {
     }
 
     private List<BatchAcquirerCSVRecord> parseCSVFile(String filePath) throws FileNotFoundException {
-        Reader inputReader = new InputStreamReader(new FileInputStream(
-                new File(filePath)), StandardCharsets.UTF_8);
+        Reader inputReader = new InputStreamReader(new FileInputStream(filePath), StandardCharsets.UTF_8);
         BeanListProcessor<BatchAcquirerCSVRecord> rowProcessor = new BeanListProcessor<>(BatchAcquirerCSVRecord.class);
         CsvParserSettings settings = new CsvParserSettings();
         settings.setHeaderExtractionEnabled(true);
