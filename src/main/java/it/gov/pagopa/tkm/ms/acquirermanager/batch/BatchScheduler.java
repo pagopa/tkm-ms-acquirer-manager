@@ -3,7 +3,7 @@ package it.gov.pagopa.tkm.ms.acquirermanager.batch;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.BinRangeService;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.KnownHashesCopyService;
-import it.gov.pagopa.tkm.ms.acquirermanager.service.KnownHashesService;
+import it.gov.pagopa.tkm.ms.acquirermanager.service.KnownHashesGenService;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;

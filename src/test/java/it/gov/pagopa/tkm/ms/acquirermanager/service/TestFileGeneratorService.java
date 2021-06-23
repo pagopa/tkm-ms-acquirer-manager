@@ -78,16 +78,14 @@ class TestFileGeneratorService {
     @Test
     void generateKnownHashesFile_success() {
         String fileName = "KNOWN_HASHES_GEN_LOCAL_date_0.csv";
-        String sha256 = "77086513020c7a6f2d2d42a9d0fc243e81b6b78f443c1517cda15e609c8c9e85";
         BatchResultDetails build = BatchResultDetails.builder()
                 .fileName(fileName)
                 .success(true)
-                .sha256(sha256)
                 .numberOfRows(2)
                 .build();
         Instant now = Instant.now();
         BatchResultDetails batchResultDetails = fileGeneratorService.generateKnownHashesFile(now, 0, Arrays.asList("hash", "hash2"));
         Assertions.assertEquals(build, batchResultDetails);
-        verify(blobService).uploadFile(any(), eq(now), eq(fileName), eq(sha256), eq(BatchEnum.KNOWN_HASHES_GEN));
+        verify(blobService).uploadFile(any(), eq(now), eq(fileName), eq(null), eq(BatchEnum.KNOWN_HASHES_GEN));
     }
 }

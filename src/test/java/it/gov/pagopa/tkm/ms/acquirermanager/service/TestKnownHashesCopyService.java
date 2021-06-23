@@ -72,7 +72,7 @@ class TestKnownHashesCopyService {
 
     @Test
     void copyKnownHashesFiles_success() throws IOException {
-        when(blobService.getBlobItemsInFolderHashingTmp(anyString())).thenReturn(defaultBeans.BLOB_LIST);
+        when(blobService.getFilesFromDirectory(anyString())).thenReturn(defaultBeans.BLOB_LIST);
         when(blobService.uploadFile(any(), any(Instant.class), anyString(), anyString(), any(BatchEnum.class))).thenReturn(DefaultBeans.TESTNAME);
         String mapperUtilsString = "{}";
         when(mapperUtils.toJsonOrNull(any())).thenReturn(mapperUtilsString);
@@ -102,7 +102,7 @@ class TestKnownHashesCopyService {
 
     @Test
     void copyKnownHashesFiles_exceptionDownload(){
-        when(blobService.getBlobItemsInFolderHashingTmp(anyString())).thenReturn(defaultBeans.BLOB_LIST);
+        when(blobService.getFilesFromDirectory(anyString())).thenReturn(defaultBeans.BLOB_LIST);
         String mapperUtilsString = "{\"errorMessage\": \"message\"}";
         when(mapperUtils.toJsonOrNull(any())).thenReturn(mapperUtilsString);
         knownHashesCopyService.copyKnownHashesFiles();

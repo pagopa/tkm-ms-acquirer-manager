@@ -12,7 +12,7 @@ public interface BlobService {
 
     void downloadFileHashingTmp(String remotePathFile, String localPathFileOut);
 
-    List<BlobItem> getBlobItemsInFolderHashingTmp(String folderPath);
+    List<BlobItem> getFilesFromDirectory(String directory);
 
     void deleteTodayFolder(Instant now, BatchEnum batch);
 

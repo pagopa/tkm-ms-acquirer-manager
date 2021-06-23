@@ -8,11 +8,10 @@ import com.azure.storage.blob.models.BlobItem;
 import com.azure.storage.blob.models.BlobListDetails;
 import com.azure.storage.blob.models.ListBlobsOptions;
 import it.gov.pagopa.tkm.constant.TkmDatetimeConstant;
-import it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum;
-import it.gov.pagopa.tkm.ms.acquirermanager.constant.DirectoryNames;
+import it.gov.pagopa.tkm.ms.acquirermanager.constant.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.BlobService;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.*;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -33,7 +32,6 @@ import static it.gov.pagopa.tkm.ms.acquirermanager.constant.BlobMetadataEnum.gen
 @Log4j2
 public class BlobServiceImpl implements BlobService {
 
-    private static final String SUFFIX = "/";
     private final BlobServiceClientBuilder serviceClientBuilder = new BlobServiceClientBuilder();
 
     private final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("uuuuMMdd").withZone(ZoneId.of(TkmDatetimeConstant.DATE_TIME_TIMEZONE));
@@ -82,13 +80,14 @@ public class BlobServiceImpl implements BlobService {
     }
 
     private String getDirectoryName(Instant instant, BatchEnum batch) {
+        String today = dateFormat.format(instant);
         switch (batch) {
             case BIN_RANGE_GEN:
+                return String.format("%s/%s/", DirectoryNames.BIN_RANGES, today);
             case KNOWN_HASHES_COPY:
-                String today = dateFormat.format(instant);
-                return String.format("%s/%s/", batch, today);
+                return String.format("%s/%s/", DirectoryNames.KNOWN_HASHES, today);
             case KNOWN_HASHES_GEN:
-                return String.format("%s/%s/", batch, DirectoryNames.ALL_HASHES);
+                return String.format("%s/%s/", DirectoryNames.KNOWN_HASHES, DirectoryNames.ALL_KNOWN_HASHES);
             default:
                 return null;
         }
@@ -114,24 +113,24 @@ public class BlobServiceImpl implements BlobService {
     }
 
     @Override
-    public List<BlobItem> getBlobItemsInFolderHashingTmp(String folderPath) {
+    public List<BlobItem> getFilesFromDirectory(String directory) {
+        directory = StringUtils.appendIfMissing(directory, Constants.BLOB_STORAGE_DELIMITER);
         BlobContainerClient client = getBlobContainerClient();
-        folderPath = StringUtils.appendIfMissing(folderPath, SUFFIX);
-        log.info("Looking for directory: " + folderPath);
+        log.info("Looking for directory: " + directory);
         BlobListDetails blobListDetails = new BlobListDetails().setRetrieveMetadata(true);
         ListBlobsOptions listBlobsOptions = new ListBlobsOptions()
-                .setPrefix(folderPath)
+                .setPrefix(directory)
                 .setDetails(blobListDetails);
         List<BlobItem> blobItemList = new ArrayList<>();
-        client.listBlobsByHierarchy(SUFFIX, listBlobsOptions, null).iterator().forEachRemaining(blobItemList::add);
-        log.debug("Found in directory: " + blobItemList);
+        client.listBlobsByHierarchy(Constants.BLOB_STORAGE_DELIMITER, listBlobsOptions, null).iterator().forEachRemaining(blobItemList::add);
+        log.debug("Found files in directory: " + blobItemList);
         return blobItemList;
     }
 
     @Override
     public void deleteTodayFolder(Instant now, BatchEnum batch) {
         String directoryName = getDirectoryName(now, batch);
-        List<BlobItem> blobItemsInFolderHashingTmp = getBlobItemsInFolderHashingTmp(directoryName);
+        List<BlobItem> blobItemsInFolderHashingTmp = getFilesFromDirectory(directoryName);
         BlobContainerClient client = getBlobContainerClient();
         for (BlobItem blobItem : blobItemsInFolderHashingTmp) {
             log.warn("The destination folder is not empty. Deleting " + blobItem.getName());

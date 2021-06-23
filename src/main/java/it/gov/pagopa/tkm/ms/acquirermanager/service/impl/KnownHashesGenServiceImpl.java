@@ -165,7 +165,7 @@ public class KnownHashesGenServiceImpl implements KnownHashesGenService {
     private BlobItem getLastGeneratedFile(String filename) {
         BlobServiceClient serviceClient = serviceClientBuilder.connectionString(connectionString).buildClient();
         BlobContainerClient client = serviceClient.getBlobContainerClient(containerName);
-        String completePath = String.format("%s/%s/%s", KNOWN_HASHES_GEN, DirectoryNames.ALL_HASHES, filename);
+        String completePath = String.format("%s/%s/%s", DirectoryNames.KNOWN_HASHES, DirectoryNames.ALL_KNOWN_HASHES, filename);
         log.info("Looking for file: " + completePath);
         BlobListDetails blobListDetails = new BlobListDetails().setRetrieveMetadata(true);
         ListBlobsOptions listBlobsOptions = new ListBlobsOptions()

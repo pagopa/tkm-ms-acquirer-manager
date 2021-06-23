@@ -56,7 +56,7 @@ class TestBlobService {
     @Mock
     private PagedIterable<BlobItem> pagedIterable;
 
-    private DefaultBeans defaultBeans = new DefaultBeans();
+    private final DefaultBeans defaultBeans = new DefaultBeans();
 
     @BeforeEach
     void init() {
@@ -96,7 +96,7 @@ class TestBlobService {
         when(containerClientMock.listBlobsByHierarchy(anyString(), any(ListBlobsOptions.class), any())).thenReturn(pagedIterable);
         when(pagedIterable.iterator()).thenReturn(defaultBeans.BLOB_LIST.iterator());
 
-        List<BlobItem> items = blobService.getBlobItemsInFolderHashingTmp("items");
+        List<BlobItem> items = blobService.getFilesFromDirectory("items");
         assertIterableEquals(defaultBeans.BLOB_LIST, items);
     }
 

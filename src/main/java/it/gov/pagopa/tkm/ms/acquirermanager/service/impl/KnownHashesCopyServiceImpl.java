@@ -13,6 +13,7 @@ import it.gov.pagopa.tkm.ms.acquirermanager.util.ZipUtils;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.sleuth.Span;
 import org.springframework.cloud.sleuth.Tracer;
@@ -32,6 +33,7 @@ import java.util.List;
 @Log4j2
 @Service
 public class KnownHashesCopyServiceImpl implements KnownHashesCopyService {
+
     @Autowired
     private BlobService blobService;
 
@@ -48,7 +50,7 @@ public class KnownHashesCopyServiceImpl implements KnownHashesCopyService {
 
     @PostConstruct
     public void init() throws IOException {
-        Files.createDirectories(Paths.get(FileUtils.getTempDirectoryPath() + File.separator + DirectoryNames.ALL_HASHES));
+        Files.createDirectories(Paths.get(StringUtils.joinWith(File.separator, FileUtils.getTempDirectoryPath(), DirectoryNames.KNOWN_HASHES, DirectoryNames.ALL_KNOWN_HASHES)));
     }
 
     @Override
@@ -58,14 +60,14 @@ public class KnownHashesCopyServiceImpl implements KnownHashesCopyService {
         log.info("Start of known hashes copy batch " + traceId);
         Instant now = Instant.now();
         List<BatchResultDetails> batchResultDetails = new ArrayList<>();
-        List<BlobItem> knownHashesTmp = blobService.getBlobItemsInFolderHashingTmp(DirectoryNames.ALL_HASHES.name());
+        List<BlobItem> allKnownHashesFiles = blobService.getFilesFromDirectory(StringUtils.joinWith(Constants.BLOB_STORAGE_DELIMITER, DirectoryNames.KNOWN_HASHES, DirectoryNames.ALL_KNOWN_HASHES));
         blobService.deleteTodayFolder(now, BatchEnum.KNOWN_HASHES_COPY);
-        log.debug("Found: " + knownHashesTmp);
-        for (BlobItem blobItem : knownHashesTmp) {
+        log.debug("Found: " + allKnownHashesFiles);
+        for (BlobItem blobItem : allKnownHashesFiles) {
             batchResultDetails.add(copyFileToDestinationForAcquirer(now, blobItem));
         }
         saveBatchResult(now, batchResultDetails);
-        log.info("End of known hashes generation batch " + traceId);
+        log.info("End of known hashes copy batch " + traceId);
     }
 
     private void saveBatchResult(Instant now, List<BatchResultDetails> batchResultDetails) {
@@ -118,4 +120,5 @@ public class KnownHashesCopyServiceImpl implements KnownHashesCopyService {
         }
         return newFileName;
     }
+
 }

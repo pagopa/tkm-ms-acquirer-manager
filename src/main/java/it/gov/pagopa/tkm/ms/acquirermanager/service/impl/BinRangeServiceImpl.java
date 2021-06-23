@@ -110,7 +110,7 @@ public class BinRangeServiceImpl implements BinRangeService {
 
     private List<BlobItem> getBlobItems(BlobContainerClient client, BatchEnum batchEnum) {
         Instant now = Instant.now();
-        String directory = String.format("%s/%s/", batchEnum, dateFormat.format(now));
+        String directory = String.format("%s/%s/", DirectoryNames.BIN_RANGES, dateFormat.format(now));
         log.info("Looking for directory: " + directory);
         BlobListDetails blobListDetails = new BlobListDetails().setRetrieveMetadata(true);
         ListBlobsOptions listBlobsOptions = new ListBlobsOptions()
