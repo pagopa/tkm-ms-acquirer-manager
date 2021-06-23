@@ -35,6 +35,7 @@ import static org.mockito.Mockito.*;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ExtendWith(MockitoExtension.class)
 class TestKnownHashesCopyService {
+
     private static final String TRACE_ID = "traceId";
     @InjectMocks
     private KnownHashesCopyServiceImpl knownHashesCopyService;
@@ -59,7 +60,7 @@ class TestKnownHashesCopyService {
 
     private final ArgumentCaptor<TkmBatchResult> batchResultArgumentCaptor = ArgumentCaptor.forClass(TkmBatchResult.class);
 
-    private DefaultBeans defaultBeans = new DefaultBeans();
+    private final DefaultBeans defaultBeans = new DefaultBeans();
     private final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("uuuuMMdd").withZone(ZoneId.of(TkmDatetimeConstant.DATE_TIME_TIMEZONE));
 
     @BeforeEach
@@ -82,14 +83,12 @@ class TestKnownHashesCopyService {
         verify(blobService).uploadFile(any(), any(Instant.class),
                 eq(DefaultBeans.TESTNAME.replace("date", dateFormat.format(Instant.now()))),
                 Mockito.matches("[a-z0-9]{16}"), eq(BatchEnum.KNOWN_HASHES_COPY));
-
         TkmBatchResult build = TkmBatchResult.builder().
                 runOutcome(true)
                 .executionTraceId(TRACE_ID)
                 .targetBatch(BatchEnum.KNOWN_HASHES_COPY)
                 .details(mapperUtilsString)
                 .build();
-
         verify(batchResultRepository).save(batchResultArgumentCaptor.capture());
         TkmBatchResult value = batchResultArgumentCaptor.getValue();
         assertThat(value)
@@ -101,20 +100,18 @@ class TestKnownHashesCopyService {
     }
 
     @Test
-    void copyKnownHashesFiles_exceptionDownload(){
+    void copyKnownHashesFiles_exceptionDownload() {
         when(blobService.getFilesFromDirectory(anyString())).thenReturn(defaultBeans.BLOB_LIST);
         String mapperUtilsString = "{\"errorMessage\": \"message\"}";
         when(mapperUtils.toJsonOrNull(any())).thenReturn(mapperUtilsString);
         knownHashesCopyService.copyKnownHashesFiles();
         verify(blobService, never()).uploadFile(any(), any(Instant.class), anyString(), anyString(), any((BatchEnum.class)));
-
         TkmBatchResult build = TkmBatchResult.builder().
                 runOutcome(false)
                 .executionTraceId(TRACE_ID)
                 .targetBatch(BatchEnum.KNOWN_HASHES_COPY)
                 .details(mapperUtilsString)
                 .build();
-
         verify(batchResultRepository).save(batchResultArgumentCaptor.capture());
         TkmBatchResult value = batchResultArgumentCaptor.getValue();
         assertThat(value)
@@ -124,4 +121,5 @@ class TestKnownHashesCopyService {
         assertTrue(value.getRunDurationMillis() > 0);
         assertNotNull(value.getRunDate());
     }
+
 }

@@ -63,7 +63,7 @@ public class KnownHashesGenServiceImpl implements KnownHashesGenService {
     private final BlobServiceClientBuilder serviceClientBuilder = new BlobServiceClientBuilder();
 
     @Override
-    public void generateKnownHashesFiles() throws JsonProcessingException {
+    public void generateKnownHashesFiles() {
         Span span = tracer.currentSpan();
         String traceId = span != null ? span.context().traceId() : "noTraceId";
         log.info("Start of known hashes generation batch " + traceId);
@@ -78,10 +78,18 @@ public class KnownHashesGenServiceImpl implements KnownHashesGenService {
         List<BatchResultDetails> batchResultDetails = callCardManagerForKnownHpans(now);
         long duration = Instant.now().toEpochMilli() - start;
         batchResult.setRunDurationMillis(duration);
-        batchResult.setDetails(mapper.writeValueAsString(batchResultDetails));
+        batchResult.setDetails(writeAsJson(batchResultDetails));
         batchResult.setRunOutcome(batchResultDetails.stream().allMatch(BatchResultDetails::isSuccess));
         batchResultRepository.save(batchResult);
         log.info("End of known hashes generation batch " + traceId);
+    }
+
+    private String writeAsJson(Object object) {
+        try {
+            return mapper.writeValueAsString(object);
+        } catch (JsonProcessingException e) {
+            return null;
+        }
     }
 
     private List<BatchResultDetails> callCardManagerForKnownHpans(Instant now) {

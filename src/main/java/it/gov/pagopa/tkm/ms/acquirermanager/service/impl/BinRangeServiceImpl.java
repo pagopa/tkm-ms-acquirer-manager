@@ -72,6 +72,9 @@ public class BinRangeServiceImpl implements BinRangeService {
     @Autowired
     private Tracer tracer;
 
+    @Autowired
+    private BlobServiceImpl blobService;
+
     private final BlobServiceClientBuilder serviceClientBuilder = new BlobServiceClientBuilder();
     private final BlobClientBuilder blobClientBuilder = new BlobClientBuilder();
     private final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("uuuuMMdd").withZone(ZoneId.of(TkmDatetimeConstant.DATE_TIME_TIMEZONE));
@@ -108,9 +111,9 @@ public class BinRangeServiceImpl implements BinRangeService {
         return instant;
     }
 
-    private List<BlobItem> getBlobItems(BlobContainerClient client, BatchEnum batchEnum) {
+    private List<BlobItem> getBlobItems(BlobContainerClient client, BatchEnum batch) {
         Instant now = Instant.now();
-        String directory = String.format("%s/%s/", DirectoryNames.BIN_RANGES, dateFormat.format(now));
+        String directory = blobService.getDirectoryName(now, batch);
         log.info("Looking for directory: " + directory);
         BlobListDetails blobListDetails = new BlobListDetails().setRetrieveMetadata(true);
         ListBlobsOptions listBlobsOptions = new ListBlobsOptions()
@@ -179,7 +182,7 @@ public class BinRangeServiceImpl implements BinRangeService {
     }
 
     @Override
-    public void generateBinRangeFiles() throws JsonProcessingException {
+    public void generateBinRangeFiles() {
         Span span = tracer.currentSpan();
         String traceId = span != null ? span.context().traceId() : "noTraceId";
         log.info("Start of bin range generation batch " + traceId);
@@ -194,14 +197,22 @@ public class BinRangeServiceImpl implements BinRangeService {
         List<BatchResultDetails> batchResultDetails = executeThreads(now);
         long duration = Instant.now().toEpochMilli() - start;
         batchResult.setRunDurationMillis(duration);
-        batchResult.setDetails(mapper.writeValueAsString(batchResultDetails));
+        batchResult.setDetails(writeAsJson(batchResultDetails));
         batchResult.setRunOutcome(batchResultDetails.stream().allMatch(BatchResultDetails::isSuccess));
         batchResultRepository.save(batchResult);
         log.info("End of bin range generation batch " + traceId);
     }
 
+    private String writeAsJson(Object object) {
+        try {
+            return mapper.writeValueAsString(object);
+        } catch (JsonProcessingException e) {
+            return null;
+        }
+    }
+
     @Override
-    public void retrieveVisaBinRanges() throws JsonProcessingException {
+    public void retrieveVisaBinRanges() {
         Span span = tracer.currentSpan();
         String traceId = span != null ? span.context().traceId() : "noTraceId";
         log.info("Start of Visa bin range retrieval batch " + traceId);
@@ -227,7 +238,7 @@ public class BinRangeServiceImpl implements BinRangeService {
             details = BatchResultDetails.builder().success(false).errorMessage(e.getMessage()).build();
         }
         result.setRunDurationMillis(Instant.now().toEpochMilli() - start.toEpochMilli());
-        result.setDetails(mapper.writeValueAsString(details));
+        result.setDetails(writeAsJson(details));
         batchResultRepository.save(result);
         binRangeRepository.saveAll(binRanges);
         log.info("End of Visa bin range retrieval batch");

@@ -10,6 +10,10 @@ public interface BlobService {
 
     String uploadFile(byte[] fileByte, Instant instant, String filename, String sha256, BatchEnum batch);
 
+    String getDirectoryName(Instant instant, BatchEnum batch);
+
+    String getBlobName(BatchEnum batch, String directory, String filename);
+
     void downloadFileHashingTmp(String remotePathFile, String localPathFileOut);
 
     List<BlobItem> getFilesFromDirectory(String directory);

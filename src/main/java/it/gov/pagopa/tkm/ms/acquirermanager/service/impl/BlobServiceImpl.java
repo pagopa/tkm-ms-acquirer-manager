@@ -79,7 +79,8 @@ public class BlobServiceImpl implements BlobService {
         return client.getBlobClient(blobName);
     }
 
-    private String getDirectoryName(Instant instant, BatchEnum batch) {
+    @Override
+    public String getDirectoryName(Instant instant, BatchEnum batch) {
         String today = dateFormat.format(instant);
         switch (batch) {
             case BIN_RANGE_GEN:
@@ -93,7 +94,8 @@ public class BlobServiceImpl implements BlobService {
         }
     }
 
-    private String getBlobName(BatchEnum batch, String directory, String filename) {
+    @Override
+    public String getBlobName(BatchEnum batch, String directory, String filename) {
         switch (batch) {
             case BIN_RANGE_GEN:
             case KNOWN_HASHES_COPY:

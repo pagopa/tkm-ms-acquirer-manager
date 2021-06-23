@@ -3,7 +3,6 @@ package it.gov.pagopa.tkm.ms.acquirermanager.service;
 import com.azure.core.http.rest.PagedIterable;
 import com.azure.storage.blob.*;
 import com.azure.storage.blob.models.*;
-import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.constant.*;
@@ -79,6 +78,8 @@ class TestBinRangeService {
     @Mock
     private GenBinRangeCallable genBinRangeCallable;
 
+    @Mock
+    private BlobServiceImpl blobService;
 
     private final ArgumentCaptor<TkmBatchResult> batchResultArgumentCaptor = ArgumentCaptor.forClass(TkmBatchResult.class);
 
@@ -122,7 +123,6 @@ class TestBinRangeService {
         }
         when(serviceClientMock.getBlobContainerClient(DefaultBeans.TEST_CONTAINER_NAME)).thenReturn(containerClientMock);
         when(containerClientMock.listBlobsByHierarchy(nullable(String.class), nullable(ListBlobsOptions.class), nullable(Duration.class))).thenReturn(pagedIterableMock);
-        when(dateFormatMock.format(DefaultBeans.INSTANT)).thenReturn("20210101");
     }
 
     @Test
@@ -150,7 +150,7 @@ class TestBinRangeService {
     //BIN RANGE FILE GENERATION
 
     @Test
-    void givenBinRanges_persistResult() throws JsonProcessingException {
+    void givenBinRanges_persistResult() {
         when(binRangeRepository.count()).thenReturn(3L);
         when(genBinRangeCallable.call(any(Instant.class), anyInt(), anyInt(), anyLong())).thenReturn(new AsyncResult<>(BatchResultDetails.builder().success(true).build()));
         binRangeService.generateBinRangeFiles();
@@ -162,7 +162,7 @@ class TestBinRangeService {
     }
 
     @Test
-    void givenNoBinRanges_persistResult() throws JsonProcessingException {
+    void givenNoBinRanges_persistResult() {
         when(genBinRangeCallable.call(any(Instant.class), anyInt(), anyInt(), anyLong())).thenReturn(new AsyncResult<>(BatchResultDetails.builder().success(true).build()));
         when(binRangeRepository.count()).thenReturn(0L);
         binRangeService.generateBinRangeFiles();
@@ -174,7 +174,7 @@ class TestBinRangeService {
     }
 
     @Test
-    void callVisaApiAndWriteResult() throws JsonProcessingException {
+    void callVisaApiAndWriteResult() {
         when(visaClient.getBinRanges()).thenReturn(testBeans.TKM_BIN_RANGES);
         binRangeService.retrieveVisaBinRanges();
         verify(batchResultRepository).save(batchResultArgumentCaptor.capture());
@@ -185,7 +185,7 @@ class TestBinRangeService {
     }
 
     @Test
-    void givenVisaApiError_writeFalseOutcome() throws JsonProcessingException {
+    void givenVisaApiError_writeFalseOutcome() {
         when(visaClient.getBinRanges()).thenThrow(new RuntimeException());
         binRangeService.retrieveVisaBinRanges();
         verify(batchResultRepository).save(batchResultArgumentCaptor.capture());

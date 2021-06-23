@@ -88,4 +88,5 @@ class TestFileGeneratorService {
         Assertions.assertEquals(build, batchResultDetails);
         verify(blobService).uploadFile(any(), eq(now), eq(fileName), eq(null), eq(BatchEnum.KNOWN_HASHES_GEN));
     }
+
 }

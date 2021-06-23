@@ -4,7 +4,6 @@ import com.azure.core.http.rest.*;
 import com.azure.storage.blob.*;
 import com.azure.storage.blob.models.*;
 import com.azure.storage.blob.specialized.*;
-import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.client.internal.cardmanager.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.constant.*;
@@ -91,7 +90,7 @@ public class TestKnownHashesGenService {
     }
 
     @Test
-    void givenKnownHashesAndNoExistingFiles_persistResult() throws JsonProcessingException {
+    void givenKnownHashesAndNoExistingFiles_persistResult() {
         when(cardManagerClient.getKnownHashes(anyInt(), anyInt(), anyInt())).thenReturn(testBeans.KNOWN_HASHES_RESPONSE);
         when(fileGeneratorService.generateKnownHashesFile(any(Instant.class), anyInt(), anyList())).thenReturn(testBeans.KNOWN_HASHES_BATCH_RESULT_DETAILS);
         knownHashesService.generateKnownHashesFiles();
@@ -103,7 +102,7 @@ public class TestKnownHashesGenService {
     }
 
     @Test
-    void givenKnownHashesAndExistingFile_persistResult() throws JsonProcessingException {
+    void givenKnownHashesAndExistingFile_persistResult() {
         when(hashOffsetRepository.findAll()).thenReturn(Collections.singletonList(testBeans.HASH_OFFSET));
         when(cardManagerClient.getKnownHashes(anyInt(), anyInt(), anyInt())).thenReturn(testBeans.KNOWN_HASHES_RESPONSE);
         when(serviceClientBuilder.connectionString(DefaultBeans.TEST_CONNECTION_STRING)).thenReturn(serviceClientBuilder);
@@ -123,7 +122,7 @@ public class TestKnownHashesGenService {
     }
 
     @Test
-    void givenException_persistFalseResult() throws JsonProcessingException {
+    void givenException_persistFalseResult() {
         when(cardManagerClient.getKnownHashes(anyInt(), anyInt(), anyInt())).thenReturn(testBeans.KNOWN_HASHES_RESPONSE);
         when(fileGeneratorService.generateKnownHashesFile(any(Instant.class), anyInt(), anyList())).thenThrow(new RuntimeException());
         knownHashesService.generateKnownHashesFiles();
