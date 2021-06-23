@@ -142,7 +142,7 @@ public class DefaultBeans {
                     .max("0001")
                     .insertDate(INSTANT)
                     .build()
-            );
+    );
 
     public final TkmBatchResult VISA_BIN_RANGE_RETRIEVAL_BATCH_RESULT = TkmBatchResult.builder()
             .runOutcome(true)
