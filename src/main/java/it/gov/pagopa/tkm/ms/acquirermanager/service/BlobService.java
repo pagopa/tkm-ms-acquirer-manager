@@ -14,5 +14,6 @@ public interface BlobService {
 
     List<BlobItem> getBlobItemsInFolderHashingTmp(String folderPath);
 
-    void deleteTodayFolder(Instant now, BatchEnum batchEnum);
+    void deleteTodayFolder(Instant now, BatchEnum batch);
+
 }

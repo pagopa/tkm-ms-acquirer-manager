@@ -53,15 +53,19 @@ public class KnownHashesCopyServiceImpl implements KnownHashesCopyService {
 
     @Override
     public void copyKnownHashesFiles() {
+        Span span = tracer.currentSpan();
+        String traceId = span != null ? span.context().traceId() : "noTraceId";
+        log.info("Start of known hashes copy batch " + traceId);
         Instant now = Instant.now();
         List<BatchResultDetails> batchResultDetails = new ArrayList<>();
         List<BlobItem> knownHashesTmp = blobService.getBlobItemsInFolderHashingTmp(DirectoryNames.ALL_HASHES.name());
-        blobService.deleteTodayFolder(now, BatchEnum.KNOWN_HASHES_GEN);
+        blobService.deleteTodayFolder(now, BatchEnum.KNOWN_HASHES_COPY);
         log.debug("Found: " + knownHashesTmp);
         for (BlobItem blobItem : knownHashesTmp) {
             batchResultDetails.add(copyFileToDestinationForAcquirer(now, blobItem));
         }
         saveBatchResult(now, batchResultDetails);
+        log.info("End of known hashes generation batch " + traceId);
     }
 
     private void saveBatchResult(Instant now, List<BatchResultDetails> batchResultDetails) {

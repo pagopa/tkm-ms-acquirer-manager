@@ -28,7 +28,7 @@ import static it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum.KNOWN_HASH
 
 @Service
 @Log4j2
-public class KnownHashesServiceImpl implements KnownHashesService {
+public class KnownHashesGenServiceImpl implements KnownHashesGenService {
 
     @Autowired
     private BatchResultRepository batchResultRepository;
@@ -81,7 +81,7 @@ public class KnownHashesServiceImpl implements KnownHashesService {
         batchResult.setDetails(mapper.writeValueAsString(batchResultDetails));
         batchResult.setRunOutcome(batchResultDetails.stream().allMatch(BatchResultDetails::isSuccess));
         batchResultRepository.save(batchResult);
-        log.info("End of known hashes generation batch");
+        log.info("End of known hashes generation batch " + traceId);
     }
 
     private List<BatchResultDetails> callCardManagerForKnownHpans(Instant now) {

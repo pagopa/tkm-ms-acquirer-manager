@@ -49,43 +49,61 @@ public class BlobServiceImpl implements BlobService {
 
     @Override
     public String uploadFile(byte[] fileByte, Instant now, String filename, String sha256, BatchEnum batch) {
-        log.info("Uploading file " + filename);
-        String directory = null;
-        String blobName = null;
+        String directory = getDirectoryName(now, batch);
+        String blobName = getBlobName(batch, directory, filename);
+        log.debug("Uploading file " + blobName);
+        BlobClient blobClient = getClientForBlob(blobName);
         switch (batch) {
             case BIN_RANGE_GEN:
             case KNOWN_HASHES_COPY:
-                directory = getDirectoryName(now, batch);
-                blobName = directory + filename + ".zip";
-                break;
-            case KNOWN_HASHES_GEN:
-                directory = String.format("%s/%s/", batch, DirectoryNames.ALL_HASHES);
-                blobName = directory + filename;
-        }
-        log.debug("Uploading to directory " + directory);
-        BlobServiceClient serviceClient = serviceClientBuilder.connectionString(connectionString).buildClient();
-        BlobContainerClient client = serviceClient.getBlobContainerClient(containerNameBinHash);
-        BlobClient blobClient = client.getBlobClient(blobName);
-        switch (batch) {
-            case BIN_RANGE_GEN:
                 blobClient.upload(new ByteArrayInputStream(fileByte), fileByte.length, false);
+                addMetadata(blobClient, now, sha256);
                 break;
             case KNOWN_HASHES_GEN:
                 blobClient.getAppendBlobClient().create();
                 blobClient.getAppendBlobClient().appendBlock(new ByteArrayInputStream(fileByte), fileByte.length);
                 break;
         }
+        log.info("File " + blobName + " successfully uploaded");
+        return blobName;
+    }
+
+    private void addMetadata(BlobClient blobClient, Instant now, String sha256) {
         Map<String, String> metadata = new HashMap<>();
         metadata.put(generationdate.name(), now.toString());
         metadata.put(checksumsha256.name(), sha256);
         blobClient.setMetadata(metadata);
-        log.info("Uploaded file " + blobName);
-        return blobName;
     }
 
-    private String getDirectoryName(Instant instant, BatchEnum batchEnum) {
-        String today = dateFormat.format(instant);
-        return String.format("%s/%s/", batchEnum, today);
+    private BlobClient getClientForBlob(String blobName) {
+        BlobServiceClient serviceClient = serviceClientBuilder.connectionString(connectionString).buildClient();
+        BlobContainerClient client = serviceClient.getBlobContainerClient(containerNameBinHash);
+        return client.getBlobClient(blobName);
+    }
+
+    private String getDirectoryName(Instant instant, BatchEnum batch) {
+        switch (batch) {
+            case BIN_RANGE_GEN:
+            case KNOWN_HASHES_COPY:
+                String today = dateFormat.format(instant);
+                return String.format("%s/%s/", batch, today);
+            case KNOWN_HASHES_GEN:
+                return String.format("%s/%s/", batch, DirectoryNames.ALL_HASHES);
+            default:
+                return null;
+        }
+    }
+
+    private String getBlobName(BatchEnum batch, String directory, String filename) {
+        switch (batch) {
+            case BIN_RANGE_GEN:
+            case KNOWN_HASHES_COPY:
+                return directory + filename + ".zip";
+            case KNOWN_HASHES_GEN:
+                return directory + filename;
+            default:
+                return null;
+        }
     }
 
     @Override
@@ -98,7 +116,7 @@ public class BlobServiceImpl implements BlobService {
     @Override
     public List<BlobItem> getBlobItemsInFolderHashingTmp(String folderPath) {
         BlobContainerClient client = getBlobContainerClient();
-        folderPath = StringUtils.endsWith(folderPath, SUFFIX) ? folderPath : folderPath + SUFFIX;
+        folderPath = StringUtils.appendIfMissing(folderPath, SUFFIX);
         log.info("Looking for directory: " + folderPath);
         BlobListDetails blobListDetails = new BlobListDetails().setRetrieveMetadata(true);
         ListBlobsOptions listBlobsOptions = new ListBlobsOptions()
@@ -111,8 +129,8 @@ public class BlobServiceImpl implements BlobService {
     }
 
     @Override
-    public void deleteTodayFolder(Instant now, BatchEnum batchEnum) {
-        String directoryName = getDirectoryName(now, batchEnum);
+    public void deleteTodayFolder(Instant now, BatchEnum batch) {
+        String directoryName = getDirectoryName(now, batch);
         List<BlobItem> blobItemsInFolderHashingTmp = getBlobItemsInFolderHashingTmp(directoryName);
         BlobContainerClient client = getBlobContainerClient();
         for (BlobItem blobItem : blobItemsInFolderHashingTmp) {
@@ -126,4 +144,5 @@ public class BlobServiceImpl implements BlobService {
         BlobServiceClient serviceClient = serviceClientBuilder.connectionString(connectionString).buildClient();
         return serviceClient.getBlobContainerClient(containerNameBinHash);
     }
+
 }

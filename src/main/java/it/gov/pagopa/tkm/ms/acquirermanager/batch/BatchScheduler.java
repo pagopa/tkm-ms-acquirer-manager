@@ -14,32 +14,33 @@ public class BatchScheduler {
     private BinRangeService binRangeService;
 
     @Autowired
-    private KnownHashesService knownHashesService;
+    private KnownHashesGenService knownHashesGenService;
 
     @Autowired
     private KnownHashesCopyService knownHashesCopyService;
 
     @Scheduled(cron = "${batch.bin-range-gen.cron}")
-    @SchedulerLock(name = "Bin_Range_Gen_Task")
+    @SchedulerLock(name = "Bin_Range_Gen_Task", lockAtMostFor = "PT6H")
     public void binRangeGenTask() throws JsonProcessingException {
         binRangeService.generateBinRangeFiles();
     }
 
     @Scheduled(cron = "${batch.bin-range-retrieval.cron}")
-    @SchedulerLock(name = "Bin_Range_Retrieval_Task")
+    @SchedulerLock(name = "Bin_Range_Retrieval_Task", lockAtMostFor = "PT6H")
     public void binRangeRetrievalTask() throws Exception {
         binRangeService.retrieveVisaBinRanges();
     }
 
     @Scheduled(cron = "${batch.known-hashes-gen.cron}")
-    @SchedulerLock(name = "Known_Hashes_Gen_Task")
+    @SchedulerLock(name = "Known_Hashes_Gen_Task", lockAtMostFor = "PT10M")
     public void knownHashesGenTask() throws JsonProcessingException {
-        knownHashesService.generateKnownHashesFiles();
+        knownHashesGenService.generateKnownHashesFiles();
     }
 
     @Scheduled(cron = "${batch.known-hashes-copy.cron}")
-    @SchedulerLock(name = "Known_Hashes_Copy_Task")
+    @SchedulerLock(name = "Known_Hashes_Copy_Task", lockAtMostFor = "PT6H")
     public void copyKnownHashesToAcquirerFolder() {
         knownHashesCopyService.copyKnownHashesFiles();
     }
+
 }

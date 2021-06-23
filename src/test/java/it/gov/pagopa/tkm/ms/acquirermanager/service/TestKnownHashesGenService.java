@@ -28,10 +28,10 @@ import static org.mockito.Mockito.*;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ExtendWith(MockitoExtension.class)
-public class TestKnownHashesService {
+public class TestKnownHashesGenService {
 
     @InjectMocks
-    private KnownHashesServiceImpl knownHashesService;
+    private KnownHashesGenServiceImpl knownHashesService;
 
     @Mock
     private BatchResultRepository batchResultRepository;

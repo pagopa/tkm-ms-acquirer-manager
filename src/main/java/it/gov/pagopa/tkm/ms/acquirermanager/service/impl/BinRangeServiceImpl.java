@@ -197,7 +197,7 @@ public class BinRangeServiceImpl implements BinRangeService {
         batchResult.setDetails(mapper.writeValueAsString(batchResultDetails));
         batchResult.setRunOutcome(batchResultDetails.stream().allMatch(BatchResultDetails::isSuccess));
         batchResultRepository.save(batchResult);
-        log.info("End of bin range generation batch");
+        log.info("End of bin range generation batch " + traceId);
     }
 
     @Override

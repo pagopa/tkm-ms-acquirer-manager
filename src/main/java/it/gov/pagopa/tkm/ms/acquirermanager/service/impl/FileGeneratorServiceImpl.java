@@ -81,10 +81,8 @@ public class FileGeneratorServiceImpl implements FileGeneratorService {
         } else {
             fileToUpload = writeKnownHashesToBytes(lineSeparator, hashes);
         }
-        String sha256 = DigestUtils.sha256Hex(fileToUpload);
-        blobService.uploadFile(fileToUpload, now, filename, sha256, BatchEnum.KNOWN_HASHES_GEN);
+        blobService.uploadFile(fileToUpload, now, filename, null, BatchEnum.KNOWN_HASHES_GEN);
         details.setSuccess(true);
-        details.setSha256(sha256);
         return details;
     }
 
