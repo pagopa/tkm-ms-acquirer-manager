@@ -47,7 +47,8 @@ public class SftpUtils {
         return client;
     }
 
-    public List<RemoteResourceInfo> listFile() throws IOException {
+    public List<RemoteResourceInfo>
+    listFile() throws IOException {
         SSHClient sshClient = createClientAndConnect();
         try (SFTPClient sftpClient = sshClient.newSFTPClient()) {
             return sftpClient.ls(sftpFolder, new SftpAcquirerFileResourceFilter(sftpFilesPattern));

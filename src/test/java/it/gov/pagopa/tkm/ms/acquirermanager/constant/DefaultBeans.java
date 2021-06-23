@@ -6,7 +6,12 @@ import it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa.model.response.
 import it.gov.pagopa.tkm.ms.acquirermanager.model.dto.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.response.*;
+import net.schmizz.sshj.sftp.FileAttributes;
+import net.schmizz.sshj.sftp.PathComponents;
+import net.schmizz.sshj.sftp.RemoteResourceInfo;
+import org.apache.commons.io.FileUtils;
 
+import java.io.File;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -33,6 +38,8 @@ public class DefaultBeans {
     public final List<BlobItem> BLOB_LIST = Collections.singletonList(BLOB);
     private static final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("uuuuMMdd").withZone(ZoneId.of(TkmDatetimeConstant.DATE_TIME_TIMEZONE));
     public static final String BIN_RANGE_GEN_LOCAL__1 = "BIN_RANGE_GEN_TEST_" + dateFormat.format(Instant.now()) + "_1.csv";
+
+    public static final UUID UUID_TEST = UUID.fromString("c1f77e6e-8fc7-42d2-8128-58ca293e3b42");
 
     public final LinksResponse LINKS_RESPONSE = LinksResponse.builder()
             .fileLinks(Collections.singletonList("null/TESTNAME?null"))
@@ -132,4 +139,44 @@ public class DefaultBeans {
             .runDurationMillis(0)
             .build();
 
+    public final List<RemoteResourceInfo> REMOTE_RESOURCE_INFO = Arrays.asList(
+            new RemoteResourceInfo(new PathComponents("parent", "name", "path"), FileAttributes.EMPTY));
+
+    public final List<String> FILE_PATH_LIST = Collections.singletonList(
+            FileUtils.getTempDirectoryPath() + File.separator + UUID_TEST + File.separator + "name"
+    );
+
+    public final BatchResultDetails BATCH_RESULT_DETAILS = new BatchResultDetails(
+            FILE_PATH_LIST.get(0),
+            0,
+            null,
+            true,
+            null);
+
+    public final BatchResultDetails BATCH_RESULT_DETAILS_UNSUCCESSFUL = new BatchResultDetails(
+            FILE_PATH_LIST.get(0),
+            0,
+            null,
+            false,
+            null);
+
+    public final TkmBatchResult TKM_BATCH_RESULT_SUCCESS = new TkmBatchResult(
+            null,
+            "noTraceId",
+            BatchEnum.BATCH_ACQUIRER,
+            INSTANT,
+            true,
+            0,
+            null
+    );
+
+    public final TkmBatchResult TKM_BATCH_RESULT_UNSUCCESSFUL = new TkmBatchResult(
+            null,
+            "noTraceId",
+            BatchEnum.BATCH_ACQUIRER,
+            INSTANT,
+            false,
+            0,
+            null
+    );
 }
