@@ -53,17 +53,25 @@ public class TestBlobService {
         ReflectionTestUtils.setField(blobService, "connectionString", DefaultBeans.TEST_CONNECTION_STRING);
         ReflectionTestUtils.setField(blobService, "profile", "local");
         ReflectionTestUtils.setField(blobService, "serviceClientBuilder", serviceClientBuilderMock);
-    }
-
-    @Test
-    void givenFile_uploadFile() {
         when(serviceClientBuilderMock.connectionString(DefaultBeans.TEST_CONNECTION_STRING)).thenReturn(serviceClientBuilderMock);
         when(serviceClientBuilderMock.buildClient()).thenReturn(serviceClientMock);
         when(serviceClientMock.getBlobContainerClient(DefaultBeans.TEST_CONTAINER_NAME)).thenReturn(containerClientMock);
         when(containerClientMock.getBlobClient(any())).thenReturn(blobClientMock);
-        when(blobClientMock.getAppendBlobClient()).thenReturn(appendBlobClientMock);
+    }
+
+    @Test
+    void givenFile_uploadBinRangesFile() {
         blobService.uploadFile(new byte[]{}, DefaultBeans.INSTANT, "filename", "sha", BatchEnum.BIN_RANGE_GEN);
         verify(blobClientMock).upload(any(InputStream.class), anyLong(), anyBoolean());
+        verify(blobClientMock).setMetadata(anyMap());
+    }
+
+    @Test
+    void givenFile_uploadKnownHashesFile() {
+        when(blobClientMock.getAppendBlobClient()).thenReturn(appendBlobClientMock);
+        blobService.uploadFile(new byte[]{}, DefaultBeans.INSTANT, "filename", "sha", BatchEnum.KNOWN_HASHES_GEN);
+        verify(appendBlobClientMock).create();
+        verify(appendBlobClientMock).appendBlock(any(InputStream.class), anyLong());
         verify(blobClientMock).setMetadata(anyMap());
     }
 

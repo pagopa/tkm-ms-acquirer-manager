@@ -35,11 +35,12 @@ public class DefaultBeans {
     public final List<BlobItem> BLOB_LIST = Collections.singletonList(BLOB);
     private static final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("uuuuMMdd").withZone(ZoneId.of(TkmDatetimeConstant.DATE_TIME_TIMEZONE));
     public static final String BIN_RANGE_GEN_LOCAL__1 = "BIN_RANGE_GEN_LOCAL_" + dateFormat.format(Instant.now()) + "_1.csv";
-    public static final String KNOWN_HASHES_GEN_LOCAL__1 = "KNOWN_HASHES_GEN_LOCAL_" + dateFormat.format(Instant.now()) + "_1.csv";
+    public static final String KNOWN_HASHES_GEN_LOCAL__0 = "KNOWN_HASHES_GEN_LOCAL_date_0.csv";
+    public static final String KNOWN_HASHES_GEN_LOCAL__1 = "KNOWN_HASHES_GEN_LOCAL_date_1.csv";
     public static final String BIN_RANGE_GEN_LOCAL__1_NO_DATE = "BIN_RANGE_GEN_LOCAL_19700101_1.csv";
 
     public final LinksResponse LINKS_RESPONSE = LinksResponse.builder()
-            .fileLinks(Collections.singletonList("null/TESTNAME?null"))
+            .fileLinks(Collections.singletonList("null/" + TESTNAME + "?null"))
             .numberOfFiles(1)
             .availableUntil(null)
             .generationDate(null)
@@ -82,6 +83,10 @@ public class DefaultBeans {
 
     public final BatchResultDetails KNOWN_HASHES_BATCH_RESULT_DETAILS = new BatchResultDetails(
             KNOWN_HASHES_GEN_LOCAL__1, 3, SHA_256, true, null
+    );
+
+    public final BatchResultDetails KNOWN_HASHES_BATCH_RESULT_DETAILS_NEW = new BatchResultDetails(
+            KNOWN_HASHES_GEN_LOCAL__0, 2, SHA_256, true, null
     );
 
     public final BatchResultDetails BIN_RANGE_BATCH_RESULT_DETAILS_NO_DATE = new BatchResultDetails(

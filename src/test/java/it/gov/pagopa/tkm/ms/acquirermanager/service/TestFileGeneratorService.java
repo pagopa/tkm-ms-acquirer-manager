@@ -72,4 +72,15 @@ class TestFileGeneratorService {
 
     }
 
+    @Test
+    void givenKnownHashes_generateFile() {
+        BatchResultDetails details = fileGeneratorService.generateKnownHashesFile(DefaultBeans.INSTANT, 0, testBeans.KNOWN_HASHES_RESPONSE.getHpans());
+        assertThat(testBeans.KNOWN_HASHES_BATCH_RESULT_DETAILS_NEW)
+                .usingRecursiveComparison()
+                .ignoringFields("sha256")
+                .isEqualTo(details);
+        Assertions.assertNotNull(details.getSha256());
+        Assertions.assertTrue(details.isSuccess());
+    }
+
 }
