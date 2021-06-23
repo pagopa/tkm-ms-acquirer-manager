@@ -29,7 +29,7 @@ public class BatchScheduler {
     }
 
     @Scheduled(cron = "${batch.queue-batch-acquirer-result.cron}")
-    @SchedulerLock(name = "Queue_Batch_Acquirer_Result_Task")
+    @SchedulerLock(name = "Batch_Acquirer_Result_Task")
     public void queueBatchAcquirerResultTask() {
         batchAcquirerService.queueBatchAcquirerResult();
     }

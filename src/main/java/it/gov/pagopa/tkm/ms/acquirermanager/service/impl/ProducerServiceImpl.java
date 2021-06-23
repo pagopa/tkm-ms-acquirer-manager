@@ -33,7 +33,7 @@ public class ProducerServiceImpl implements ProducerService {
 
     public void sendMessage(ReadQueue readQueue) throws JsonProcessingException, PGPException {
         String message = mapper.writeValueAsString(readQueue);
-        log.info("Forwarding message to queue: " + message);
+        log.trace("Forwarding message to queue: " + message);
         byte[] encryptedMessage = PgpUtils.encrypt(message.getBytes(), readQueuePubPgpKey, true);
 
         kafkaTemplate.send(readQueueTopic, new String(encryptedMessage));
