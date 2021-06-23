@@ -20,7 +20,9 @@ public class ThreadConfig extends AsyncConfigurerSupport {
     @Override
     public Executor getAsyncExecutor() {
         ThreadPoolTaskExecutor threadPoolTaskExecutor = new ThreadPoolTaskExecutor();
+        //todo MOVE TO ENVIROMENT VAR
         threadPoolTaskExecutor.setCorePoolSize(5);
+        //todo MOVE TO ENVIROMENT VAR
         threadPoolTaskExecutor.setMaxPoolSize(10);
         threadPoolTaskExecutor.setQueueCapacity(0);
         threadPoolTaskExecutor.initialize();

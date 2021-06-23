@@ -112,6 +112,7 @@ public class BatchAcquirerServiceImpl implements BatchAcquirerService {
             log.debug("File decrypted " + fileOutputClear);
             PgpUtils.decrypt(fileInputPgp, pgpPrivateKey, pgpPassPhrase, fileOutputClear);
             List<BatchAcquirerCSVRecord> parsedRows = parseCSVFile(fileOutputClear);
+            //todo need to create a real partition releted to enviroment variable parsedRows/VAR is equals to number of  threads
             List<List<BatchAcquirerCSVRecord>> partition = Lists.partition(parsedRows, 50000);
             Future<Void> voidFuture = sendBatchAcquirerRecordToQueue.sendToQueue(partition.get(0));
             Future<Void> voidFuture1 = sendBatchAcquirerRecordToQueue.sendToQueue(partition.get(1));
