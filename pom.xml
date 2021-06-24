@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
 
 	<artifactId>acquirer-manager</artifactId>
-	<version>0.1.9</version>
+	<version>0.1.10</version>
 	<packaging>jar</packaging>
 
     <parent>
@@ -69,6 +69,21 @@
             <version>4.9.1</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.hierynomus</groupId>
+            <artifactId>sshj</artifactId>
+            <version>0.31.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.univocity</groupId>
+            <artifactId>univocity-parsers</artifactId>
+            <version>2.8.4</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka</artifactId>
+            <version>2.7.0</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -81,13 +96,16 @@
                 <configuration>
                     <excludes>
                         <exclude>it/gov/pagopa/tkm/ms/acquirermanager/client/external/visa/model/**/*.class</exclude>
-                        <exclude>it/gov/pagopa/tkm/ms/acquirermanager/client/internal/cardmanager/model/response/**/*.class</exclude>
+                        <exclude>
+                            it/gov/pagopa/tkm/ms/acquirermanager/client/internal/cardmanager/model/response/**/*.class
+                        </exclude>
                         <exclude>it/gov/pagopa/tkm/ms/acquirermanager/config/**/*.class</exclude>
                         <exclude>it/gov/pagopa/tkm/ms/acquirermanager/repository/**/*.class</exclude>
                         <exclude>it/gov/pagopa/tkm/ms/acquirermanager/model/**/*.class</exclude>
                         <exclude>it/gov/pagopa/tkm/ms/acquirermanager/constant/**/*.class</exclude>
                         <exclude>it/gov/pagopa/tkm/ms/acquirermanager/exception/**/*.class</exclude>
                         <exclude>it/gov/pagopa/tkm/ms/acquirermanager/batch/**/*.class</exclude>
+                        <exclude>it/gov/pagopa/tkm/ms/acquirermanager/util/SftpUtils.class</exclude>
                         <exclude>it/gov/pagopa/tkm/ms/acquirermanager/AcquirerManagerApplication.class</exclude>
                     </excludes>
                 </configuration>
@@ -167,6 +185,6 @@
     </distributionManagement>
     <scm>
         <developerConnection>scm:git:https://github.com/pagopa/tkm-ms-acquirer-manager.git</developerConnection>
-        <tag>acquirer-manager-0.1.9</tag>
+        <tag>acquirer-manager-0.1.10</tag>
     </scm>
 </project>

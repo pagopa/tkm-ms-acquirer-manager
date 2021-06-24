@@ -10,6 +10,22 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
   application:
     name: Tkm Acquirer Manager ${HOSTNAME:0}
+  kafka:
+    producer:
+      bootstrap-servers: ${KAFKA_SERVERS}
+      client-id: ${KAFKA_GROUP_ID}${HOSTNAME:0}
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      properties:
+        security:
+          protocol: ${KAFKA_SECURITY_PROTOCOL:SASL_SSL}
+        sasl:
+          mechanism: ${KAFKA_SASL_MECHANISM:PLAIN}
+          jaas:
+            config: ${keyvault.cardMEventhubWriteSaslJaasConfig}
+    topics:
+      read-queue:
+        name: ${KAFKA_READ_QUEUE_TOPIC}
 
 server:
   port: ${SERVER_PORT:8080}
@@ -58,6 +74,11 @@ keyvault:
   visaPrivateKey: ${${AZURE_KEYVAULT_PROFILE:prod}-visaPrivateKey}
   visaServerCertificate: ${${AZURE_KEYVAULT_PROFILE:prod}-visaServerCertificate}
   visaUserId: ${${AZURE_KEYVAULT_PROFILE:prod}-visaUserId}
+  acquirerPgpPrivateKey: ${${AZURE_KEYVAULT_PROFILE:prod}-acquirerPgpPrivateKey}
+  acquirerPgpPrivateKeyPassphrase: ${${AZURE_KEYVAULT_PROFILE:prod}-acquirerPgpPrivateKeyPassphrase}
+  readQueuePubPgpKey: ${${AZURE_KEYVAULT_PROFILE:prod}-readQueuePubPgpKey}
+  sftpPassPhrase: ${${AZURE_KEYVAULT_PROFILE:prod}-sftpPassPhrase}
+  sftpPrivateKey: ${${AZURE_KEYVAULT_PROFILE:prod}-sftpPrivateKey}
 
 blob-storage:
   visaPublicCert: azure-blob://${BLOB_STORAGE_ACQUIRER_CONFIG_CONTAINER}/Visa_Public_Cert.p12
@@ -89,3 +110,19 @@ batch:
     max-records-in-api-call: ${KNOWN_HASHES_GEN_MAX_RECORDS_IN_API_CALL:500000}
   known-hashes-copy:
     cron: ${KNOWN_HASHES_COPY_CRON:-}
+  queue-batch-acquirer-result:
+    cron: ${QUEUE_BATCH_ACQUIRER_RESULT_CRON:-}
+    threadNumber: ${BATCH_ACQUIRER_THREAD_NUMBER:5}
+
+sftp:
+  sftpHostname: ${SFTP_SIA_HOSTNAME}
+  sftpPort: ${SFTP_SIA_PORT}
+  sftpUser: ${SFTP_SIA_USER}
+  sftpPrivateKey: ${keyvault.sftpPrivateKey}
+  sftpPassPhrase: ${keyvault.sftpPassPhrase}
+  sftpFolder: ${SFTP_SIA_FOLDER}
+  sftpFilesPattern: ${SFTP_SIA_FILE_PATTERN:^TKM\..*\.zip$}
+
+thread:
+  corePoolSize: ${THREAD_CORE_POOL_SIZE:5}
+  maxPoolSize: ${THREAD_MAX_POOL_SIZE:10}
