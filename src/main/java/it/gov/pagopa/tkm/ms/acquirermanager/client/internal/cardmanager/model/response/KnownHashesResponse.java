@@ -13,4 +13,8 @@ public class KnownHashesResponse {
 
     private List<String> htokens;
 
+    private int nextHpanOffset;
+
+    private int nextHtokenOffset;
+
 }

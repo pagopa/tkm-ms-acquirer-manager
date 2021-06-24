@@ -173,7 +173,9 @@ public class DefaultBeans {
 
     public final KnownHashesResponse KNOWN_HASHES_RESPONSE = new KnownHashesResponse(
             Arrays.asList("hpan1", "hpan2"),
-            Arrays.asList("htoken1", "htoken2")
+            Arrays.asList("htoken1", "htoken2"),
+            4,
+            4
     );
 
     public final TkmHashOffset HASH_OFFSET = TkmHashOffset.builder()
