@@ -3,6 +3,7 @@ package it.gov.pagopa.tkm.ms.acquirermanager.constant;
 import com.azure.storage.blob.models.*;
 import it.gov.pagopa.tkm.constant.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa.model.response.*;
+import it.gov.pagopa.tkm.ms.acquirermanager.client.internal.cardmanager.model.response.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.dto.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.response.*;
@@ -25,17 +26,21 @@ public class DefaultBeans {
 
     public static final Instant INSTANT = Instant.EPOCH;
     public static final OffsetDateTime OFFSET_DATE_TIME = OffsetDateTime.MIN.plus(1000002030, ChronoUnit.YEARS);
+    public static final String TESTNAME = "TESTNAME_date";
 
     private final Map<String, String> GENERATION_DATE_METADATA = new HashMap<>(Collections.singletonMap(generationdate.name(), INSTANT.toString()));
 
-    private final BlobItem BLOB = new BlobItem().setMetadata(GENERATION_DATE_METADATA).setName("TESTNAME");
+    private final BlobItem BLOB = new BlobItem().setMetadata(GENERATION_DATE_METADATA).setName(TESTNAME);
 
     public final List<BlobItem> BLOB_LIST = Collections.singletonList(BLOB);
     private static final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("uuuuMMdd").withZone(ZoneId.of(TkmDatetimeConstant.DATE_TIME_TIMEZONE));
-    public static final String BIN_RANGE_GEN_LOCAL__1 = "BIN_RANGE_GEN_TEST_" + dateFormat.format(Instant.now()) + "_1.csv";
+    public static final String BIN_RANGE_GEN_LOCAL__1 = "BIN_RANGE_GEN_LOCAL_" + dateFormat.format(Instant.now()) + "_1.csv";
+    public static final String KNOWN_HASHES_GEN_LOCAL__0 = "KNOWN_HASHES_GEN_LOCAL_date_0.csv";
+    public static final String KNOWN_HASHES_GEN_LOCAL__1 = "KNOWN_HASHES_GEN_LOCAL_date_1.csv";
+    public static final String BIN_RANGE_GEN_LOCAL__1_NO_DATE = "BIN_RANGE_GEN_LOCAL_19700101_1.csv";
 
     public final LinksResponse LINKS_RESPONSE = LinksResponse.builder()
-            .fileLinks(Collections.singletonList("null/TESTNAME?null"))
+            .fileLinks(Collections.singletonList("null/" + TESTNAME + "?null"))
             .numberOfFiles(1)
             .availableUntil(null)
             .generationDate(null)
@@ -56,17 +61,40 @@ public class DefaultBeans {
             .executionTraceId("traceId")
             .build();
 
+    public final TkmBatchResult KNOWN_HASHES_GEN_BATCH_RESULT = TkmBatchResult.builder()
+            .targetBatch(BatchEnum.KNOWN_HASHES_GEN)
+            .runDate(INSTANT)
+            .runDurationMillis(0)
+            .runOutcome(true)
+            .executionTraceId("traceId")
+            .build();
+
+    public final TkmBatchResult KNOWN_HASHES_GEN_BATCH_RESULT_FAILED = TkmBatchResult.builder()
+            .targetBatch(BatchEnum.KNOWN_HASHES_GEN)
+            .runDate(INSTANT)
+            .runDurationMillis(0)
+            .runOutcome(false)
+            .executionTraceId("traceId")
+            .build();
+
     public final BatchResultDetails BIN_RANGE_BATCH_RESULT_DETAILS = new BatchResultDetails(
             BIN_RANGE_GEN_LOCAL__1, 3, SHA_256, true, null
     );
 
-    public final BatchResultDetails BIN_RANGE_BATCH_RESULT_ERROR_DETAILS = new BatchResultDetails(
-            BIN_RANGE_GEN_LOCAL__1, 0, null, false, "error"
+    public final BatchResultDetails KNOWN_HASHES_BATCH_RESULT_DETAILS = new BatchResultDetails(
+            KNOWN_HASHES_GEN_LOCAL__1, 3, SHA_256, true, null
     );
 
+    public final BatchResultDetails KNOWN_HASHES_BATCH_RESULT_DETAILS_NEW = new BatchResultDetails(
+            KNOWN_HASHES_GEN_LOCAL__0, 2, SHA_256, true, null
+    );
 
-    public final BatchResultDetails BIN_RANGE_BATCH_RESULT_DETAILS_EMPTY = new BatchResultDetails(
-            BIN_RANGE_GEN_LOCAL__1, 0, null, true, null
+    public final BatchResultDetails BIN_RANGE_BATCH_RESULT_DETAILS_NO_DATE = new BatchResultDetails(
+            BIN_RANGE_GEN_LOCAL__1_NO_DATE, 3, SHA_256, true, null
+    );
+
+    public final BatchResultDetails BIN_RANGE_BATCH_RESULT_DETAILS_EMPTY_NO_DATE = new BatchResultDetails(
+            BIN_RANGE_GEN_LOCAL__1_NO_DATE, 0, null, true, null
     );
 
     private final VisaBinRangeResponseData VISA_BIN_RANGE_RESPONSE_DATA_TOKEN = VisaBinRangeResponseData.builder()
@@ -114,12 +142,12 @@ public class DefaultBeans {
                     .max("0001")
                     .insertDate(INSTANT)
                     .build()
-            );
+    );
 
     public final TkmBatchResult VISA_BIN_RANGE_RETRIEVAL_BATCH_RESULT = TkmBatchResult.builder()
             .runOutcome(true)
             .targetBatch(BatchEnum.BIN_RANGE_RETRIEVAL)
-            .details("{\"fileSize\":3,\"success\":true}")
+            .details("{\"numberOfRows\":3,\"success\":true}")
             .runDate(INSTANT)
             .runDurationMillis(0)
             .build();
@@ -127,9 +155,21 @@ public class DefaultBeans {
     public final TkmBatchResult VISA_BIN_RANGE_RETRIEVAL_BATCH_RESULT_FAILED = TkmBatchResult.builder()
             .runOutcome(false)
             .targetBatch(BatchEnum.BIN_RANGE_RETRIEVAL)
-            .details("{\"fileSize\":0,\"success\":false}")
+            .details("{\"success\":false}")
             .runDate(INSTANT)
             .runDurationMillis(0)
+            .build();
+
+    public final KnownHashesResponse KNOWN_HASHES_RESPONSE = new KnownHashesResponse(
+            Arrays.asList("hpan1", "hpan2"),
+            Arrays.asList("htoken1", "htoken2")
+    );
+
+    public final TkmHashOffset HASH_OFFSET = TkmHashOffset.builder()
+            .lastHashesFileFilename("filename")
+            .lastHashesFileIndex(2)
+            .lastHpanOffset(10)
+            .lastHashesFileRowCount(0)
             .build();
 
 }

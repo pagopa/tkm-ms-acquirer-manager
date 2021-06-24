@@ -15,7 +15,7 @@ public class BatchResultDetails {
 
     private String fileName;
 
-    private int fileSize;
+    private Integer numberOfRows;
 
     private String sha256;
 

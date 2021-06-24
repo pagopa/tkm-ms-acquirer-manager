@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
 
 	<artifactId>acquirer-manager</artifactId>
-	<version>0.1.7</version>
+	<version>0.1.8</version>
 	<packaging>jar</packaging>
 
     <parent>
@@ -81,6 +81,7 @@
                 <configuration>
                     <excludes>
                         <exclude>it/gov/pagopa/tkm/ms/acquirermanager/client/external/visa/model/**/*.class</exclude>
+                        <exclude>it/gov/pagopa/tkm/ms/acquirermanager/client/internal/cardmanager/model/response/**/*.class</exclude>
                         <exclude>it/gov/pagopa/tkm/ms/acquirermanager/config/**/*.class</exclude>
                         <exclude>it/gov/pagopa/tkm/ms/acquirermanager/repository/**/*.class</exclude>
                         <exclude>it/gov/pagopa/tkm/ms/acquirermanager/model/**/*.class</exclude>
@@ -166,6 +167,6 @@
     </distributionManagement>
     <scm>
         <developerConnection>scm:git:https://github.com/pagopa/tkm-ms-acquirer-manager.git</developerConnection>
-        <tag>acquirer-manager-0.1.7</tag>
+        <tag>acquirer-manager-0.1.8</tag>
     </scm>
 </project>

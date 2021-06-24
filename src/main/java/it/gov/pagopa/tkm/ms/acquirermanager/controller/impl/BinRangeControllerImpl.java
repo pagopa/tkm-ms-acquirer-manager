@@ -11,11 +11,11 @@ import org.springframework.web.bind.annotation.*;
 public class BinRangeControllerImpl implements BinRangeController {
 
     @Autowired
-    private BinRangeHashServiceImpl binRangeService;
+    private FileLinksServiceImpl fileLinksService;
 
     @Override
     public LinksResponse getBinRangeFiles() {
-        return binRangeService.getSasLinkResponse(BatchEnum.BIN_RANGE_GEN);
+        return fileLinksService.getSasLinkResponse(BatchEnum.BIN_RANGE_GEN);
     }
 
 }

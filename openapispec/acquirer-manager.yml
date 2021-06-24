@@ -2,12 +2,12 @@ openapi: 3.0.1
 info:
   title: tkm-acquirer-apis
   description: "RESTful APIs provided to acquirers"
-  version: '1.1.0'
+  version: '1.1.1'
 servers:
   - url: https://test.cstar.pagopa.it/tkm/uat/acquirerm
   - url: https://prod.cstar.pagopa.it/tkm/acquirerm
 paths:
-  /bin-range/link:
+  /bin-ranges/links:
     get:
       summary: Get Temporary link to download bin range details
       operationId: getBinRangeLink
@@ -46,10 +46,10 @@ paths:
                 maxLength: 16
                 example: 937aee55bbabd29b
               required: true
-  /htoken-hpan/known/link:
+  /known-hashes/links:
     get:
-      summary: Get Temporary link to download Known Htoken
-      operationId: getHtokenKnow
+      summary: Get temporary links to download known hpans and htokens
+      operationId: getKnownHashes
       responses:
         '200':
           description: Success
