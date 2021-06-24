@@ -7,6 +7,7 @@ import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.TkmBatchResult;
 import it.gov.pagopa.tkm.ms.acquirermanager.repository.BatchResultRepository;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.impl.BatchAcquirerServiceImpl;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.impl.ProducerServiceImpl;
+import it.gov.pagopa.tkm.ms.acquirermanager.thread.SendBatchAcquirerRecordToQueue;
 import it.gov.pagopa.tkm.ms.acquirermanager.util.ObjectMapperUtils;
 import it.gov.pagopa.tkm.ms.acquirermanager.util.PgpUtils;
 import it.gov.pagopa.tkm.ms.acquirermanager.util.SftpUtils;
@@ -60,6 +61,10 @@ class TestBatchAcquirerService {
 
     @Mock
     private ProducerServiceImpl producerService;
+
+    @Mock
+    private SendBatchAcquirerRecordToQueue sendBatchAcquirerRecordToQueue;
+
 
     private ObjectMapper objectMapper = new ObjectMapper();
 

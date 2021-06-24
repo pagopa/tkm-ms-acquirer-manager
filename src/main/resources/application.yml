@@ -103,6 +103,7 @@ batch:
     cron: ${BIN_RANGE_RETRIEVAL_CRON:-}
   queue-batch-acquirer-result:
     cron: ${QUEUE_BATCH_ACQUIRER_RESULT_CRON:-}
+    threadNumber: ${BATCH_ACQUIRER_THREAD_NUMBER:5}
 
 sftp:
   sftpHostname: ${SFTP_SIA_HOSTNAME}
@@ -112,3 +113,7 @@ sftp:
   sftpPassPhrase: ${keyvault.sftpPassPhrase}
   sftpFolder: ${SFTP_SIA_FOLDER}
   sftpFilesPattern: ${SFTP_SIA_FILE_PATTERN:^TKM\..*\.zip$}
+
+thread:
+  corePoolSize: ${THREAD_CORE_POOL_SIZE:5}
+  maxPoolSize: ${THREAD_MAX_POOL_SIZE:10}

@@ -53,6 +53,9 @@ public class BatchAcquirerServiceImpl implements BatchAcquirerService {
     @Value("${keyvault.sftpPrivateKey}")
     private byte[] sftpPrivateKey;
 
+    @Value("${batch.queue-batch-acquirer-result.threadNumber}")
+    private int threadNumber;
+
     @Autowired
     private SftpUtils sftpUtils;
 
@@ -112,23 +115,17 @@ public class BatchAcquirerServiceImpl implements BatchAcquirerService {
             log.debug("File decrypted " + fileOutputClear);
             PgpUtils.decrypt(fileInputPgp, pgpPrivateKey, pgpPassPhrase, fileOutputClear);
             List<BatchAcquirerCSVRecord> parsedRows = parseCSVFile(fileOutputClear);
-            //todo need to create a real partition releted to enviroment variable parsedRows/VAR is equals to number of  threads
-            List<List<BatchAcquirerCSVRecord>> partition = Lists.partition(parsedRows, 50000);
-            Future<Void> voidFuture = sendBatchAcquirerRecordToQueue.sendToQueue(partition.get(0));
-            Future<Void> voidFuture1 = sendBatchAcquirerRecordToQueue.sendToQueue(partition.get(1));
-            Future<Void> voidFuture2 = sendBatchAcquirerRecordToQueue.sendToQueue(partition.get(2));
-            Future<Void> voidFuture3 = sendBatchAcquirerRecordToQueue.sendToQueue(partition.get(4));
-            Future<Void> voidFuture4 = sendBatchAcquirerRecordToQueue.sendToQueue(partition.get(5));
-            Future<Void> voidFuture5 = sendBatchAcquirerRecordToQueue.sendToQueue(partition.get(6));
-
-            voidFuture.get();
-            voidFuture1.get();
-            voidFuture2.get();
-            voidFuture3.get();
-            voidFuture4.get();
-            voidFuture5.get();
+            int partitionSize = (int) Math.ceil((double)parsedRows.size()/threadNumber);
+            List<List<BatchAcquirerCSVRecord>> partition = Lists.partition(parsedRows, partitionSize);
+            List<Future<Void>> futureList = new ArrayList<>();
+            for(List<BatchAcquirerCSVRecord> record : partition){
+                Future<Void> voidFuture = sendBatchAcquirerRecordToQueue.sendToQueue(record);
+                futureList.add(voidFuture);
+            }
+            for(Future<Void> future : futureList){
+                future.get();
+            }
             build.setSuccess(true);
-            log.info("Sent");
         } catch (Exception e) {
             log.error("Failed queueBatchAcquirerResult to elaborate: " + zipFilePath, e);
             build.setErrorMessage(e.getMessage());

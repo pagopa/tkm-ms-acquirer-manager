@@ -26,10 +26,6 @@ public class SendBatchAcquirerRecordToQueue {
 
     @Async
     public Future<Void> sendToQueue(List<BatchAcquirerCSVRecord> parsedRows) throws PGPException, JsonProcessingException {
-        String s = UUID.randomUUID().toString();
-        Instant now = Instant.now();
-        log.info(now);
-        int count = 0;
         for (BatchAcquirerCSVRecord row : parsedRows) {
             if (!row.getCircuit().isAllowedValue())
                 continue;
@@ -41,16 +37,6 @@ public class SendBatchAcquirerRecordToQueue {
             tokens.add(new Token(row.getToken(), null));
             message.setTokens(tokens);
             producerService.sendMessage(message);
-
-            //todo remove
-            count++;
-            Instant now2 = Instant.now();
-            long l = now2.toEpochMilli() - now.toEpochMilli();
-            if (l >= 1000) {
-                now = now2;
-                log.info("Count " + s + ": " + l + " " + count);
-                count = 0;
-            }
         }
         return null;
     }

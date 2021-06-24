@@ -2,6 +2,7 @@ package it.gov.pagopa.tkm.ms.acquirermanager.config;
 
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.sleuth.instrument.async.LazyTraceExecutor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.AsyncConfigurerSupport;
@@ -17,13 +18,17 @@ public class ThreadConfig extends AsyncConfigurerSupport {
     @Autowired
     private BeanFactory beanFactory;
 
+    @Value("${thread.corePoolSize}")
+    private int corePoolSize;
+
+    @Value("${thread.maxPoolSize}")
+    private int maxPoolSize;
+
     @Override
     public Executor getAsyncExecutor() {
         ThreadPoolTaskExecutor threadPoolTaskExecutor = new ThreadPoolTaskExecutor();
-        //todo MOVE TO ENVIROMENT VAR
-        threadPoolTaskExecutor.setCorePoolSize(5);
-        //todo MOVE TO ENVIROMENT VAR
-        threadPoolTaskExecutor.setMaxPoolSize(10);
+        threadPoolTaskExecutor.setCorePoolSize(corePoolSize);
+        threadPoolTaskExecutor.setMaxPoolSize(maxPoolSize);
         threadPoolTaskExecutor.setQueueCapacity(0);
         threadPoolTaskExecutor.initialize();
 
