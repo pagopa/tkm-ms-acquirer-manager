@@ -100,8 +100,8 @@ public class KnownHashesGenServiceImpl implements KnownHashesGenService {
         KnownHashesResponse hashesResponse = cardManagerClient.getKnownHashes(maxRecordsInApiCall, lastOffset.getLastHpanOffset(), lastOffset.getLastHtokenOffset());
         List<String> hashes = ListUtils.union(hashesResponse.getHpans(), hashesResponse.getHtokens());
         log.info(hashes.size() + " hashes retrieved");
-        lastOffset.setLastHpanOffset(lastOffset.getLastHpanOffset() + CollectionUtils.size(hashesResponse.getHpans()));
-        lastOffset.setLastHtokenOffset(lastOffset.getLastHtokenOffset() + CollectionUtils.size(hashesResponse.getHtokens()));
+        lastOffset.setLastHpanOffset(hashesResponse.getNextHpanOffset());
+        lastOffset.setLastHtokenOffset(hashesResponse.getNextHtokenOffset());
         int freeSpotsInLastFile = lastOffset.getFreeSpots(maxRowsInFiles);
         if (freeSpotsInLastFile > 0) {
             BatchResultDetails lastFileDetails = manageExistingFile(lastOffset, hashes, freeSpotsInLastFile);
