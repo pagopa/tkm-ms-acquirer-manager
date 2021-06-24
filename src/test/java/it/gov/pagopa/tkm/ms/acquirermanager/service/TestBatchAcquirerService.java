@@ -19,6 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.cloud.sleuth.Tracer;
@@ -65,6 +66,8 @@ class TestBatchAcquirerService {
     @Mock
     private SendBatchAcquirerRecordToQueue sendBatchAcquirerRecordToQueue;
 
+    @TempDir
+    static Path tempDir;
 
     private ObjectMapper objectMapper = new ObjectMapper();
 
