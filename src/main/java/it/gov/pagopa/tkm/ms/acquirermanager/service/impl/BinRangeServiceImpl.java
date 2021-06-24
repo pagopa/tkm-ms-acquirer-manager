@@ -2,10 +2,11 @@ package it.gov.pagopa.tkm.ms.acquirermanager.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa.*;
-import it.gov.pagopa.tkm.ms.acquirermanager.constant.*;
-import it.gov.pagopa.tkm.ms.acquirermanager.model.dto.*;
-import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.*;
+import it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa.VisaClient;
+import it.gov.pagopa.tkm.ms.acquirermanager.constant.CircuitEnum;
+import it.gov.pagopa.tkm.ms.acquirermanager.model.dto.BatchResultDetails;
+import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.TkmBatchResult;
+import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.TkmBinRange;
 import it.gov.pagopa.tkm.ms.acquirermanager.repository.BatchResultRepository;
 import it.gov.pagopa.tkm.ms.acquirermanager.repository.BinRangeRepository;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.BinRangeService;
@@ -14,11 +15,13 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cloud.sleuth.*;
+import org.springframework.cloud.sleuth.Span;
+import org.springframework.cloud.sleuth.Tracer;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
@@ -35,7 +38,7 @@ public class BinRangeServiceImpl implements BinRangeService {
 
     @Autowired
     private VisaClient visaClient;
-    
+
     @Autowired
     private BatchResultRepository batchResultRepository;
 

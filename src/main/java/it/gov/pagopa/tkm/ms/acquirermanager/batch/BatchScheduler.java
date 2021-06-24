@@ -1,5 +1,6 @@
 package it.gov.pagopa.tkm.ms.acquirermanager.batch;
 
+import it.gov.pagopa.tkm.ms.acquirermanager.service.BatchAcquirerService;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.BinRangeService;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.KnownHashesCopyService;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.KnownHashesGenService;
@@ -19,6 +20,9 @@ public class BatchScheduler {
 
     @Autowired
     private KnownHashesCopyService knownHashesCopyService;
+
+    @Autowired
+    private BatchAcquirerService batchAcquirerService;
 
     @Scheduled(cron = "${batch.bin-range-gen.cron}")
     @SchedulerLock(name = "Bin_Range_Gen_Task", lockAtMostFor = "PT6H")
@@ -44,4 +48,9 @@ public class BatchScheduler {
         knownHashesCopyService.copyKnownHashesFiles();
     }
 
+    @Scheduled(cron = "${batch.queue-batch-acquirer-result.cron}")
+    @SchedulerLock(name = "Batch_Acquirer_Result_Task")
+    public void queueBatchAcquirerResultTask() {
+        batchAcquirerService.queueBatchAcquirerResult();
+    }
 }

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
 	<artifactId>acquirer-manager</artifactId>
@@ -69,6 +70,21 @@
             <version>4.9.1</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.hierynomus</groupId>
+            <artifactId>sshj</artifactId>
+            <version>0.31.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.univocity</groupId>
+            <artifactId>univocity-parsers</artifactId>
+            <version>2.8.4</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka</artifactId>
+            <version>2.7.0</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -81,13 +97,16 @@
                 <configuration>
                     <excludes>
                         <exclude>it/gov/pagopa/tkm/ms/acquirermanager/client/external/visa/model/**/*.class</exclude>
-                        <exclude>it/gov/pagopa/tkm/ms/acquirermanager/client/internal/cardmanager/model/response/**/*.class</exclude>
+                        <exclude>
+                            it/gov/pagopa/tkm/ms/acquirermanager/client/internal/cardmanager/model/response/**/*.class
+                        </exclude>
                         <exclude>it/gov/pagopa/tkm/ms/acquirermanager/config/**/*.class</exclude>
                         <exclude>it/gov/pagopa/tkm/ms/acquirermanager/repository/**/*.class</exclude>
                         <exclude>it/gov/pagopa/tkm/ms/acquirermanager/model/**/*.class</exclude>
                         <exclude>it/gov/pagopa/tkm/ms/acquirermanager/constant/**/*.class</exclude>
                         <exclude>it/gov/pagopa/tkm/ms/acquirermanager/exception/**/*.class</exclude>
                         <exclude>it/gov/pagopa/tkm/ms/acquirermanager/batch/**/*.class</exclude>
+                        <exclude>it/gov/pagopa/tkm/ms/acquirermanager/util/SftpUtils.class</exclude>
                         <exclude>it/gov/pagopa/tkm/ms/acquirermanager/AcquirerManagerApplication.class</exclude>
                     </excludes>
                 </configuration>
