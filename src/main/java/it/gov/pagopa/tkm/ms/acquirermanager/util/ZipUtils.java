@@ -2,6 +2,7 @@ package it.gov.pagopa.tkm.ms.acquirermanager.util;
 
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -38,7 +39,9 @@ public class ZipUtils {
         log.debug("Zipped: " + filePath);
         Files.delete(Paths.get(filePath));
         log.debug("Deleted: " + filePath + " - Exists? " + Files.exists(Paths.get(filePath)));
-        return baos.toByteArray();
+        byte[] bytes = baos.toByteArray();
+        baos.close();
+        return bytes;
     }
 
     public static List<String> unzipFile(String zipFilePath, String destDirectory) throws IOException {

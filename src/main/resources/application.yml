@@ -83,6 +83,9 @@ keyvault:
 blob-storage:
   visaPublicCert: azure-blob://${BLOB_STORAGE_ACQUIRER_CONFIG_CONTAINER}/Visa_Public_Cert.p12
 
+client-urls:
+  card-manager: ${CARD_MANAGER_URL}
+
 circuit-urls:
   visa: ${VISA_URL}
 
@@ -101,6 +104,12 @@ batch:
     max-rows-in-files: ${BIN_RANGE_GEN_MAX_ROWS_IN_FILES:1000000}
   bin-range-retrieval:
     cron: ${BIN_RANGE_RETRIEVAL_CRON:-}
+  known-hashes-gen:
+    cron: ${KNOWN_HASHES_GEN_CRON:-}
+    max-rows-in-files: ${KNOWN_HASHES_GEN_MAX_ROWS_IN_FILES:1000000}
+    max-records-in-api-call: ${KNOWN_HASHES_GEN_MAX_RECORDS_IN_API_CALL:500000}
+  known-hashes-copy:
+    cron: ${KNOWN_HASHES_COPY_CRON:-}
   queue-batch-acquirer-result:
     cron: ${QUEUE_BATCH_ACQUIRER_RESULT_CRON:-}
     threadNumber: ${BATCH_ACQUIRER_THREAD_NUMBER:5}
