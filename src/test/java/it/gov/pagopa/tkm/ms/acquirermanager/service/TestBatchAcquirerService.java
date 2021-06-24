@@ -7,6 +7,7 @@ import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.TkmBatchResult;
 import it.gov.pagopa.tkm.ms.acquirermanager.repository.BatchResultRepository;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.impl.BatchAcquirerServiceImpl;
 import it.gov.pagopa.tkm.ms.acquirermanager.thread.SendBatchAcquirerRecordToQueue;
+import it.gov.pagopa.tkm.ms.acquirermanager.util.ObjectMapperUtils;
 import it.gov.pagopa.tkm.ms.acquirermanager.util.SftpUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -63,6 +64,9 @@ class TestBatchAcquirerService {
     @Mock
     Future<Void> mockFuture;
 
+    @Mock
+    private ObjectMapperUtils mapperUtils;
+
     private final ArgumentCaptor<TkmBatchResult> batchResultArgumentCaptor = ArgumentCaptor.forClass(TkmBatchResult.class);
 
     private DefaultBeans testBeans = new DefaultBeans();
@@ -92,18 +96,21 @@ class TestBatchAcquirerService {
                 return null;
             }).when(sftpUtils).downloadFile(anyString(), anyString());
             when(sendBatchAcquirerRecordToQueue.sendToQueue(anyList())).thenReturn(mockFuture);
+            String details = "{}";
+            when(mapperUtils.toJsonOrNull(any())).thenReturn(details);
             batchAcquirerService.queueBatchAcquirerResult();
             verify(sftpUtils, times(1)).downloadFile(anyString(), anyString());
             TkmBatchResult build = TkmBatchResult.builder().
                     runOutcome(true)
                     .executionTraceId(TRACE_ID)
+                    .details(details)
                     .targetBatch(BatchEnum.BATCH_ACQUIRER)
                     .build();
             verify(batchResultRepository).save(batchResultArgumentCaptor.capture());
             TkmBatchResult value = batchResultArgumentCaptor.getValue();
             assertThat(value)
                     .usingRecursiveComparison()
-                    .ignoringFields("runDate", "runDurationMillis", "details")
+                    .ignoringFields("runDate", "runDurationMillis")
                     .isEqualTo(build);
             assertTrue(value.getRunDurationMillis() > 0);
             assertNotNull(value.getRunDate());
