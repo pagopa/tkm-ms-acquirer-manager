@@ -1,12 +1,16 @@
 package it.gov.pagopa.tkm.ms.acquirermanager.constant;
 
-import com.azure.storage.blob.models.*;
-import it.gov.pagopa.tkm.constant.*;
-import it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa.model.response.*;
-import it.gov.pagopa.tkm.ms.acquirermanager.client.internal.cardmanager.model.response.*;
-import it.gov.pagopa.tkm.ms.acquirermanager.model.dto.*;
-import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.*;
-import it.gov.pagopa.tkm.ms.acquirermanager.model.response.*;
+import com.azure.storage.blob.models.BlobItem;
+import it.gov.pagopa.tkm.constant.TkmDatetimeConstant;
+import it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa.model.response.VisaBinRangeResponse;
+import it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa.model.response.VisaBinRangeResponseData;
+import it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa.model.response.VisaBinRangeResponseStatus;
+import it.gov.pagopa.tkm.ms.acquirermanager.client.internal.cardmanager.model.response.KnownHashesResponse;
+import it.gov.pagopa.tkm.ms.acquirermanager.model.dto.BatchResultDetails;
+import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.TkmBatchResult;
+import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.TkmBinRange;
+import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.TkmHashOffset;
+import it.gov.pagopa.tkm.ms.acquirermanager.model.response.LinksResponse;
 import net.schmizz.sshj.sftp.FileAttributes;
 import net.schmizz.sshj.sftp.PathComponents;
 import net.schmizz.sshj.sftp.RemoteResourceInfo;
@@ -179,8 +183,9 @@ public class DefaultBeans {
             .lastHashesFileRowCount(0)
             .build();
 
+    public final String acquirerFileName = "TKM.acquirer.junit.csv.gpg.zip";
     public final List<RemoteResourceInfo> REMOTE_RESOURCE_INFO = Arrays.asList(
-            new RemoteResourceInfo(new PathComponents("parent", "name", "path"), FileAttributes.EMPTY));
+            new RemoteResourceInfo(new PathComponents("parent", acquirerFileName, acquirerFileName), FileAttributes.EMPTY));
 
     public final List<String> FILE_PATH_LIST = Collections.singletonList(
             FileUtils.getTempDirectoryPath() + File.separator + UUID_TEST + File.separator + "name"
