@@ -5,7 +5,7 @@ import it.gov.pagopa.tkm.constant.TkmDatetimeConstant;
 import it.gov.pagopa.tkm.ms.acquirermanager.constant.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.dto.BatchResultDetails;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.TkmBatchResult;
-import it.gov.pagopa.tkm.ms.acquirermanager.repository.BatchResultRepository;
+import it.gov.pagopa.tkm.ms.acquirermanager.repository.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.BlobService;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.KnownHashesCopyService;
 import it.gov.pagopa.tkm.ms.acquirermanager.util.ObjectMapperUtils;
@@ -41,6 +41,9 @@ public class KnownHashesCopyServiceImpl implements KnownHashesCopyService {
     private BatchResultRepository batchResultRepository;
 
     @Autowired
+    private HashOffsetRepository hashOffsetRepository;
+
+    @Autowired
     private Tracer tracer;
 
     @Autowired
@@ -61,12 +64,14 @@ public class KnownHashesCopyServiceImpl implements KnownHashesCopyService {
         Instant now = Instant.now();
         List<BatchResultDetails> batchResultDetails = new ArrayList<>();
         List<BlobItem> allKnownHashesFiles = blobService.getFilesFromDirectory(StringUtils.joinWith(Constants.BLOB_STORAGE_DELIMITER, DirectoryNames.KNOWN_HASHES, DirectoryNames.ALL_KNOWN_HASHES));
-        blobService.deleteTodayFolder(now, BatchEnum.KNOWN_HASHES_COPY);
+        blobService.deleteFolder(blobService.getDirectoryName(now, BatchEnum.KNOWN_HASHES_COPY));
         log.debug("Found: " + allKnownHashesFiles);
         for (BlobItem blobItem : allKnownHashesFiles) {
             batchResultDetails.add(copyFileToDestinationForAcquirer(now, blobItem));
         }
+        blobService.deleteFolder(blobService.getDirectoryName(now, BatchEnum.KNOWN_HASHES_GEN));
         saveBatchResult(now, batchResultDetails);
+        hashOffsetRepository.deleteAll();
         log.info("End of known hashes copy batch " + traceId);
     }
 

@@ -5,8 +5,7 @@ import com.azure.storage.blob.*;
 import com.azure.storage.blob.models.BlobItem;
 import com.azure.storage.blob.models.ListBlobsOptions;
 import com.azure.storage.blob.specialized.AppendBlobClient;
-import it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum;
-import it.gov.pagopa.tkm.ms.acquirermanager.constant.DefaultBeans;
+import it.gov.pagopa.tkm.ms.acquirermanager.constant.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.impl.BlobServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,7 +21,7 @@ import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertIterableEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -72,7 +71,11 @@ class TestBlobService {
         when(serviceClientBuilderMock.buildClient()).thenReturn(serviceClientMock);
         when(serviceClientMock.getBlobContainerClient(DefaultBeans.TEST_CONTAINER_NAME)).thenReturn(containerClientMock);
         when(containerClientMock.getBlobClient(any())).thenReturn(blobClientMock);
+        when(blobClientMock.getAppendBlobClient()).thenReturn(appendBlobClientMock);
         blobService.uploadFile(new byte[]{}, DefaultBeans.INSTANT, "filename", "sha", BatchEnum.BIN_RANGE_GEN);
+        verify(blobClientMock).upload(any(InputStream.class), anyLong(), anyBoolean());
+        verify(blobClientMock).setMetadata(anyMap());
+        blobService.uploadFile(new byte[]{}, DefaultBeans.INSTANT, "filename", "sha", BatchEnum.KNOWN_HASHES_GEN);
         verify(blobClientMock).upload(any(InputStream.class), anyLong(), anyBoolean());
         verify(blobClientMock).setMetadata(anyMap());
     }
@@ -108,10 +111,22 @@ class TestBlobService {
         when(containerClientMock.listBlobsByHierarchy(anyString(), any(ListBlobsOptions.class), any())).thenReturn(pagedIterable);
         when(pagedIterable.iterator()).thenReturn(defaultBeans.BLOB_LIST.iterator());
         when(containerClientMock.getBlobClient(any())).thenReturn(blobClientMock);
-
-        blobService.deleteTodayFolder(Instant.now(), BatchEnum.BIN_RANGE_GEN);
+        blobService.deleteFolder(blobService.getDirectoryName(Instant.now(), BatchEnum.BIN_RANGE_GEN));
         verify(blobClientMock).delete();
+    }
 
+    @Test
+    void givenBatch_getDirectoryName() {
+        assertEquals(
+                String.format("%s/%s/", DirectoryNames.KNOWN_HASHES, "19700101"),
+                blobService.getDirectoryName(DefaultBeans.INSTANT, BatchEnum.KNOWN_HASHES_COPY));
+        assertEquals(
+                String.format("%s/%s/", DirectoryNames.KNOWN_HASHES, DirectoryNames.ALL_KNOWN_HASHES),
+                blobService.getDirectoryName(DefaultBeans.INSTANT, BatchEnum.KNOWN_HASHES_GEN));
+        assertEquals(
+                String.format("%s/%s/", DirectoryNames.BIN_RANGES, "19700101"),
+                blobService.getDirectoryName(DefaultBeans.INSTANT, BatchEnum.BIN_RANGE_GEN));
+        assertNull(blobService.getDirectoryName(DefaultBeans.INSTANT, BatchEnum.BATCH_ACQUIRER));
     }
 
 }

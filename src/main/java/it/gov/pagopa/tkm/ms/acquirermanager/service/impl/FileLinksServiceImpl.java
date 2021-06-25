@@ -79,7 +79,7 @@ public class FileLinksServiceImpl implements FileLinksService {
         client.listBlobsByHierarchy("/", listBlobsOptions, null).iterator().forEachRemaining(blobItemList::add);
         if (CollectionUtils.isEmpty(blobItemList)) {
             log.info("No files found on Blob Storage");
-            throw new AcquirerDataNotFoundException();
+            throw new AcquirerDataNotFoundException(ErrorCodeEnum.DATA_NOT_FOUND);
         }
         return blobItemList;
     }

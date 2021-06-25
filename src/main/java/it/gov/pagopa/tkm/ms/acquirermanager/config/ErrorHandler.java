@@ -11,9 +11,9 @@ import org.springframework.web.bind.annotation.*;
 public class ErrorHandler {
 
     @ExceptionHandler(AcquirerDataNotFoundException.class)
-    public ResponseEntity<Void> handleAcquirerDataNotFoundException(AcquirerDataNotFoundException ce) {
+    public ResponseEntity<ErrorCodeEnum> handleAcquirerDataNotFoundException(AcquirerDataNotFoundException ce) {
         log.error(ce.getMessage());
-        return ResponseEntity.notFound().build();
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ce.getErrorCode());
     }
 
     @ExceptionHandler(AcquirerException.class)
