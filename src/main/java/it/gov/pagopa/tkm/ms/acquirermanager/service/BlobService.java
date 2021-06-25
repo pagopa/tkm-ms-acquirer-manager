@@ -18,6 +18,6 @@ public interface BlobService {
 
     List<BlobItem> getFilesFromDirectory(String directory);
 
-    void deleteTodayFolder(Instant now, BatchEnum batch);
+    void deleteFolder(String directory);
 
 }

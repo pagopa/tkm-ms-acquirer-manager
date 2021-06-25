@@ -108,10 +108,8 @@ class TestBlobService {
         when(containerClientMock.listBlobsByHierarchy(anyString(), any(ListBlobsOptions.class), any())).thenReturn(pagedIterable);
         when(pagedIterable.iterator()).thenReturn(defaultBeans.BLOB_LIST.iterator());
         when(containerClientMock.getBlobClient(any())).thenReturn(blobClientMock);
-
-        blobService.deleteTodayFolder(Instant.now(), BatchEnum.BIN_RANGE_GEN);
+        blobService.deleteFolder(blobService.getDirectoryName(Instant.now(), BatchEnum.BIN_RANGE_GEN));
         verify(blobClientMock).delete();
-
     }
 
 }

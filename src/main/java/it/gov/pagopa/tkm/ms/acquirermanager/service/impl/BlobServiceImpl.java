@@ -130,11 +130,10 @@ public class BlobServiceImpl implements BlobService {
     }
 
     @Override
-    public void deleteTodayFolder(Instant now, BatchEnum batch) {
-        String directoryName = getDirectoryName(now, batch);
-        List<BlobItem> blobItemsInFolderHashingTmp = getFilesFromDirectory(directoryName);
+    public void deleteFolder(String directory) {
+        List<BlobItem> files = getFilesFromDirectory(directory);
         BlobContainerClient client = getBlobContainerClient();
-        for (BlobItem blobItem : blobItemsInFolderHashingTmp) {
+        for (BlobItem blobItem : files) {
             log.warn("The destination folder is not empty. Deleting " + blobItem.getName());
             client.getBlobClient(blobItem.getName()).delete();
         }
