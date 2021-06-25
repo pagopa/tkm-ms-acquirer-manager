@@ -59,14 +59,14 @@ public class VisaClient {
 
     private static final Integer CHUNK_SIZE = 500;
 
+    private static final int timeout = 5000;
+
     private RestTemplate restTemplate;
 
     @PostConstruct
     //TODO Need to add pooling with ssl
     public void init() throws Exception {
         log.info("Set Visa Client with Mutual Auth");
-        int timeout = 5000;
-        restTemplate = new RestTemplate();
         char[] chars = keystorePassword.toCharArray();
         KeyStore clientStore = KeyStore.getInstance("PKCS12");
         clientStore.load(publicCert.getInputStream(), chars);
@@ -85,6 +85,21 @@ public class VisaClient {
         restTemplate = new RestTemplate(requestFactory);
     }
 
+    public List<TkmBinRange> getBinRanges() {
+        List<TkmBinRange> tkmBinRangeList = new ArrayList<>();
+        int index = 0;
+        do {
+            log.info("Calling Visa bin range API");
+            VisaBinRangeResponse visaBinRangeResponse = invokeVisaBinRange(index);
+            log.trace(visaBinRangeResponse.toString());
+            log.info(visaBinRangeResponse.getTotalRecordsCount() + " bin ranges total, this response contains " + visaBinRangeResponse.getNumRecordsReturned() + " bin ranges");
+            tkmBinRangeList.addAll(getBinRangeToken(visaBinRangeResponse));
+            index = getNewIndex(index, visaBinRangeResponse);
+        } while (index != -1);
+
+        return tkmBinRangeList;
+    }
+
     private VisaBinRangeResponse invokeVisaBinRange(int index) {
         HttpHeaders headers = new HttpHeaders();
         headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
@@ -101,21 +116,6 @@ public class VisaClient {
         log.trace(visaBinRangeRequest);
         HttpEntity<VisaBinRangeRequest> entity = new HttpEntity<>(visaBinRangeRequest, headers);
         return restTemplate.postForObject(retrieveBinRangesUrl, entity, VisaBinRangeResponse.class);
-    }
-
-    public List<TkmBinRange> getBinRanges() {
-        List<TkmBinRange> tkmBinRangeList = new ArrayList<>();
-        int index = 0;
-        do {
-            log.info("Calling Visa bin range API");
-            VisaBinRangeResponse visaBinRangeResponse = invokeVisaBinRange(index);
-            log.trace(visaBinRangeResponse.toString());
-            log.info(visaBinRangeResponse.getTotalRecordsCount() + " bin ranges total, this response contains " + visaBinRangeResponse.getNumRecordsReturned() + " bin ranges");
-            tkmBinRangeList.addAll(getBinRangeToken(visaBinRangeResponse));
-            index = getNewIndex(index, visaBinRangeResponse);
-        } while (index != -1);
-
-        return tkmBinRangeList;
     }
 
     private int getNewIndex(int index, VisaBinRangeResponse visaBinRangeResponse) {

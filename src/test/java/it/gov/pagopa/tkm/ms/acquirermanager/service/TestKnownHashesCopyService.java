@@ -4,7 +4,7 @@ import it.gov.pagopa.tkm.constant.TkmDatetimeConstant;
 import it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum;
 import it.gov.pagopa.tkm.ms.acquirermanager.constant.DefaultBeans;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.TkmBatchResult;
-import it.gov.pagopa.tkm.ms.acquirermanager.repository.BatchResultRepository;
+import it.gov.pagopa.tkm.ms.acquirermanager.repository.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.impl.KnownHashesCopyServiceImpl;
 import it.gov.pagopa.tkm.ms.acquirermanager.util.ObjectMapperUtils;
 import org.apache.commons.io.FileUtils;
@@ -37,6 +37,7 @@ import static org.mockito.Mockito.*;
 class TestKnownHashesCopyService {
 
     private static final String TRACE_ID = "traceId";
+
     @InjectMocks
     private KnownHashesCopyServiceImpl knownHashesCopyService;
 
@@ -45,6 +46,9 @@ class TestKnownHashesCopyService {
 
     @Mock
     private BatchResultRepository batchResultRepository;
+
+    @Mock
+    private HashOffsetRepository hashOffsetRepository;
 
     @Mock
     private Tracer tracer;
@@ -90,6 +94,7 @@ class TestKnownHashesCopyService {
                 .details(mapperUtilsString)
                 .build();
         verify(batchResultRepository).save(batchResultArgumentCaptor.capture());
+        verify(hashOffsetRepository).deleteAll();
         TkmBatchResult value = batchResultArgumentCaptor.getValue();
         assertThat(value)
                 .usingRecursiveComparison()
