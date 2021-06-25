@@ -75,7 +75,7 @@ public class KnownHashesGenServiceImpl implements KnownHashesGenService {
                 .runDate(now)
                 .runOutcome(true)
                 .build();
-        List<BatchResultDetails> batchResultDetails = callCardManagerForKnownHpans(now);
+        List<BatchResultDetails> batchResultDetails = getKnownHpans(now);
         long duration = Instant.now().toEpochMilli() - start;
         batchResult.setRunDurationMillis(duration);
         batchResult.setDetails(writeAsJson(batchResultDetails));
@@ -92,18 +92,13 @@ public class KnownHashesGenServiceImpl implements KnownHashesGenService {
         }
     }
 
-    private List<BatchResultDetails> callCardManagerForKnownHpans(Instant now) {
+    private List<BatchResultDetails> getKnownHpans(Instant now) {
         List<BatchResultDetails> details = new ArrayList<>();
         List<TkmHashOffset> offsets = hashOffsetRepository.findAll();
         TkmHashOffset lastOffset = CollectionUtils.isEmpty(offsets) ? new TkmHashOffset() : offsets.get(0);
-        log.info("Calling Card Manager for known hashes");
-        KnownHashesResponse hashesResponse = cardManagerClient.getKnownHashes(maxRecordsInApiCall, lastOffset.getLastHpanOffset(), lastOffset.getLastHtokenOffset());
-        List<String> hashes = ListUtils.union(hashesResponse.getHpans(), hashesResponse.getHtokens());
-        log.info(hashes.size() + " hashes retrieved");
-        lastOffset.setLastHpanOffset(hashesResponse.getNextHpanOffset());
-        lastOffset.setLastHtokenOffset(hashesResponse.getNextHtokenOffset());
+        List<String> hashes = callCardManagerForHashes(lastOffset);
         int freeSpotsInLastFile = lastOffset.getFreeSpots(maxRowsInFiles);
-        if (freeSpotsInLastFile > 0) {
+        if (CollectionUtils.isNotEmpty(hashes) && freeSpotsInLastFile > 0) {
             BatchResultDetails lastFileDetails = manageExistingFile(lastOffset, hashes, freeSpotsInLastFile);
             details.add(lastFileDetails);
         }
@@ -119,6 +114,20 @@ public class KnownHashesGenServiceImpl implements KnownHashesGenService {
         log.trace(lastOffset);
         hashOffsetRepository.save(lastOffset);
         return details;
+    }
+
+    private List<String> callCardManagerForHashes(TkmHashOffset lastOffset) {
+        try {
+            log.info("Calling Card Manager for known hashes");
+            KnownHashesResponse hashesResponse = cardManagerClient.getKnownHashes(maxRecordsInApiCall, lastOffset.getLastHpanOffset(), lastOffset.getLastHtokenOffset());
+            List<String> hashes = ListUtils.union(hashesResponse.getHpans(), hashesResponse.getHtokens());
+            log.info(hashes.size() + " hashes retrieved");
+            lastOffset.setLastHpanOffset(hashesResponse.getNextHpanOffset());
+            lastOffset.setLastHtokenOffset(hashesResponse.getNextHtokenOffset());
+            return hashes;
+        } catch (Exception e) {
+            throw new AcquirerException(ErrorCodeEnum.CALL_TO_CARD_MANAGER_FAILED);
+        }
     }
 
     private BatchResultDetails manageNewFile(List<String> remainingHashes, Instant now, int index, TkmHashOffset lastOffset) {
@@ -183,7 +192,7 @@ public class KnownHashesGenServiceImpl implements KnownHashesGenService {
         client.listBlobsByHierarchy("/", listBlobsOptions, null).iterator().forEachRemaining(blobItemList::add);
         if (CollectionUtils.isEmpty(blobItemList)) {
             log.warn("No files found for given filename");
-            throw new AcquirerDataNotFoundException();
+            throw new AcquirerDataNotFoundException(ErrorCodeEnum.DATA_NOT_FOUND);
         }
         return blobItemList.get(0);
     }
