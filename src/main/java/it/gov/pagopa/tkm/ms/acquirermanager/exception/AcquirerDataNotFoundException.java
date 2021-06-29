@@ -1,6 +1,12 @@
 package it.gov.pagopa.tkm.ms.acquirermanager.exception;
 
-public class AcquirerDataNotFoundException extends RuntimeException {
+import it.gov.pagopa.tkm.ms.acquirermanager.constant.*;
+
+public class AcquirerDataNotFoundException extends AcquirerException {
+
+    public AcquirerDataNotFoundException(ErrorCodeEnum errorCode) {
+        super(errorCode);
+    }
 
 }
 

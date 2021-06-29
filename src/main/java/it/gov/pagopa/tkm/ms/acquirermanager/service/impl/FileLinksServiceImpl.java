@@ -1,33 +1,27 @@
 package it.gov.pagopa.tkm.ms.acquirermanager.service.impl;
 
 import com.azure.storage.blob.*;
-import com.azure.storage.blob.models.BlobItem;
-import com.azure.storage.blob.models.BlobListDetails;
-import com.azure.storage.blob.models.ListBlobsOptions;
-import com.azure.storage.blob.sas.BlobContainerSasPermission;
-import com.azure.storage.blob.sas.BlobServiceSasSignatureValues;
-import it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum;
-import it.gov.pagopa.tkm.ms.acquirermanager.exception.AcquirerDataNotFoundException;
-import it.gov.pagopa.tkm.ms.acquirermanager.model.response.LinksResponse;
-import it.gov.pagopa.tkm.ms.acquirermanager.service.BinRangeHashService;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-import org.springframework.util.*;
+import com.azure.storage.blob.models.*;
+import com.azure.storage.blob.sas.*;
+import it.gov.pagopa.tkm.ms.acquirermanager.constant.*;
+import it.gov.pagopa.tkm.ms.acquirermanager.exception.*;
+import it.gov.pagopa.tkm.ms.acquirermanager.model.response.*;
+import it.gov.pagopa.tkm.ms.acquirermanager.service.*;
+import lombok.extern.log4j.*;
+import org.apache.commons.collections.*;
+import org.apache.commons.lang3.*;
+import org.apache.commons.lang3.math.*;
+import org.springframework.beans.factory.annotation.*;
+import org.springframework.stereotype.*;
 
-import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.time.*;
+import java.util.*;
 
 import static it.gov.pagopa.tkm.ms.acquirermanager.constant.BlobMetadataEnum.generationdate;
 
 @Service
-public class BinRangeHashServiceImpl implements BinRangeHashService {
+@Log4j2
+public class FileLinksServiceImpl implements FileLinksService {
 
     @Value("${azure.storage.connection-string}")
     private String connectionString;
@@ -35,26 +29,32 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
     @Value("${BLOB_STORAGE_BIN_HASH_CONTAINER}")
     private String containerName;
 
+    @Autowired
+    private BlobServiceImpl blobService;
+
     private final BlobServiceClientBuilder serviceClientBuilder = new BlobServiceClientBuilder();
     private final BlobClientBuilder blobClientBuilder = new BlobClientBuilder();
-    private final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("uuuuMMdd").withZone(ZoneId.of("Europe/Rome"));
 
     @Override
     public LinksResponse getSasLinkResponse(BatchEnum batchEnum) {
+        log.info("Getting files for batch: " + batchEnum);
         BlobServiceClient serviceClient = serviceClientBuilder.connectionString(connectionString).buildClient();
         BlobContainerClient client = serviceClient.getBlobContainerClient(containerName);
         List<BlobItem> blobItems = getBlobItems(client, batchEnum);
+        int blobItemsSize = CollectionUtils.size(blobItems);
+        log.info(blobItemsSize + " files found on Blob Storage");
         OffsetDateTime now = OffsetDateTime.now();
-        OffsetDateTime offsetDateTime = now.plusMinutes(getAvailableFor(blobItems.size()));
+        OffsetDateTime offsetDateTime = now.plusMinutes(getAvailableFor(blobItemsSize));
         List<String> links = getLinks(offsetDateTime, client, blobItems);
-
-        return LinksResponse.builder()
+        LinksResponse response = LinksResponse.builder()
                 .fileLinks(links)
                 .numberOfFiles(links.size())
                 .availableUntil(offsetDateTime.toInstant())
                 .generationDate(getGenerationDate(blobItems))
                 .expiredIn(offsetDateTime.toEpochSecond() - now.toEpochSecond())
                 .build();
+        log.debug("Response: " + response.toString());
+        return response;
     }
 
     private Instant getGenerationDate(List<BlobItem> blobItems) {
@@ -67,10 +67,10 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
         return instant;
     }
 
-    private List<BlobItem> getBlobItems(BlobContainerClient client, BatchEnum batchEnum) {
+    private List<BlobItem> getBlobItems(BlobContainerClient client, BatchEnum batch) {
         Instant now = Instant.now();
-        String directory = String.format("%s/%s/", batchEnum, dateFormat.format(now));
-
+        String directory = blobService.getDirectoryName(now, batch);
+        log.info("Looking for directory: " + directory);
         BlobListDetails blobListDetails = new BlobListDetails().setRetrieveMetadata(true);
         ListBlobsOptions listBlobsOptions = new ListBlobsOptions()
                 .setPrefix(directory)
@@ -78,7 +78,8 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
         List<BlobItem> blobItemList = new ArrayList<>();
         client.listBlobsByHierarchy("/", listBlobsOptions, null).iterator().forEachRemaining(blobItemList::add);
         if (CollectionUtils.isEmpty(blobItemList)) {
-            throw new AcquirerDataNotFoundException();
+            log.info("No files found on Blob Storage");
+            throw new AcquirerDataNotFoundException(ErrorCodeEnum.DATA_NOT_FOUND);
         }
         return blobItemList;
     }
@@ -89,6 +90,7 @@ public class BinRangeHashServiceImpl implements BinRangeHashService {
         String completeContainerUrl = client.getBlobContainerUrl();
         for (BlobItem blobItem : blobItems) {
             String blobName = blobItem.getName();
+            log.trace(blobName);
             BlobClient blobClient = blobClientBuilder
                     .connectionString(connectionString)
                     .blobName(blobName)

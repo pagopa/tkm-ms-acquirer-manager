@@ -7,7 +7,8 @@ import lombok.*;
 @JsonFormat(shape = JsonFormat.Shape.OBJECT)
 public enum ErrorCodeEnum {
 
-    CALL_TO_CARD_MANAGER_FAILED(4000, "Could not execute call to Card Manager");
+    CALL_TO_CARD_MANAGER_FAILED(4000, "Could not execute call to Card Manager"),
+    DATA_NOT_FOUND(4001, "Requested data could not be found");
 
     @Getter
     private final Integer statusCode;
