@@ -1,28 +1,45 @@
 package it.gov.pagopa.tkm.ms.acquirermanager.service.impl;
 
-import com.azure.storage.blob.*;
-import com.azure.storage.blob.models.*;
-import com.fasterxml.jackson.core.*;
-import com.fasterxml.jackson.databind.*;
-import it.gov.pagopa.tkm.ms.acquirermanager.client.internal.cardmanager.*;
-import it.gov.pagopa.tkm.ms.acquirermanager.client.internal.cardmanager.model.response.*;
-import it.gov.pagopa.tkm.ms.acquirermanager.constant.*;
-import it.gov.pagopa.tkm.ms.acquirermanager.exception.*;
-import it.gov.pagopa.tkm.ms.acquirermanager.model.dto.*;
-import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.*;
-import it.gov.pagopa.tkm.ms.acquirermanager.repository.*;
-import it.gov.pagopa.tkm.ms.acquirermanager.service.*;
-import lombok.extern.log4j.*;
-import org.apache.commons.collections4.*;
-import org.apache.commons.lang3.*;
-import org.springframework.beans.factory.annotation.*;
-import org.springframework.cloud.sleuth.*;
-import org.springframework.stereotype.*;
+import com.azure.storage.blob.BlobClient;
+import com.azure.storage.blob.BlobContainerClient;
+import com.azure.storage.blob.BlobServiceClient;
+import com.azure.storage.blob.BlobServiceClientBuilder;
+import com.azure.storage.blob.models.BlobItem;
+import com.azure.storage.blob.models.BlobListDetails;
+import com.azure.storage.blob.models.ListBlobsOptions;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import it.gov.pagopa.tkm.ms.acquirermanager.client.internal.cardmanager.CardManagerClient;
+import it.gov.pagopa.tkm.ms.acquirermanager.client.internal.cardmanager.model.response.KnownHashesResponse;
+import it.gov.pagopa.tkm.ms.acquirermanager.constant.DirectoryNames;
+import it.gov.pagopa.tkm.ms.acquirermanager.constant.ErrorCodeEnum;
+import it.gov.pagopa.tkm.ms.acquirermanager.exception.AcquirerDataNotFoundException;
+import it.gov.pagopa.tkm.ms.acquirermanager.exception.AcquirerException;
+import it.gov.pagopa.tkm.ms.acquirermanager.exception.EmptyResponseException;
+import it.gov.pagopa.tkm.ms.acquirermanager.model.dto.BatchResultDetails;
+import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.TkmBatchResult;
+import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.TkmHashOffset;
+import it.gov.pagopa.tkm.ms.acquirermanager.repository.BatchResultRepository;
+import it.gov.pagopa.tkm.ms.acquirermanager.repository.HashOffsetRepository;
+import it.gov.pagopa.tkm.ms.acquirermanager.service.FileGeneratorService;
+import it.gov.pagopa.tkm.ms.acquirermanager.service.KnownHashesGenService;
+import lombok.extern.log4j.Log4j2;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.ListUtils;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.sleuth.Span;
+import org.springframework.cloud.sleuth.Tracer;
+import org.springframework.stereotype.Service;
 
-import java.io.*;
-import java.time.*;
-import java.util.*;
-import java.util.stream.*;
+import java.io.ByteArrayInputStream;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum.KNOWN_HASHES_GEN;
 
@@ -69,13 +86,18 @@ public class KnownHashesGenServiceImpl implements KnownHashesGenService {
         log.info("Start of known hashes generation batch " + traceId);
         Instant now = Instant.now();
         long start = now.toEpochMilli();
+        List<BatchResultDetails> batchResultDetails = new ArrayList<>();
         TkmBatchResult batchResult = TkmBatchResult.builder()
                 .targetBatch(KNOWN_HASHES_GEN)
                 .executionTraceId(String.valueOf(traceId))
                 .runDate(now)
-                .runOutcome(true)
                 .build();
-        List<BatchResultDetails> batchResultDetails = getKnownHpans(now);
+        try {
+            batchResultDetails = getKnownHpans(now);
+        } catch (Exception e) {
+            log.error(e);
+            batchResultDetails.add(BatchResultDetails.builder().success(false).errorMessage(e.getMessage()).build());
+        }
         long duration = Instant.now().toEpochMilli() - start;
         batchResult.setRunDurationMillis(duration);
         batchResult.setDetails(writeAsJson(batchResultDetails));
@@ -92,7 +114,7 @@ public class KnownHashesGenServiceImpl implements KnownHashesGenService {
         }
     }
 
-    private List<BatchResultDetails> getKnownHpans(Instant now) {
+    private List<BatchResultDetails> getKnownHpans(Instant now) throws AcquirerException {
         List<BatchResultDetails> details = new ArrayList<>();
         List<TkmHashOffset> offsets = hashOffsetRepository.findAll();
         TkmHashOffset lastOffset = CollectionUtils.isEmpty(offsets) ? new TkmHashOffset() : offsets.get(0);
@@ -103,6 +125,9 @@ public class KnownHashesGenServiceImpl implements KnownHashesGenService {
             details.add(lastFileDetails);
         }
         List<String> remainingHashes = hashes.stream().skip(freeSpotsInLastFile).collect(Collectors.toList());
+        if (CollectionUtils.isEmpty(hashes) && lastOffset.getLastHashesFileIndex() == 0) {
+            remainingHashes = Collections.singletonList(StringUtils.EMPTY);
+        }
         if (CollectionUtils.isNotEmpty(remainingHashes)) {
             List<List<String>> partitionedHashes = ListUtils.partition(remainingHashes, maxRowsInFiles);
             for (List<String> chunk : partitionedHashes) {
@@ -116,10 +141,11 @@ public class KnownHashesGenServiceImpl implements KnownHashesGenService {
         return details;
     }
 
-    private List<String> callCardManagerForHashes(TkmHashOffset lastOffset) {
+    private List<String> callCardManagerForHashes(TkmHashOffset lastOffset) throws AcquirerException {
         try {
             log.info("Calling Card Manager for known hashes");
             KnownHashesResponse hashesResponse = cardManagerClient.getKnownHashes(maxRecordsInApiCall, lastOffset.getLastHpanOffset(), lastOffset.getLastHtokenOffset());
+            checkResponse(hashesResponse);
             List<String> hashes = ListUtils.union(hashesResponse.getHpans(), hashesResponse.getHtokens());
             log.info(hashes.size() + " hashes retrieved");
             lastOffset.setLastHpanOffset(hashesResponse.getNextHpanOffset());
@@ -127,6 +153,14 @@ public class KnownHashesGenServiceImpl implements KnownHashesGenService {
             return hashes;
         } catch (Exception e) {
             throw new AcquirerException(ErrorCodeEnum.CALL_TO_CARD_MANAGER_FAILED);
+        }
+    }
+
+    private void checkResponse(Object response) throws EmptyResponseException {
+        if (response == null) {
+            String responseCannotBeEmpty = "Response cannot be empty";
+            log.error(responseCannotBeEmpty);
+            throw new EmptyResponseException(responseCannotBeEmpty);
         }
     }
 
@@ -170,7 +204,8 @@ public class KnownHashesGenServiceImpl implements KnownHashesGenService {
 
     private void updateFile(BlobItem file, List<String> hashes) {
         log.info("Updating file " + file.getName());
-        byte[] hashesAsBytes = hashes.stream().collect(Collectors.joining(System.lineSeparator())).getBytes();
+        String hashesAsString = hashes.stream().collect(Collectors.joining(System.lineSeparator())) + System.lineSeparator();
+        byte[] hashesAsBytes = hashesAsString.getBytes();
         log.trace(hashesAsBytes);
         BlobServiceClient serviceClient = serviceClientBuilder.connectionString(connectionString).buildClient();
         BlobContainerClient client = serviceClient.getBlobContainerClient(containerName);

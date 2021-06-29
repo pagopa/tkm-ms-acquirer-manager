@@ -1,8 +1,9 @@
 package it.gov.pagopa.tkm.ms.acquirermanager.client.internal.cardmanager;
 
-import it.gov.pagopa.tkm.ms.acquirermanager.client.internal.cardmanager.model.response.*;
-import org.springframework.cloud.openfeign.*;
-import org.springframework.web.bind.annotation.*;
+import it.gov.pagopa.tkm.ms.acquirermanager.client.internal.cardmanager.model.response.KnownHashesResponse;
+import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import static it.gov.pagopa.tkm.ms.acquirermanager.constant.ApiParams.*;
 
@@ -12,11 +13,11 @@ public interface CardManagerClient {
     @GetMapping("/known-hashes")
     KnownHashesResponse getKnownHashes(
             @RequestParam(value = MAX_NUMBER_OF_RECORDS_PARAM)
-            Integer maxRecords,
+                    Integer maxRecords,
             @RequestParam(value = HPAN_OFFSET_PARAM)
-            Integer hpanOffset,
+                    Integer hpanOffset,
             @RequestParam(value = HTOKEN_OFFSET_PARAM)
-            Integer htokenOffset
+                    Integer htokenOffset
     );
 
 }

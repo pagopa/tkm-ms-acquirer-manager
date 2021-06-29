@@ -8,10 +8,12 @@ import com.azure.storage.blob.models.BlobItem;
 import com.azure.storage.blob.models.BlobListDetails;
 import com.azure.storage.blob.models.ListBlobsOptions;
 import it.gov.pagopa.tkm.constant.TkmDatetimeConstant;
-import it.gov.pagopa.tkm.ms.acquirermanager.constant.*;
+import it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum;
+import it.gov.pagopa.tkm.ms.acquirermanager.constant.Constants;
+import it.gov.pagopa.tkm.ms.acquirermanager.constant.DirectoryNames;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.BlobService;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.lang3.*;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -61,6 +63,9 @@ public class BlobServiceImpl implements BlobService {
                 blobClient.getAppendBlobClient().create();
                 blobClient.getAppendBlobClient().appendBlock(new ByteArrayInputStream(fileByte), fileByte.length);
                 break;
+            default:
+                log.warn("invalid batch type " + batch);
+                return null;
         }
         log.info("File " + blobName + " successfully uploaded");
         return blobName;
@@ -82,13 +87,14 @@ public class BlobServiceImpl implements BlobService {
     @Override
     public String getDirectoryName(Instant instant, BatchEnum batch) {
         String today = dateFormat.format(instant);
+        String pattern = "%s/%s/";
         switch (batch) {
             case BIN_RANGE_GEN:
-                return String.format("%s/%s/", DirectoryNames.BIN_RANGES, today);
+                return String.format(pattern, DirectoryNames.BIN_RANGES, today);
             case KNOWN_HASHES_COPY:
-                return String.format("%s/%s/", DirectoryNames.KNOWN_HASHES, today);
+                return String.format(pattern, DirectoryNames.KNOWN_HASHES, today);
             case KNOWN_HASHES_GEN:
-                return String.format("%s/%s/", DirectoryNames.KNOWN_HASHES, DirectoryNames.ALL_KNOWN_HASHES);
+                return String.format(pattern, DirectoryNames.KNOWN_HASHES, DirectoryNames.ALL_KNOWN_HASHES);
             default:
                 return null;
         }
@@ -134,7 +140,7 @@ public class BlobServiceImpl implements BlobService {
         List<BlobItem> files = getFilesFromDirectory(directory);
         BlobContainerClient client = getBlobContainerClient();
         for (BlobItem blobItem : files) {
-            log.warn("The destination folder is not empty. Deleting " + blobItem.getName());
+            log.warn("The folder is not empty. Deleting " + blobItem.getName());
             client.getBlobClient(blobItem.getName()).delete();
         }
     }
