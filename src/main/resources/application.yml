@@ -12,6 +12,7 @@ spring:
     name: Tkm Acquirer Manager ${HOSTNAME:0}
   kafka:
     producer:
+      retries: 0
       bootstrap-servers: ${KAFKA_SERVERS}
       client-id: ${HOSTNAME:0}
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
@@ -66,7 +67,6 @@ keyvault:
   blobAccountName: ${${AZURE_KEYVAULT_PROFILE:prod}-blobAccountName}
   blobAccountKey: ${${AZURE_KEYVAULT_PROFILE:prod}-blobAccountKey}
   eventhubLogSaslJaasConfig: ${${AZURE_KEYVAULT_PROFILE:prod}-eventhubLogSaslJaasConfig:null}
-  acquirerMEventhubReadSaslJaasConfig: ${${AZURE_KEYVAULT_PROFILE:prod}-acquirerMEventhubReadSaslJaasConfig:null}
   visaClientId: ${${AZURE_KEYVAULT_PROFILE:prod}-visaClientId}
   visaKeyId: ${${AZURE_KEYVAULT_PROFILE:prod}-visaKeyId}
   visaKeyStorePassword: ${${AZURE_KEYVAULT_PROFILE:prod}-visaKeyStorePassword}
@@ -79,7 +79,7 @@ keyvault:
   readQueuePubPgpKey: ${${AZURE_KEYVAULT_PROFILE:prod}-readQueuePubPgpKey}
   sftpPassPhrase: ${${AZURE_KEYVAULT_PROFILE:prod}-sftpPassPhrase}
   sftpPrivateKey: ${${AZURE_KEYVAULT_PROFILE:prod}-sftpPrivateKey}
-  tkmReadTokenParPanProducerSaslJaasConfig: ${${AZURE_KEYVAULT_PROFILE:prod}-tkmReadTokenParPanProducerSaslJaasConfig}
+  tkmReadTokenParPanProducerSaslJaasConfig: ${${AZURE_KEYVAULT_PROFILE:prod}-tkmReadTokenParPanProducerSaslJaasConfig:null}
 
 blob-storage:
   visaPublicCert: azure-blob://${BLOB_STORAGE_ACQUIRER_CONFIG_CONTAINER}/Visa_Public_Cert.p12
