@@ -38,11 +38,11 @@ logging:
     root: ${LOGGING_LEVEL:INFO}
     org:
       hibernate:
-        SQL: TRACE
+        SQL: ${LOGGING_LEVEL_HIBERNATE:INFO}
         type:
           descriptor:
             sql:
-              BasicBinder: TRACE
+              BasicBinder: ${LOGGING_LEVEL_HIBERNATE:INFO}
   pattern:
     level: "${LOGGING_PATTERN:%p [${spring.application.name}][%X{traceId}|%X{spanId}]}"
 
@@ -76,7 +76,7 @@ keyvault:
   visaUserId: ${${AZURE_KEYVAULT_PROFILE:prod}-visaUserId}
   acquirerPgpPrivateKey: ${${AZURE_KEYVAULT_PROFILE:prod}-acquirerPgpPrivateKey}
   acquirerPgpPrivateKeyPassphrase: ${${AZURE_KEYVAULT_PROFILE:prod}-acquirerPgpPrivateKeyPassphrase}
-  readQueuePubPgpKey: ${${AZURE_KEYVAULT_PROFILE:prod}-readQueuePubPgpKey}
+  tkmReadTokenParPanPubPgpKey: ${${AZURE_KEYVAULT_PROFILE:prod}-tkmReadTokenParPanPubPgpKey}
   sftpPassPhrase: ${${AZURE_KEYVAULT_PROFILE:prod}-sftpPassPhrase}
   sftpPrivateKey: ${${AZURE_KEYVAULT_PROFILE:prod}-sftpPrivateKey}
   tkmReadTokenParPanProducerSaslJaasConfig: ${${AZURE_KEYVAULT_PROFILE:prod}-tkmReadTokenParPanProducerSaslJaasConfig:null}
@@ -112,7 +112,7 @@ batch:
   known-hashes-copy:
     cron: ${KNOWN_HASHES_COPY_CRON:-}
   queue-batch-acquirer-result:
-    cron: ${QUEUE_BATCH_ACQUIRER_RESULT_CRON:-}
+    cron: ${BATCH_ACQUIRER_RESULT_CRON:-}
     threadNumber: ${BATCH_ACQUIRER_THREAD_NUMBER:5}
 
 sftp:
@@ -122,7 +122,7 @@ sftp:
   sftpPrivateKey: ${keyvault.sftpPrivateKey}
   sftpPassPhrase: ${keyvault.sftpPassPhrase}
   sftpFolder: ${SFTP_SIA_FOLDER}
-  sftpFilesPattern: ${SFTP_SIA_FILE_PATTERN:^TKM\..*\.zip$}
+  sftpFilesPattern: ${SFTP_SIA_FILE_PATTERN:^TKM\..*\.pgp}
 
 thread:
   corePoolSize: ${THREAD_CORE_POOL_SIZE:5}

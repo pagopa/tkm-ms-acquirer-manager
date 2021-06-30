@@ -36,7 +36,7 @@ public class BinRangeServiceImpl implements BinRangeService {
     @Autowired
     private BinRangeRepository binRangeRepository;
 
-    @Autowired
+    @Autowired(required = false)
     private VisaClient visaClient;
 
     @Autowired

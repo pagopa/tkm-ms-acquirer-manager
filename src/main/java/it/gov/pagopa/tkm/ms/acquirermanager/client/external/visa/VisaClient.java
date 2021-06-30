@@ -14,6 +14,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -23,8 +24,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.PostConstruct;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
+import java.security.cert.CertificateException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -34,6 +37,7 @@ import java.util.stream.Collectors;
 
 @Component
 @Log4j2
+@ConditionalOnExpression("'${batch.bin-range-retrieval.cron}' != '-'")
 public class VisaClient {
 
     @Autowired
@@ -59,13 +63,12 @@ public class VisaClient {
 
     private static final Integer CHUNK_SIZE = 500;
 
-    private static final int timeout = 5000;
+    private static final int TIMEOUT = 5000;
 
     private RestTemplate restTemplate;
 
     @PostConstruct
-    //TODO Need to add pooling with ssl
-    public void init() throws Exception {
+    public void init() throws KeyStoreException, IOException, CertificateException, NoSuchAlgorithmException, UnrecoverableKeyException, KeyManagementException {
         log.info("Set Visa Client with Mutual Auth");
         char[] chars = keystorePassword.toCharArray();
         KeyStore clientStore = KeyStore.getInstance("PKCS12");
@@ -79,8 +82,8 @@ public class VisaClient {
                 .setSSLSocketFactory(sslConnectionSocketFactory)
                 .build();
         HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory(httpClient);
-        requestFactory.setConnectTimeout(timeout);
-        requestFactory.setReadTimeout(timeout);
+        requestFactory.setConnectTimeout(TIMEOUT);
+        requestFactory.setReadTimeout(TIMEOUT);
 
         restTemplate = new RestTemplate(requestFactory);
     }
@@ -91,7 +94,10 @@ public class VisaClient {
         do {
             log.info("Calling Visa bin range API");
             VisaBinRangeResponse visaBinRangeResponse = invokeVisaBinRange(index);
-            log.trace(visaBinRangeResponse.toString());
+            if (visaBinRangeResponse == null) {
+                return tkmBinRangeList;
+            }
+            log.trace(visaBinRangeResponse);
             log.info(visaBinRangeResponse.getTotalRecordsCount() + " bin ranges total, this response contains " + visaBinRangeResponse.getNumRecordsReturned() + " bin ranges");
             tkmBinRangeList.addAll(getBinRangeToken(visaBinRangeResponse));
             index = getNewIndex(index, visaBinRangeResponse);

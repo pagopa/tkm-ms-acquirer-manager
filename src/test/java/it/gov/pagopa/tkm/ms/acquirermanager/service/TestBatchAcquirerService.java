@@ -87,12 +87,12 @@ class TestBatchAcquirerService {
         try (MockedStatic<UUID> mockedUuid = Mockito.mockStatic(UUID.class)) {
             mockedUuid.when(() -> UUID.randomUUID()).thenReturn(defaultUuid);
             String directory = FileUtils.getTempDirectoryPath() + File.separator + UUID.randomUUID();
-            String tempFileZip = directory + File.separator + testBeans.acquirerFileName;
+            String tempInputFile = directory + File.separator + testBeans.acquirerFileName;
             FileUtils.deleteDirectory(new File(directory));
             byte[] bytes = ByteStreams.toByteArray(new ClassPathResource(testBeans.acquirerFileName).getInputStream());
             when(sftpUtils.listFile()).thenReturn(testBeans.REMOTE_RESOURCE_INFO);
             doAnswer((i) -> {
-                FileUtils.writeByteArrayToFile(new File(tempFileZip), bytes);
+                FileUtils.writeByteArrayToFile(new File(tempInputFile), bytes);
                 return null;
             }).when(sftpUtils).downloadFile(anyString(), anyString());
             when(sendBatchAcquirerRecordToQueue.sendToQueue(anyList())).thenReturn(mockFuture);

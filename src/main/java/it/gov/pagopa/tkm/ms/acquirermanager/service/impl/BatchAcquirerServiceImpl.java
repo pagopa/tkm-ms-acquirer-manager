@@ -13,11 +13,9 @@ import it.gov.pagopa.tkm.ms.acquirermanager.service.BatchAcquirerService;
 import it.gov.pagopa.tkm.ms.acquirermanager.thread.SendBatchAcquirerRecordToQueue;
 import it.gov.pagopa.tkm.ms.acquirermanager.util.ObjectMapperUtils;
 import it.gov.pagopa.tkm.ms.acquirermanager.util.SftpUtils;
-import it.gov.pagopa.tkm.ms.acquirermanager.util.ZipUtils;
-import it.gov.pagopa.tkm.service.*;
+import it.gov.pagopa.tkm.service.PgpStaticUtils;
 import lombok.extern.log4j.Log4j2;
 import net.schmizz.sshj.sftp.RemoteResourceInfo;
-import org.apache.commons.collections4.IterableUtils;
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -82,9 +80,9 @@ public class BatchAcquirerServiceImpl implements BatchAcquirerService {
                 String workingDir = FileUtils.getTempDirectoryPath() + File.separator + UUID.randomUUID();
                 createWorkingDir(workingDir);
                 log.debug("Working dir " + workingDir);
-                String zipFilePath = workingDir + File.separator + remoteFile.getName();
-                sftpUtils.downloadFile(remoteFile.getPath(), zipFilePath);
-                batchResultDetailsList.add(workOnFile(zipFilePath, workingDir));
+                String fileInputPgp = workingDir + File.separator + remoteFile.getName();
+                sftpUtils.downloadFile(remoteFile.getPath(), fileInputPgp);
+                batchResultDetailsList.add(workOnFile(fileInputPgp, workingDir));
             }
         } catch (Exception e) {
             BatchResultDetails build = BatchResultDetails.builder().errorMessage(e.getMessage()).success(false).build();
@@ -101,15 +99,12 @@ public class BatchAcquirerServiceImpl implements BatchAcquirerService {
         }
     }
 
-    private BatchResultDetails workOnFile(String zipFilePath, String workingDir) {
-        BatchResultDetails build = BatchResultDetails.builder().success(false).fileName(zipFilePath).build();
+    private BatchResultDetails workOnFile(String fileInputPgp, String workingDir) {
+        BatchResultDetails build = BatchResultDetails.builder().success(false).fileName(fileInputPgp).build();
         try {
-            List<String> files = getUnzippedFile(zipFilePath, workingDir);
-            log.debug("Unzipped file to " + files);
-            String fileInputPgp = files.get(0);
             String fileOutputClear = fileInputPgp + ".clear";
-            log.debug("File decrypted " + fileOutputClear);
             PgpStaticUtils.decrypt(fileInputPgp, pgpPrivateKey, pgpPassPhrase, fileOutputClear);
+            log.debug("File decrypted " + fileOutputClear);
             List<BatchAcquirerCSVRecord> parsedRows = parseCSVFile(fileOutputClear);
             int partitionSize = (int) Math.ceil((double) parsedRows.size() / threadNumber);
             List<List<BatchAcquirerCSVRecord>> partition = Lists.partition(parsedRows, partitionSize);
@@ -123,7 +118,7 @@ public class BatchAcquirerServiceImpl implements BatchAcquirerService {
             }
             build.setSuccess(true);
         } catch (Exception e) {
-            log.error("Failed queueBatchAcquirerResult to elaborate: " + zipFilePath, e);
+            log.error("Failed queueBatchAcquirerResult to elaborate: " + fileInputPgp, e);
             build.setErrorMessage(e.getMessage());
         } finally {
             deleteDirectoryQuietly(workingDir);
@@ -138,14 +133,6 @@ public class BatchAcquirerServiceImpl implements BatchAcquirerService {
         } catch (IOException e) {
             log.error("Cannot delete directory");
         }
-    }
-
-    private List<String> getUnzippedFile(String zipFilePath, String destDirectory) throws IOException {
-        List<String> files = ZipUtils.unzipFile(zipFilePath, destDirectory);
-        if (IterableUtils.size(files) != 1) {
-            throw new IOException("Too Many unzipped files");
-        }
-        return files;
     }
 
     private List<BatchAcquirerCSVRecord> parseCSVFile(String filePath) throws FileNotFoundException {
