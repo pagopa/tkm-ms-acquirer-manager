@@ -6,14 +6,18 @@ import it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa.model.request.V
 import it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa.model.request.VisaBinRangeRequestHeader;
 import it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa.model.response.VisaBinRangeResponse;
 import it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa.model.response.VisaBinRangeResponseData;
+import it.gov.pagopa.tkm.ms.acquirermanager.exception.EmptyResponseException;
+import it.gov.pagopa.tkm.ms.acquirermanager.exception.MissingPropertyException;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.TkmBinRange;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -23,8 +27,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.PostConstruct;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
+import java.security.cert.CertificateException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -34,6 +40,7 @@ import java.util.stream.Collectors;
 
 @Component
 @Log4j2
+@ConditionalOnExpression("'${batch.bin-range-retrieval.cron}' != '-'")
 public class VisaClient {
 
     @Autowired
@@ -59,14 +66,20 @@ public class VisaClient {
 
     private static final Integer CHUNK_SIZE = 500;
 
-    private static final int timeout = 5000;
+    private static final int TIMEOUT = 5000;
 
     private RestTemplate restTemplate;
 
     @PostConstruct
-    //TODO Need to add pooling with ssl
-    public void init() throws Exception {
+    public void init() throws KeyStoreException, IOException, CertificateException, NoSuchAlgorithmException, UnrecoverableKeyException, KeyManagementException {
         log.info("Set Visa Client with Mutual Auth");
+        log.debug(String.format("keystorePassword is blank: %s, userId is blank: %s, password is blank: %s, keyId is blank: %s, retrieveBinRangesUrl is blank: %s",
+                StringUtils.isBlank(keystorePassword), StringUtils.isBlank(userId), StringUtils.isBlank(password),
+                StringUtils.isBlank(keyId), StringUtils.isBlank(retrieveBinRangesUrl)));
+
+        if (StringUtils.isAnyBlank(keystorePassword, userId, password, keyId, retrieveBinRangesUrl)) {
+            throw new MissingPropertyException("Visa Client configuration has not been completed. Check the application.yml");
+        }
         char[] chars = keystorePassword.toCharArray();
         KeyStore clientStore = KeyStore.getInstance("PKCS12");
         clientStore.load(publicCert.getInputStream(), chars);
@@ -79,8 +92,8 @@ public class VisaClient {
                 .setSSLSocketFactory(sslConnectionSocketFactory)
                 .build();
         HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory(httpClient);
-        requestFactory.setConnectTimeout(timeout);
-        requestFactory.setReadTimeout(timeout);
+        requestFactory.setConnectTimeout(TIMEOUT);
+        requestFactory.setReadTimeout(TIMEOUT);
 
         restTemplate = new RestTemplate(requestFactory);
     }
@@ -89,9 +102,12 @@ public class VisaClient {
         List<TkmBinRange> tkmBinRangeList = new ArrayList<>();
         int index = 0;
         do {
-            log.info("Calling Visa bin range API");
+            log.info("Calling Visa bin range API. Index: " + index);
             VisaBinRangeResponse visaBinRangeResponse = invokeVisaBinRange(index);
-            log.trace(visaBinRangeResponse.toString());
+            if (visaBinRangeResponse == null) {
+                throw new EmptyResponseException("Empty Visa Response");
+            }
+            log.trace(visaBinRangeResponse);
             log.info(visaBinRangeResponse.getTotalRecordsCount() + " bin ranges total, this response contains " + visaBinRangeResponse.getNumRecordsReturned() + " bin ranges");
             tkmBinRangeList.addAll(getBinRangeToken(visaBinRangeResponse));
             index = getNewIndex(index, visaBinRangeResponse);

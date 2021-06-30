@@ -3,13 +3,13 @@
     <modelVersion>4.0.0</modelVersion>
 
 	<artifactId>acquirer-manager</artifactId>
-	<version>0.1.14</version>
+	<version>1.0.0</version>
 	<packaging>jar</packaging>
 
     <parent>
         <groupId>it.gov.pagopa.tkm.ms</groupId>
         <artifactId>starter-parent</artifactId>
-        <version>2.1.12</version>
+        <version>2.1.13</version>
     </parent>
 
     <properties>
@@ -185,6 +185,6 @@
     </distributionManagement>
     <scm>
         <developerConnection>scm:git:https://github.com/pagopa/tkm-ms-acquirer-manager.git</developerConnection>
-        <tag>acquirer-manager-0.1.14</tag>
+        <tag>acquirer-manager-1.0.0</tag>
     </scm>
 </project>
