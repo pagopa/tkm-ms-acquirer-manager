@@ -6,8 +6,11 @@ import it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa.model.request.V
 import it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa.model.request.VisaBinRangeRequestHeader;
 import it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa.model.response.VisaBinRangeResponse;
 import it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa.model.response.VisaBinRangeResponseData;
+import it.gov.pagopa.tkm.ms.acquirermanager.exception.EmptyResponseException;
+import it.gov.pagopa.tkm.ms.acquirermanager.exception.MissingPropertyException;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.TkmBinRange;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
@@ -70,6 +73,13 @@ public class VisaClient {
     @PostConstruct
     public void init() throws KeyStoreException, IOException, CertificateException, NoSuchAlgorithmException, UnrecoverableKeyException, KeyManagementException {
         log.info("Set Visa Client with Mutual Auth");
+        log.debug(String.format("keystorePassword is blank: %s, userId is blank: %s, password is blank: %s, keyId is blank: %s, retrieveBinRangesUrl is blank: %s",
+                StringUtils.isBlank(keystorePassword), StringUtils.isBlank(userId), StringUtils.isBlank(password),
+                StringUtils.isBlank(keyId), StringUtils.isBlank(retrieveBinRangesUrl)));
+
+        if (StringUtils.isAnyBlank(keystorePassword, userId, password, keyId, retrieveBinRangesUrl)) {
+            throw new MissingPropertyException("Visa Client configuration has not been completed. Check the application.yml");
+        }
         char[] chars = keystorePassword.toCharArray();
         KeyStore clientStore = KeyStore.getInstance("PKCS12");
         clientStore.load(publicCert.getInputStream(), chars);
@@ -92,10 +102,10 @@ public class VisaClient {
         List<TkmBinRange> tkmBinRangeList = new ArrayList<>();
         int index = 0;
         do {
-            log.info("Calling Visa bin range API");
+            log.info("Calling Visa bin range API. Index: " + index);
             VisaBinRangeResponse visaBinRangeResponse = invokeVisaBinRange(index);
             if (visaBinRangeResponse == null) {
-                return tkmBinRangeList;
+                throw new EmptyResponseException("Empty Visa Response");
             }
             log.trace(visaBinRangeResponse);
             log.info(visaBinRangeResponse.getTotalRecordsCount() + " bin ranges total, this response contains " + visaBinRangeResponse.getNumRecordsReturned() + " bin ranges");

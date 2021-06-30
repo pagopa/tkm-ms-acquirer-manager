@@ -10,6 +10,7 @@ import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.TkmBinRange;
 import it.gov.pagopa.tkm.ms.acquirermanager.repository.BatchResultRepository;
 import it.gov.pagopa.tkm.ms.acquirermanager.repository.BinRangeRepository;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.BinRangeService;
+import it.gov.pagopa.tkm.ms.acquirermanager.service.BlobService;
 import it.gov.pagopa.tkm.ms.acquirermanager.thread.GenBinRangeCallable;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections.CollectionUtils;
@@ -54,6 +55,9 @@ public class BinRangeServiceImpl implements BinRangeService {
     @Autowired
     private Tracer tracer;
 
+    @Autowired
+    private BlobService blobService;
+
     @Override
     public void generateBinRangeFiles() {
         Span span = tracer.currentSpan();
@@ -67,6 +71,7 @@ public class BinRangeServiceImpl implements BinRangeService {
                 .runDate(now)
                 .runOutcome(true)
                 .build();
+        blobService.deleteFolder(blobService.getDirectoryName(now, BIN_RANGE_GEN));
         List<BatchResultDetails> batchResultDetails = executeThreads(now);
         long duration = Instant.now().toEpochMilli() - start;
         batchResult.setRunDurationMillis(duration);

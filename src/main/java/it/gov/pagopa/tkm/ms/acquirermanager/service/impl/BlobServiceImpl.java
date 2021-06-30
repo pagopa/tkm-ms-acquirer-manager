@@ -140,7 +140,7 @@ public class BlobServiceImpl implements BlobService {
         List<BlobItem> files = getFilesFromDirectory(directory);
         BlobContainerClient client = getBlobContainerClient();
         for (BlobItem blobItem : files) {
-            log.warn("The folder is not empty. Deleting " + blobItem.getName());
+            log.debug("The folder is not empty. Deleting " + blobItem.getName());
             client.getBlobClient(blobItem.getName()).delete();
         }
     }

@@ -48,7 +48,7 @@ public class BatchScheduler {
         knownHashesCopyService.copyKnownHashesFiles();
     }
 
-    @Scheduled(cron = "${batch.queue-batch-acquirer-result.cron}")
+    @Scheduled(cron = "${batch.acquirer-result.cron}")
     @SchedulerLock(name = "Batch_Acquirer_Result_Task")
     public void queueBatchAcquirerResultTask() {
         batchAcquirerService.queueBatchAcquirerResult();

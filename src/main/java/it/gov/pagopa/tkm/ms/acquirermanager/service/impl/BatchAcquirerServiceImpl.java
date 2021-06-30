@@ -47,7 +47,7 @@ public class BatchAcquirerServiceImpl implements BatchAcquirerService {
     @Value("${keyvault.sftpPrivateKey}")
     private byte[] sftpPrivateKey;
 
-    @Value("${batch.queue-batch-acquirer-result.threadNumber}")
+    @Value("${batch.acquirer-result.threadNumber}")
     private int threadNumber;
 
     @Autowired

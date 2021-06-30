@@ -14,7 +14,7 @@ spring:
     producer:
       retries: 0
       bootstrap-servers: ${KAFKA_SERVERS}
-      client-id: ${KAFKA_GROUP_ID:null}${HOSTNAME:0}
+      client-id: ${KAFKA_GROUP_ID:}${HOSTNAME:0}
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
       properties:
@@ -66,20 +66,17 @@ keyvault:
   acquirerMDbPassword: ${${AZURE_KEYVAULT_PROFILE:prod}-acquirerMDbPassword}
   blobAccountName: ${${AZURE_KEYVAULT_PROFILE:prod}-blobAccountName}
   blobAccountKey: ${${AZURE_KEYVAULT_PROFILE:prod}-blobAccountKey}
-  eventhubLogSaslJaasConfig: ${${AZURE_KEYVAULT_PROFILE:prod}-eventhubLogSaslJaasConfig:null}
-  visaClientId: ${${AZURE_KEYVAULT_PROFILE:prod}-visaClientId}
-  visaKeyId: ${${AZURE_KEYVAULT_PROFILE:prod}-visaKeyId}
-  visaKeyStorePassword: ${${AZURE_KEYVAULT_PROFILE:prod}-visaKeyStorePassword}
-  visaPassword: ${${AZURE_KEYVAULT_PROFILE:prod}-visaPassword}
-  visaPrivateKey: ${${AZURE_KEYVAULT_PROFILE:prod}-visaPrivateKey}
-  visaServerCertificate: ${${AZURE_KEYVAULT_PROFILE:prod}-visaServerCertificate}
-  visaUserId: ${${AZURE_KEYVAULT_PROFILE:prod}-visaUserId}
+  eventhubLogSaslJaasConfig: ${${AZURE_KEYVAULT_PROFILE:prod}-eventhubLogSaslJaasConfig:}
+  visaKeyId: ${${AZURE_KEYVAULT_PROFILE:prod}-visaKeyId:}
+  visaKeyStorePassword: ${${AZURE_KEYVAULT_PROFILE:prod}-visaKeyStorePassword:}
+  visaPassword: ${${AZURE_KEYVAULT_PROFILE:prod}-visaPassword:}
+  visaUserId: ${${AZURE_KEYVAULT_PROFILE:prod}-visaUserId:}
   acquirerPgpPrivateKey: ${${AZURE_KEYVAULT_PROFILE:prod}-acquirerPgpPrivateKey}
   acquirerPgpPrivateKeyPassphrase: ${${AZURE_KEYVAULT_PROFILE:prod}-acquirerPgpPrivateKeyPassphrase}
   tkmReadTokenParPanPubPgpKey: ${${AZURE_KEYVAULT_PROFILE:prod}-tkmReadTokenParPanPubPgpKey}
   sftpPassPhrase: ${${AZURE_KEYVAULT_PROFILE:prod}-sftpPassPhrase}
   sftpPrivateKey: ${${AZURE_KEYVAULT_PROFILE:prod}-sftpPrivateKey}
-  tkmReadTokenParPanProducerSaslJaasConfig: ${${AZURE_KEYVAULT_PROFILE:prod}-tkmReadTokenParPanProducerSaslJaasConfig:null}
+  tkmReadTokenParPanProducerSaslJaasConfig: ${${AZURE_KEYVAULT_PROFILE:prod}-tkmReadTokenParPanProducerSaslJaasConfig:}
 
 blob-storage:
   visaPublicCert: azure-blob://${BLOB_STORAGE_ACQUIRER_CONFIG_CONTAINER}/Visa_Public_Cert.p12
@@ -88,7 +85,7 @@ client-urls:
   card-manager: ${CARD_MANAGER_URL}
 
 circuit-urls:
-  visa: ${VISA_URL}
+  visa: ${VISA_URL:}
 
 management:
   health:
@@ -111,7 +108,7 @@ batch:
     max-records-in-api-call: ${KNOWN_HASHES_GEN_MAX_RECORDS_IN_API_CALL:500000}
   known-hashes-copy:
     cron: ${KNOWN_HASHES_COPY_CRON:-}
-  queue-batch-acquirer-result:
+  acquirer-result:
     cron: ${BATCH_ACQUIRER_RESULT_CRON:-}
     threadNumber: ${BATCH_ACQUIRER_THREAD_NUMBER:5}
 
