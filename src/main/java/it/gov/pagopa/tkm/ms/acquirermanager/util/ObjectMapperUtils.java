@@ -13,7 +13,8 @@ public class ObjectMapperUtils {
     public String toJsonOrNull(Object o) {
         String json = null;
         try {
-            json = mapper.writeValueAsString(o);
+            if (o != null)
+                json = mapper.writeValueAsString(o);
         } catch (JsonProcessingException ignore) {
         }
         return json;

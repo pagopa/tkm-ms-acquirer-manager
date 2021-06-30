@@ -185,7 +185,7 @@ public class DefaultBeans {
             .lastHashesFileRowCount(0)
             .build();
 
-    public final String acquirerFileName = "TKM.acquirer.junit.csv.gpg.zip";
+    public final String acquirerFileName = "TKM.acquirer.junit.csv.pgp";
     public final List<RemoteResourceInfo> REMOTE_RESOURCE_INFO = Arrays.asList(
             new RemoteResourceInfo(new PathComponents("parent", acquirerFileName, acquirerFileName), FileAttributes.EMPTY));
 
