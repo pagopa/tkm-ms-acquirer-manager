@@ -69,7 +69,7 @@ class TestBatchAcquirerService {
 
     private final ArgumentCaptor<TkmBatchResult> batchResultArgumentCaptor = ArgumentCaptor.forClass(TkmBatchResult.class);
 
-    private DefaultBeans testBeans = new DefaultBeans();
+    private final DefaultBeans testBeans = new DefaultBeans();
 
     @BeforeEach
     void init() throws IOException {
