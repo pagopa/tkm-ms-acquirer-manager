@@ -25,13 +25,13 @@ public class ProducerServiceImpl implements ProducerService {
     @Value("${spring.kafka.topics.read-queue.name}")
     private String readQueueTopic;
 
-    @Value("${keyvault.readQueuePubPgpKey}")
+    @Value("${keyvault.tkmReadTokenParPanPubPgpKey}")
     private byte[] readQueuePubPgpKey;
 
     public void sendMessage(ReadQueue readQueue) throws JsonProcessingException, PGPException {
         String message = mapper.writeValueAsString(readQueue);
-        log.trace("Forwarding message to queue: " + message);
         byte[] encryptedMessage = PgpStaticUtils.encrypt(message.getBytes(), readQueuePubPgpKey, true);
+        log.trace("Forwarding message to queue: " + encryptedMessage);
 
         kafkaTemplate.send(readQueueTopic, new String(encryptedMessage));
     }
