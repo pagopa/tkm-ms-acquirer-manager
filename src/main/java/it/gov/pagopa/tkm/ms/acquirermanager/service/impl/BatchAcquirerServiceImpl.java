@@ -36,16 +36,10 @@ import java.util.concurrent.Future;
 public class BatchAcquirerServiceImpl implements BatchAcquirerService {
 
     @Value("${keyvault.acquirerPgpPrivateKeyPassphrase}")
-    private char[] pgpPassPhrase;
+    private String pgpPassPhrase;
 
     @Value("${keyvault.acquirerPgpPrivateKey}")
-    private byte[] pgpPrivateKey;
-
-    @Value("${keyvault.sftpPassPhrase}")
-    private char[] sftpPassPhrase;
-
-    @Value("${keyvault.sftpPrivateKey}")
-    private byte[] sftpPrivateKey;
+    private String pgpPrivateKey;
 
     @Value("${batch.acquirer-result.threadNumber}")
     private int threadNumber;
@@ -103,7 +97,7 @@ public class BatchAcquirerServiceImpl implements BatchAcquirerService {
         BatchResultDetails build = BatchResultDetails.builder().success(false).fileName(fileInputPgp).build();
         try {
             String fileOutputClear = fileInputPgp + ".clear";
-            PgpStaticUtils.decrypt(fileInputPgp, pgpPrivateKey, pgpPassPhrase, fileOutputClear);
+            PgpStaticUtils.decryptToFile(fileInputPgp, pgpPrivateKey, pgpPassPhrase, fileOutputClear);
             log.debug("File decrypted " + fileOutputClear);
             List<BatchAcquirerCSVRecord> parsedRows = parseCSVFile(fileOutputClear);
             int partitionSize = (int) Math.ceil((double) parsedRows.size() / threadNumber);
