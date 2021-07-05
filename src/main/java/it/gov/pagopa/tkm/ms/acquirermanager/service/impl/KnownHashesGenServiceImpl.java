@@ -185,20 +185,14 @@ public class KnownHashesGenServiceImpl implements KnownHashesGenService {
         log.info("Last generated hashes file has " + freeSpotsInLastFile + " free spots, filling them up");
         String filename = lastOffset.getLastHashesFileFilename();
         BatchResultDetails lastFileDetails = BatchResultDetails.builder().success(true).fileName(filename).build();
-        try {
-            BlobItem lastFile = getLastGeneratedFile(filename);
-            log.info("Found " + lastFile.getName());
-            List<String> hashesSublist = hashes.stream().limit(freeSpotsInLastFile).collect(Collectors.toList());
-            updateFile(lastFile, hashesSublist);
-            int newRowCount = lastOffset.getLastHashesFileRowCount() + hashesSublist.size();
-            lastOffset.setLastHashesFileFilename(filename);
-            lastOffset.setLastHashesFileRowCount(newRowCount);
-            lastFileDetails.setNumberOfRows(newRowCount);
-        } catch (Exception e) {
-            log.error(e);
-            lastFileDetails.setErrorMessage(e.getMessage());
-            lastFileDetails.setSuccess(false);
-        }
+        BlobItem lastFile = getLastGeneratedFile(filename);
+        log.info("Found " + lastFile.getName());
+        List<String> hashesSublist = hashes.stream().limit(freeSpotsInLastFile).collect(Collectors.toList());
+        updateFile(lastFile, hashesSublist);
+        int newRowCount = lastOffset.getLastHashesFileRowCount() + hashesSublist.size();
+        lastOffset.setLastHashesFileFilename(filename);
+        lastOffset.setLastHashesFileRowCount(newRowCount);
+        lastFileDetails.setNumberOfRows(newRowCount);
         return lastFileDetails;
     }
 

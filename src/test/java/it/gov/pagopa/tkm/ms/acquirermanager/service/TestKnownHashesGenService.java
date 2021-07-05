@@ -7,6 +7,7 @@ import com.azure.storage.blob.specialized.*;
 import com.fasterxml.jackson.databind.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.client.internal.cardmanager.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.constant.*;
+import it.gov.pagopa.tkm.ms.acquirermanager.exception.AcquirerException;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.repository.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.impl.*;
@@ -133,4 +134,14 @@ public class TestKnownHashesGenService {
                 .isEqualTo(testBeans.KNOWN_HASHES_GEN_BATCH_RESULT_FAILED);
     }
 
+    @Test
+    void givenEmptyHashesResponse_throwsException(){
+        when(cardManagerClient.getKnownHashes(anyInt(), anyInt(), anyInt())).thenReturn(null);
+        knownHashesService.generateKnownHashesFiles();
+        verify(batchResultRepository).save(batchResultArgumentCaptor.capture());
+        assertThat(batchResultArgumentCaptor.getValue())
+                .usingRecursiveComparison()
+                .ignoringFields("details", "executionTraceId")
+                .isEqualTo(testBeans.KNOWN_HASHES_GEN_BATCH_RESULT_FAILED_FOR_KNOWN_HASHES_NULL_RESPONSE);
+    }
 }

@@ -88,6 +88,14 @@ public class DefaultBeans {
             .executionTraceId("traceId")
             .build();
 
+    public final TkmBatchResult KNOWN_HASHES_GEN_BATCH_RESULT_FAILED_FOR_KNOWN_HASHES_NULL_RESPONSE = TkmBatchResult.builder()
+            .targetBatch(BatchEnum.KNOWN_HASHES_GEN)
+            .runDate(INSTANT)
+            .runDurationMillis(0)
+            .runOutcome(false)
+            .executionTraceId("traceId")
+            .build();
+
     public final BatchResultDetails BIN_RANGE_BATCH_RESULT_DETAILS = new BatchResultDetails(
             BIN_RANGE_GEN_LOCAL__1, 3, SHA_256, true, null
     );

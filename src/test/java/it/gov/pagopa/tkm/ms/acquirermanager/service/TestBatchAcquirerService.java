@@ -31,8 +31,7 @@ import java.util.UUID;
 import java.util.concurrent.Future;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
@@ -115,5 +114,22 @@ class TestBatchAcquirerService {
             assertTrue(value.getRunDurationMillis() > 0);
             assertNotNull(value.getRunDate());
         }
+    }
+
+    @Test
+    void badConnection_failure() throws IOException {
+        when(sftpUtils.listFile()).thenThrow(new IOException());
+        batchAcquirerService.queueBatchAcquirerResult();
+        verify(batchResultRepository).save(batchResultArgumentCaptor.capture());
+        TkmBatchResult value = batchResultArgumentCaptor.getValue();
+        TkmBatchResult build = TkmBatchResult.builder().
+                runOutcome(false)
+                .executionTraceId(TRACE_ID)
+                .targetBatch(BatchEnum.BATCH_ACQUIRER)
+                .build();
+        assertThat(value)
+                .usingRecursiveComparison()
+                .ignoringFields("runDate", "runDurationMillis")
+                .isEqualTo(build);
     }
 }
