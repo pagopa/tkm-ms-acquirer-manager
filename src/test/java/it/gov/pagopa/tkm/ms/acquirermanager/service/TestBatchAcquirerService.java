@@ -77,8 +77,8 @@ class TestBatchAcquirerService {
         when(span.context()).thenReturn(traceContext);
         when(span.context().traceId()).thenReturn(TRACE_ID);
         String privateKey = IOUtils.toString(new ClassPathResource("junit_pgp_private.asc").getInputStream(), StandardCharsets.UTF_8.name());
-        ReflectionTestUtils.setField(batchAcquirerService, "pgpPrivateKey", privateKey.getBytes());
-        ReflectionTestUtils.setField(batchAcquirerService, "pgpPassPhrase", "passphrase".toCharArray());
+        ReflectionTestUtils.setField(batchAcquirerService, "pgpPrivateKey", privateKey);
+        ReflectionTestUtils.setField(batchAcquirerService, "pgpPassPhrase", "passphrase");
     }
 
     @Test
