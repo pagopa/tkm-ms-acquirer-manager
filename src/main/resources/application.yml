@@ -97,6 +97,7 @@ management:
         include: "info,health,prometheus"
 
 batch:
+  max-thread: ${BATCH_MAX_THREAD:2}
   bin-range-gen:
     cron: ${BIN_RANGE_GEN_CRON:-}
     max-rows-in-files: ${BIN_RANGE_GEN_MAX_ROWS_IN_FILES:1000000}
@@ -105,7 +106,7 @@ batch:
   known-hashes-gen:
     cron: ${KNOWN_HASHES_GEN_CRON:-}
     max-rows-in-files: ${KNOWN_HASHES_GEN_MAX_ROWS_IN_FILES:1000000}
-    max-records-in-api-call: ${KNOWN_HASHES_GEN_MAX_RECORDS_IN_API_CALL:500000}
+    max-records-in-api-call: ${KNOWN_HASHES_GEN_MAX_RECORDS_IN_API_CALL:50000}
   known-hashes-copy:
     cron: ${KNOWN_HASHES_COPY_CRON:-}
   acquirer-result:
