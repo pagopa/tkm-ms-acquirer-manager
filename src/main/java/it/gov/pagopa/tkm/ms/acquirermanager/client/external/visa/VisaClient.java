@@ -1,6 +1,7 @@
 package it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa.model.request.VisaBinRangeRequest;
 import it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa.model.request.VisaBinRangeRequestData;
 import it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa.model.request.VisaBinRangeRequestHeader;
@@ -116,6 +117,7 @@ public class VisaClient {
         return tkmBinRangeList;
     }
 
+    @CircuitBreaker(name = "visaBinRangesCircuitBreaker", fallbackMethod = "visaBinRangesFallback")
     private VisaBinRangeResponse invokeVisaBinRange(int index) {
         HttpHeaders headers = new HttpHeaders();
         headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
@@ -132,6 +134,11 @@ public class VisaClient {
         log.trace(visaBinRangeRequest);
         HttpEntity<VisaBinRangeRequest> entity = new HttpEntity<>(visaBinRangeRequest, headers);
         return restTemplate.postForObject(retrieveBinRangesUrl, entity, VisaBinRangeResponse.class);
+    }
+
+    public VisaBinRangeResponse visaBinRangesFallback(int index, Throwable t){
+        log.debug("VISA BIN RANGES fallback - cause {}", t.toString());
+        return new VisaBinRangeResponse();
     }
 
     private int getNewIndex(int index, VisaBinRangeResponse visaBinRangeResponse) {
