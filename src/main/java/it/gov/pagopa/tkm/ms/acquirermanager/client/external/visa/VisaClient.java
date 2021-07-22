@@ -1,7 +1,6 @@
 package it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa.model.request.VisaBinRangeRequest;
 import it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa.model.request.VisaBinRangeRequestData;
 import it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa.model.request.VisaBinRangeRequestHeader;
@@ -10,6 +9,7 @@ import it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa.model.response.
 import it.gov.pagopa.tkm.ms.acquirermanager.exception.EmptyResponseException;
 import it.gov.pagopa.tkm.ms.acquirermanager.exception.MissingPropertyException;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.TkmBinRange;
+import it.gov.pagopa.tkm.ms.acquirermanager.service.CircuitBreakerService;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
@@ -46,6 +46,9 @@ public class VisaClient {
 
     @Autowired
     private ObjectMapper mapper;
+
+    @Autowired
+    private CircuitBreakerService circuitBreakerService;
 
     @Value("${blob-storage.visaPublicCert}")
     private Resource publicCert;
@@ -117,7 +120,6 @@ public class VisaClient {
         return tkmBinRangeList;
     }
 
-    @CircuitBreaker(name = "visaBinRangesCircuitBreaker", fallbackMethod = "visaBinRangesFallback")
     private VisaBinRangeResponse invokeVisaBinRange(int index) {
         HttpHeaders headers = new HttpHeaders();
         headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
@@ -133,12 +135,7 @@ public class VisaClient {
         VisaBinRangeRequest visaBinRangeRequest = new VisaBinRangeRequest(requestHeader, requestData);
         log.trace(visaBinRangeRequest);
         HttpEntity<VisaBinRangeRequest> entity = new HttpEntity<>(visaBinRangeRequest, headers);
-        return restTemplate.postForObject(retrieveBinRangesUrl, entity, VisaBinRangeResponse.class);
-    }
-
-    public VisaBinRangeResponse visaBinRangesFallback(int index, Throwable t){
-        log.debug("VISA BIN RANGES fallback - cause {}", t.toString());
-        return new VisaBinRangeResponse();
+        return circuitBreakerService.getVisaBinRanges(retrieveBinRangesUrl, entity, restTemplate);
     }
 
     private int getNewIndex(int index, VisaBinRangeResponse visaBinRangeResponse) {
