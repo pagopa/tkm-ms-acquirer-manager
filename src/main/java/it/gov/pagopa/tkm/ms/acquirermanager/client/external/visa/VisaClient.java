@@ -102,7 +102,7 @@ public class VisaClient {
         restTemplate = new RestTemplate(requestFactory);
     }
 
-    public List<TkmBinRange> getBinRanges() {
+    public List<TkmBinRange> getBinRanges() throws Exception {
         List<TkmBinRange> tkmBinRangeList = new ArrayList<>();
         int index = 0;
         do {
@@ -120,7 +120,7 @@ public class VisaClient {
         return tkmBinRangeList;
     }
 
-    private VisaBinRangeResponse invokeVisaBinRange(int index) {
+    private VisaBinRangeResponse invokeVisaBinRange(int index) throws Exception {
         HttpHeaders headers = new HttpHeaders();
         headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
         headers.setContentType(MediaType.APPLICATION_JSON);
