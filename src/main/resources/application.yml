@@ -126,12 +126,17 @@ thread:
   corePoolSize: ${THREAD_CORE_POOL_SIZE:5}
   maxPoolSize: ${THREAD_MAX_POOL_SIZE:10}
 
-resilience4j.circuitbreaker:
+#resilience4j.circuitbreaker:
+ # instances:
+  #  visaBinRangesCircuitBreaker:
+  #  minimumNumberOfCalls: ${MINUMUM_NUMBER_OF_CALLS:2}
+  #  slidingWindowSize: ${SLIDING_WINDOW_SIZE:4}
+  #  ringBufferSizeInClosedState: ${RING_BUFFER_SIZE_IN_CLOSED_SATE:2}
+  #  ringBufferSizeInHalfOpenState: ${RING_BUFFER_SIZE_IN_HALFOPEN_SATE:2}
+  #  failureRateThreshold: ${FAILURE_RATE_THRESHOLD:50}
+  #  waitDurationInOpenState: ${WAIT_DURATION_IN_OPENSTATE:20s}
+resilience4j.retry:
   instances:
-    visaBinRangesCircuitBreaker:
-      minimumNumberOfCalls: ${MINUMUM_NUMBER_OF_CALLS:2}
-      slidingWindowSize: ${SLIDING_WINDOW_SIZE:4}
-      ringBufferSizeInClosedState: ${RING_BUFFER_SIZE_IN_CLOSED_SATE:2}
-      ringBufferSizeInHalfOpenState: ${RING_BUFFER_SIZE_IN_HALFOPEN_SATE:2}
-      failureRateThreshold: ${FAILURE_RATE_THRESHOLD:50}
-      waitDurationInOpenState: ${WAIT_DURATION_IN_OPENSTATE:20s}
+    visaBinRangesRetry:
+      maxAttempts: ${RETRY_MAX_ATTEMPTS:5}
+      waitDuration: ${RETRY_WAIT_DURATION:2000}

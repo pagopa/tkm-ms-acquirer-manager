@@ -16,8 +16,7 @@ public class CircuitBreakerServiceImpl implements CircuitBreakerService {
     @Override
   //@CircuitBreaker(name = "visaBinRangesCircuitBreaker", fallbackMethod = "visaBinRangesFallback")
     @Retry(name = "visaBinRangesRetry", fallbackMethod = "visaBinRangesFallback")
-    public VisaBinRangeResponse getVisaBinRanges(String retrieveBinRangesUrl, HttpEntity<VisaBinRangeRequest> entity,
-                                                 RestTemplate restTemplate){
+    public VisaBinRangeResponse getVisaBinRanges(String retrieveBinRangesUrl, HttpEntity<VisaBinRangeRequest> entity, RestTemplate restTemplate){
          return restTemplate.postForObject(retrieveBinRangesUrl, entity, VisaBinRangeResponse.class);
 
     }

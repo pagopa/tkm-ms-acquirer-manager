@@ -10,6 +10,7 @@ import it.gov.pagopa.tkm.ms.acquirermanager.exception.EmptyResponseException;
 import it.gov.pagopa.tkm.ms.acquirermanager.exception.MissingPropertyException;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.TkmBinRange;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.CircuitBreakerService;
+import it.gov.pagopa.tkm.ms.acquirermanager.service.impl.CircuitBreakerServiceImpl;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
