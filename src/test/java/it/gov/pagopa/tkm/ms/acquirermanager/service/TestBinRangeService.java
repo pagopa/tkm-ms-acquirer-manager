@@ -91,7 +91,7 @@ class TestBinRangeService {
     }
 
     @Test
-    void callVisaApiAndWriteResult() {
+    void callVisaApiAndWriteResult() throws Exception {
         when(visaClient.getBinRanges()).thenReturn(testBeans.TKM_BIN_RANGES);
         binRangeService.retrieveVisaBinRanges();
         verify(batchResultRepository).save(batchResultArgumentCaptor.capture());
@@ -102,7 +102,7 @@ class TestBinRangeService {
     }
 
     @Test
-    void givenVisaApiError_writeFalseOutcome() {
+    void givenVisaApiError_writeFalseOutcome() throws Exception {
         when(visaClient.getBinRanges()).thenThrow(new RuntimeException());
         binRangeService.retrieveVisaBinRanges();
         verify(batchResultRepository).save(batchResultArgumentCaptor.capture());
