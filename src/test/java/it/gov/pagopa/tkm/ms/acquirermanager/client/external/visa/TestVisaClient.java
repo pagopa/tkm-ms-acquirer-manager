@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import it.gov.pagopa.tkm.ms.acquirermanager.constant.DefaultBeans;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.*;
+import it.gov.pagopa.tkm.ms.acquirermanager.service.CircuitBreakerService;
+import it.gov.pagopa.tkm.ms.acquirermanager.service.impl.CircuitBreakerServiceImpl;
 import okhttp3.mockwebserver.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -37,6 +39,13 @@ class TestVisaClient {
 
     private static MockWebServer mockServer;
 
+   // @Spy
+   // private CircuitBreakerService circuitBreakerService;
+
+  //  @Mock
+  //  private CircuitBreakerServiceImpl circuitBreakerServiceImpl;
+
+
     @BeforeAll
     static void setUp() throws IOException {
         mockServer = new MockWebServer();
@@ -54,6 +63,7 @@ class TestVisaClient {
         ReflectionTestUtils.setField(visaClient, "keyId", "TEST_KEY_ID");
         ReflectionTestUtils.setField(visaClient, "retrieveBinRangesUrl", "http://localhost:" + mockServer.getPort());
         ReflectionTestUtils.setField(visaClient, "mapper", mapper);
+        ReflectionTestUtils.setField(visaClient, "circuitBreakerService", new CircuitBreakerServiceImpl());
         Method postConstruct = VisaClient.class.getDeclaredMethod("init");
         postConstruct.setAccessible(true);
         postConstruct.invoke(visaClient);
@@ -65,7 +75,7 @@ class TestVisaClient {
     }
 
     @Test
-    void givenRequest_callClient() throws JsonProcessingException {
+    void givenRequest_callClient() throws Exception {
         MockResponse mockResponse1 = new MockResponse()
                 .setBody(mapper.writeValueAsString(testBeans.VISA_BIN_RANGE_RESPONSE))
                 .addHeader("Content-Type", "application/json");

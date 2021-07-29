@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
 
 	<artifactId>acquirer-manager</artifactId>
-	<version>1.0.1</version>
+	<version>1.0.2</version>
 	<packaging>jar</packaging>
 
     <parent>
@@ -14,6 +14,7 @@
 
     <properties>
         <spring.azure-version>3.2.0</spring.azure-version>
+        <resilience4j.version>1.7.0</resilience4j.version>
     </properties>
 
     <dependencies>
@@ -73,6 +74,16 @@
             <groupId>org.springframework.kafka</groupId>
             <artifactId>spring-kafka</artifactId>
             <version>2.7.0</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-spring-boot2</artifactId>
+            <version>${resilience4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-metrics</artifactId>
+            <version>${resilience4j.version}</version>
         </dependency>
     </dependencies>
 
@@ -175,6 +186,6 @@
     </distributionManagement>
     <scm>
         <developerConnection>scm:git:https://github.com/pagopa/tkm-ms-acquirer-manager.git</developerConnection>
-        <tag>acquirer-manager-1.0.1</tag>
+        <tag>acquirer-manager-1.0.2</tag>
     </scm>
 </project>
