@@ -15,7 +15,7 @@ import org.springframework.http.converter.xml.*;
 import org.springframework.test.web.servlet.*;
 import org.springframework.test.web.servlet.setup.*;
 
-import static it.gov.pagopa.tkm.ms.acquirermanager.constant.ApiEndpoints.LINK;
+import static it.gov.pagopa.tkm.ms.acquirermanager.constant.ApiEndpoints.LINKS;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -28,7 +28,7 @@ public class TestBinRangeController {
     private BinRangeControllerImpl binRangeController;
 
     @Mock
-    private BinRangeHashServiceImpl binRangeHashService;
+    private FileLinksServiceImpl fileLinksService;
 
     private final ObjectMapper mapper = new ObjectMapper();
 
@@ -54,9 +54,9 @@ public class TestBinRangeController {
 
     @Test
     void givenValidBinRangeRequest_returnBinRangeResponse() throws Exception {
-        when(binRangeHashService.getSasLinkResponse(BatchEnum.BIN_RANGE_GEN)).thenReturn(testBeans.LINKS_RESPONSE);
+        when(fileLinksService.getSasLinkResponse(BatchEnum.BIN_RANGE_GEN)).thenReturn(testBeans.LINKS_RESPONSE);
         mockMvc.perform(
-                get(ApiEndpoints.BIN_RANGE_BASE_PATH + LINK))
+                get(ApiEndpoints.BIN_RANGES_BASE_PATH + LINKS))
                 .andExpect(status().isOk())
                 .andExpect(content().json(mapper.writeValueAsString(testBeans.LINKS_RESPONSE)));
     }

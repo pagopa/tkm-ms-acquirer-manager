@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: tkmmsacquirermanagersit
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: tkmmsacquirermanagersit
@@ -28,6 +28,8 @@ spec:
                 name: kafka-log-configuration
             - configMapRef:
                 name: tkmmsacquirermanager
+            - configMapRef:
+                name: jvm
           livenessProbe:
             httpGet:
               path: /actuator/health

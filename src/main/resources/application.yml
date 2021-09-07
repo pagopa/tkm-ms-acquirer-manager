@@ -1,30 +1,32 @@
 spring:
-  #  datasource:
-  #    url: jdbc:postgresql://${DB_SERVER}
-  #    username: ${keyvault.acquirerMDbUsername}
-  #    password: ${keyvault.acquirerMDbPassword}
-  #    driver-class-name: org.postgresql.Driver
-  #  jpa:
-  #    properties:
-  #      hibernate:
-  #        dialect: org.hibernate.dialect.PostgreSQLDialect
+  datasource:
+    url: jdbc:postgresql://${DB_SERVER}
+    username: ${keyvault.acquirerMDbUsername}
+    password: ${keyvault.acquirerMDbPassword}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
   application:
     name: Tkm Acquirer Manager ${HOSTNAME:0}
-#  kafka:
-#    producer:
-#      bootstrap-servers: ${KAFKA_SERVERS}
-#      client-id: ${KAFKA_GROUP_ID}${HOSTNAME:0}
-#      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-#      value-serializer: org.apache.kafka.common.serialization.StringSerializer
-#      properties:
-#        security:
-#          protocol: ${KAFKA_SECURITY_PROTOCOL:SASL_SSL}
-#        sasl:
-#          mechanism: ${KAFKA_SASL_MECHANISM:PLAIN}
-#          jaas:
-#            config: ${keyvault.acquirerMEventhubReadSaslJaasConfig}
-#    topics:
-#      read-queue: ${KAFKA_READ_QUEUE_TOPIC}
+  kafka:
+    producer:
+      retries: 0
+      bootstrap-servers: ${KAFKA_SERVERS}
+      client-id: ${KAFKA_GROUP_ID:}${HOSTNAME:0}
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      properties:
+        security:
+          protocol: ${KAFKA_SECURITY_PROTOCOL:SASL_SSL}
+        sasl:
+          mechanism: ${KAFKA_SASL_MECHANISM:PLAIN}
+          jaas:
+            config: ${keyvault.tkmReadTokenParPanProducerSaslJaasConfig}
+    topics:
+      read-queue:
+        name: ${KAFKA_READ_QUEUE_TOPIC}
 
 server:
   port: ${SERVER_PORT:8080}
@@ -34,8 +36,15 @@ server:
 logging:
   level:
     root: ${LOGGING_LEVEL:INFO}
+    org:
+      hibernate:
+        SQL: ${LOGGING_LEVEL_HIBERNATE:INFO}
+        type:
+          descriptor:
+            sql:
+              BasicBinder: ${LOGGING_LEVEL_HIBERNATE:INFO}
   pattern:
-    level: "${LOGGING_PATTERN:%p [${spring.application.name}][%X{traceId}]}"
+    level: "${LOGGING_PATTERN:%p [${spring.application.name}][%X{traceId}|%X{spanId}]}"
 
 azure:
   keyvault:
@@ -53,38 +62,81 @@ azure:
     connection-string: DefaultEndpointsProtocol=${azure.storage.default-endpoints-protocol};AccountName=${keyvault.blobAccountName};AccountKey=${keyvault.blobAccountKey};BlobEndpoint=${azure.storage.blob-endpoint};
 
 keyvault:
+  acquirerMDbUsername: ${${AZURE_KEYVAULT_PROFILE:prod}-acquirerMDbUsername}
+  acquirerMDbPassword: ${${AZURE_KEYVAULT_PROFILE:prod}-acquirerMDbPassword}
   blobAccountName: ${${AZURE_KEYVAULT_PROFILE:prod}-blobAccountName}
   blobAccountKey: ${${AZURE_KEYVAULT_PROFILE:prod}-blobAccountKey}
-  eventhubLogSaslJaasConfig: ${${AZURE_KEYVAULT_PROFILE:prod}-eventhubLogSaslJaasConfig:null}
-  acquirerMEventhubReadSaslJaasConfig: ${${AZURE_KEYVAULT_PROFILE:prod}-acquirerMEventhubReadSaslJaasConfig:null}
-#  readQueuePrvPgpKey: ${${AZURE_KEYVAULT_PROFILE:prod}-readQueuePrvPgpKey}
-#  readQueuePubPgpKey: ${${AZURE_KEYVAULT_PROFILE:prod}-readQueuePubPgpKey}
-#  readQueuePrvPgpKeyPassphrase: ${${AZURE_KEYVAULT_PROFILE:prod}-readQueuePrvPgpKeyPassphrase:null}
-#  amexClientId: ${${AZURE_KEYVAULT_PROFILE:prod}-amexClientId}
-#  amexClientSecret: ${${AZURE_KEYVAULT_PROFILE:prod}-amexClientSecret}
-#  visaClientId: ${${AZURE_KEYVAULT_PROFILE:prod}-visaClientId}
-#  visaKeyId: ${${AZURE_KEYVAULT_PROFILE:prod}-visaKeyId}
-#  visaKeyStorePassword: ${${AZURE_KEYVAULT_PROFILE:prod}-visaKeyStorePassword}
-#  visaPassword: ${${AZURE_KEYVAULT_PROFILE:prod}-visaPassword}
-#  visaPrivateKey: ${${AZURE_KEYVAULT_PROFILE:prod}-visaPrivateKey}
-#  visaServerCertificate: ${${AZURE_KEYVAULT_PROFILE:prod}-visaServerCertificate}
-#  visaUserId: ${${AZURE_KEYVAULT_PROFILE:prod}-visaUserId}
-#
-#blob-storage:
-#  visaPublicCert: azure-blob://${BLOB_STORAGE_NAME}/Visa_Public_Cert.p12
-#
-#client-urls:
-#  card-manager: ${CARD_MANAGER_URL}
-#
-#circuit-urls:
-#  amex: ${AMEX_URL}
-#  visa: ${VISA_URL}
+  eventhubLogSaslJaasConfig: ${${AZURE_KEYVAULT_PROFILE:prod}-eventhubLogSaslJaasConfig:}
+  visaKeyId: ${${AZURE_KEYVAULT_PROFILE:prod}-visaKeyId:}
+  visaKeyStorePassword: ${${AZURE_KEYVAULT_PROFILE:prod}-visaKeyStorePassword:}
+  visaPassword: ${${AZURE_KEYVAULT_PROFILE:prod}-visaPassword:}
+  visaUserId: ${${AZURE_KEYVAULT_PROFILE:prod}-visaUserId:}
+  acquirerPgpPrivateKey: ${${AZURE_KEYVAULT_PROFILE:prod}-acquirerPgpPrivateKey}
+  acquirerPgpPrivateKeyPassphrase: ${${AZURE_KEYVAULT_PROFILE:prod}-acquirerPgpPrivateKeyPassphrase}
+  tkmReadTokenParPanPubPgpKey: ${${AZURE_KEYVAULT_PROFILE:prod}-tkmReadTokenParPanPubPgpKey}
+  sftpPassPhrase: ${${AZURE_KEYVAULT_PROFILE:prod}-sftpPassPhrase}
+  sftpPrivateKey: ${${AZURE_KEYVAULT_PROFILE:prod}-sftpPrivateKey}
+  tkmReadTokenParPanProducerSaslJaasConfig: ${${AZURE_KEYVAULT_PROFILE:prod}-tkmReadTokenParPanProducerSaslJaasConfig:}
+
+blob-storage:
+  visaPublicCert: azure-blob://${BLOB_STORAGE_ACQUIRER_CONFIG_CONTAINER}/Visa_Public_Cert.p12
+
+client-urls:
+  card-manager: ${CARD_MANAGER_URL}
+
+circuit-urls:
+  visa: ${VISA_URL:}
 
 management:
   health:
     db:
-      enabled: false
+      enabled: true
   endpoints:
     web:
       exposure:
         include: "info,health,prometheus"
+
+batch:
+  max-thread: ${BATCH_MAX_THREAD:2}
+  bin-range-gen:
+    cron: ${BIN_RANGE_GEN_CRON:-}
+    max-rows-in-files: ${BIN_RANGE_GEN_MAX_ROWS_IN_FILES:1000000}
+  bin-range-retrieval:
+    cron: ${BIN_RANGE_RETRIEVAL_CRON:-}
+  known-hashes-gen:
+    cron: ${KNOWN_HASHES_GEN_CRON:-}
+    max-rows-in-files: ${KNOWN_HASHES_GEN_MAX_ROWS_IN_FILES:1000000}
+    max-records-in-api-call: ${KNOWN_HASHES_GEN_MAX_RECORDS_IN_API_CALL:50000}
+  known-hashes-copy:
+    cron: ${KNOWN_HASHES_COPY_CRON:-}
+  acquirer-result:
+    cron: ${BATCH_ACQUIRER_RESULT_CRON:-}
+    threadNumber: ${BATCH_ACQUIRER_THREAD_NUMBER:5}
+
+sftp:
+  sftpHostname: ${SFTP_SIA_HOSTNAME}
+  sftpPort: ${SFTP_SIA_PORT}
+  sftpUser: ${SFTP_SIA_USER}
+  sftpPrivateKey: ${keyvault.sftpPrivateKey}
+  sftpPassPhrase: ${keyvault.sftpPassPhrase}
+  sftpFolder: ${SFTP_SIA_FOLDER}
+  sftpFilesPattern: ${SFTP_SIA_FILE_PATTERN:^TKM\..*\.pgp}
+
+thread:
+  corePoolSize: ${THREAD_CORE_POOL_SIZE:5}
+  maxPoolSize: ${THREAD_MAX_POOL_SIZE:10}
+
+#resilience4j.circuitbreaker:
+ # instances:
+  #  visaBinRangesCircuitBreaker:
+  #  minimumNumberOfCalls: ${MINUMUM_NUMBER_OF_CALLS:2}
+  #  slidingWindowSize: ${SLIDING_WINDOW_SIZE:4}
+  #  ringBufferSizeInClosedState: ${RING_BUFFER_SIZE_IN_CLOSED_SATE:2}
+  #  ringBufferSizeInHalfOpenState: ${RING_BUFFER_SIZE_IN_HALFOPEN_SATE:2}
+  #  failureRateThreshold: ${FAILURE_RATE_THRESHOLD:50}
+  #  waitDurationInOpenState: ${WAIT_DURATION_IN_OPENSTATE:20s}
+resilience4j.retry:
+  instances:
+    visaBinRangesRetry:
+      maxAttempts: ${RETRY_MAX_ATTEMPTS:5}
+      waitDuration: ${RETRY_WAIT_DURATION:2000}
