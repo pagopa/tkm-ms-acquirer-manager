@@ -8,7 +8,6 @@ import org.springframework.scheduling.annotation.*;
 
 @SpringBootApplication
 @EnableFeignClients
-@EnableScheduling
 @EnableSchedulerLock(defaultLockAtMostFor = "PT6H")
 public class AcquirerManagerApplication {
 

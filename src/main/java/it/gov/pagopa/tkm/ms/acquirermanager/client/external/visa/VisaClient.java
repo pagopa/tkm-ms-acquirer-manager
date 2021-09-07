@@ -9,6 +9,8 @@ import it.gov.pagopa.tkm.ms.acquirermanager.client.external.visa.model.response.
 import it.gov.pagopa.tkm.ms.acquirermanager.exception.EmptyResponseException;
 import it.gov.pagopa.tkm.ms.acquirermanager.exception.MissingPropertyException;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.TkmBinRange;
+import it.gov.pagopa.tkm.ms.acquirermanager.service.CircuitBreakerService;
+import it.gov.pagopa.tkm.ms.acquirermanager.service.impl.CircuitBreakerServiceImpl;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
@@ -45,6 +47,9 @@ public class VisaClient {
 
     @Autowired
     private ObjectMapper mapper;
+
+    @Autowired
+    private CircuitBreakerService circuitBreakerService;
 
     @Value("${blob-storage.visaPublicCert}")
     private Resource publicCert;
@@ -98,7 +103,7 @@ public class VisaClient {
         restTemplate = new RestTemplate(requestFactory);
     }
 
-    public List<TkmBinRange> getBinRanges() {
+    public List<TkmBinRange> getBinRanges() throws Exception {
         List<TkmBinRange> tkmBinRangeList = new ArrayList<>();
         int index = 0;
         do {
@@ -116,7 +121,7 @@ public class VisaClient {
         return tkmBinRangeList;
     }
 
-    private VisaBinRangeResponse invokeVisaBinRange(int index) {
+    private VisaBinRangeResponse invokeVisaBinRange(int index) throws Exception {
         HttpHeaders headers = new HttpHeaders();
         headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -131,7 +136,7 @@ public class VisaClient {
         VisaBinRangeRequest visaBinRangeRequest = new VisaBinRangeRequest(requestHeader, requestData);
         log.trace(visaBinRangeRequest);
         HttpEntity<VisaBinRangeRequest> entity = new HttpEntity<>(visaBinRangeRequest, headers);
-        return restTemplate.postForObject(retrieveBinRangesUrl, entity, VisaBinRangeResponse.class);
+        return circuitBreakerService.getVisaBinRanges(retrieveBinRangesUrl, entity, restTemplate);
     }
 
     private int getNewIndex(int index, VisaBinRangeResponse visaBinRangeResponse) {
