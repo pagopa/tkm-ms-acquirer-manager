@@ -2,13 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: tkmmsacquirermanagersit
-resources:
-  requests:
-    memory: 2Gi
-    cpu: 500m
-  limits:
-    memory: 4Gi
-    cpu: 700m
 spec:
   replicas: 1
   selector:
@@ -37,6 +30,13 @@ spec:
                 name: tkmmsacquirermanager
             - configMapRef:
                 name: jvm
+          resources:
+            requests:
+              memory: 2Gi
+              cpu: 500m
+            limits:
+              memory: 4Gi
+              cpu: 700m
           livenessProbe:
             httpGet:
               path: /actuator/health
