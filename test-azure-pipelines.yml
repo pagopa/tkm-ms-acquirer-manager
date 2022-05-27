@@ -51,7 +51,7 @@ stages:
     - job: Pre_Deploy
       displayName: 'Pre-Deploy'
       pool:
-        vmImage: $(vmImageNameDefault)
+        name: pagopa-agent-pool-uat
       steps:
         - task: DownloadSecureFile@1
           displayName: 'download tkmmsacquirermanager.yaml'
