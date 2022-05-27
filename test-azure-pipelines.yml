@@ -38,6 +38,7 @@ stages:
                       $(Pipeline.Workspace)/manifests/namespace-$(enviroment).yml
   - stage: Pre-Deploy
     displayName: Pre-Deploy
+    jobs:
     - job: Pre-Deploy
       displayName: Pre-Deploy
       pool:
