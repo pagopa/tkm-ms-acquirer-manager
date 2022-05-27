@@ -36,7 +36,7 @@ stages:
                     kubernetesServiceConnection: 'u87-aks-pci-uat-self-connection-tkm'
                     manifests: |
                       $(Pipeline.Workspace)/manifests/namespace-$(enviroment).yml
-  - stage: Pre-Deploy
+  - stage: Pre_Deploy
     displayName: Pre-Deploy
     jobs:
     - job: Pre-Deploy
