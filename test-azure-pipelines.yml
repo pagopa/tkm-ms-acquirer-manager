@@ -37,10 +37,10 @@ stages:
                     manifests: |
                       $(Pipeline.Workspace)/manifests/namespace-$(enviroment).yml
   - stage: Pre_Deploy
-    displayName: Pre-Deploy
+    displayName: 'Pre-Deploy'
     jobs:
-    - job: Pre-Deploy
-      displayName: Pre-Deploy
+    - job: Pre_Deploy
+      displayName: 'Pre-Deploy'
       pool:
         vmImage: $(vmImageNameDefault)
       steps:
