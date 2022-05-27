@@ -10,49 +10,52 @@ variables:
   enviroment: uat
 
 stages:
-  - deployment: createNamespace
-    displayName: Create Namespace
-    pool:
-      name: pagopa-agent-pool-uat
-      environment: 'uat'
-      strategy:
-        runOnce:
-          deploy:
-            steps:
-              - download: none
-              - task: DownloadPipelineArtifact@2
-                inputs:
-                  buildType: 'current'
-                  artifactName: 'manifests'
-                  targetPath: '$(Pipeline.Workspace)/manifests'
-              - task: KubernetesManifest@0
-                displayName: 'Create Namespace'
-                inputs:
-                  namespace: tkm-uat
-                  action: deploy
-                  kubernetesServiceConnection: 'u87-aks-pci-uat-self-connection-tkm'
-                  manifests: |
-                    $(Pipeline.Workspace)/manifests/namespace-$(enviroment).yml
-  - stage: Pre-Deploy
-    displayName: Pre-Deploy
-    - job: Pre-Deploy
-      displayName: Pre-Deploy
+  - stage: UAT
+    displayName: UAT
+    jobs:
+    - deployment: createNamespace
+      displayName: Create Namespace
       pool:
-        vmImage: $(vmImageNameDefault)
-      steps:
-        - task: DownloadSecureFile@1
-          displayName: 'download tkmmsacquirermanager.yaml'
-          name: tkmmsacquirermanager
-          inputs:
-            secureFile: 'tkmmsacquirermanager-$(enviroment).yaml'
-            retryCount: '2'
-        - task: Kubernetes@1
-          displayName: 'apply tkmmsacquirermanager.yaml'
-          inputs:
-            connectionType: Azure Resource Manager
-            azureSubscriptionEndpoint: 'U87-PagoPa-PCI-uat'
-            azureResourceGroup: 'U87-AKS-pci-uat'
-            kubernetesCluster: 'U87-AKS-pci-uat'
-            command: apply
-            useConfigurationFile: true
-            configuration: $(tkmmsacquirermanager.secureFilePath)
+        name: pagopa-agent-pool-uat
+        environment: 'uat'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - download: none
+                - task: DownloadPipelineArtifact@2
+                  inputs:
+                    buildType: 'current'
+                    artifactName: 'manifests'
+                    targetPath: '$(Pipeline.Workspace)/manifests'
+                - task: KubernetesManifest@0
+                  displayName: 'Create Namespace'
+                  inputs:
+                    namespace: tkm-uat
+                    action: deploy
+                    kubernetesServiceConnection: 'u87-aks-pci-uat-self-connection-tkm'
+                    manifests: |
+                      $(Pipeline.Workspace)/manifests/namespace-$(enviroment).yml
+    - stage: Pre-Deploy
+      displayName: Pre-Deploy
+      - job: Pre-Deploy
+        displayName: Pre-Deploy
+        pool:
+          vmImage: $(vmImageNameDefault)
+        steps:
+          - task: DownloadSecureFile@1
+            displayName: 'download tkmmsacquirermanager.yaml'
+            name: tkmmsacquirermanager
+            inputs:
+              secureFile: 'tkmmsacquirermanager-$(enviroment).yaml'
+              retryCount: '2'
+          - task: Kubernetes@1
+            displayName: 'apply tkmmsacquirermanager.yaml'
+            inputs:
+              connectionType: Azure Resource Manager
+              azureSubscriptionEndpoint: 'U87-PagoPa-PCI-uat'
+              azureResourceGroup: 'U87-AKS-pci-uat'
+              kubernetesCluster: 'U87-AKS-pci-uat'
+              command: apply
+              useConfigurationFile: true
+              configuration: $(tkmmsacquirermanager.secureFilePath)
