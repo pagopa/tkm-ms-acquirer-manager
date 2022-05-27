@@ -23,11 +23,11 @@ stages:
           deploy:
             steps:
               - download: none
-              - task: DownloadPipelineArtifact@2
-                inputs:
-                  buildType: 'current'
-                  artifactName: 'manifests'
-                  targetPath: '$(Pipeline.Workspace)/manifests'
+#              - task: DownloadPipelineArtifact@2
+#                inputs:
+#                  buildType: 'current'
+#                  artifactName: 'manifests'
+#                  targetPath: '$(Pipeline.Workspace)/manifests'
               - task: KubernetesManifest@0
                 displayName: 'Create Namespace'
                 inputs:
@@ -35,7 +35,7 @@ stages:
                   action: deploy
                   kubernetesServiceConnection: 'u87-aks-pci-uat-self-connection-tkm'
                   manifests: |
-                    $(Pipeline.Workspace)/manifests/namespace-$(enviroment).yml
+                    refs/heads/PM-805-pipeline-uat/manifests/namespace-$(enviroment).yml
   - stage: Pre_Deploy
     displayName: 'Pre-Deploy'
     jobs:
