@@ -54,7 +54,7 @@ stages:
           displayName: 'apply tkmmsacquirermanager.yaml'
           inputs:
             connectionType: Azure Resource Manager
-            azureSubscriptionEndpoint: 'U87-PagoPa-PCI-uat'
+            azureSubscriptionEndpoint: 'U87-PagoPa-PCI-uat(e7feb90c-fcc2-40a2-ba56-d68ec301c6c0)'
             azureResourceGroup: 'U87-AKS-pci-uat'
             kubernetesCluster: 'U87-AKS-pci-uat'
             command: apply
