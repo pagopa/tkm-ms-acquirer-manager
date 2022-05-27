@@ -198,7 +198,7 @@ stages:
                   displayName: 'download tkmmsacquirermanager.yaml'
                   name: tkmmsacquirermanager
                   inputs:
-                    secureFile: 'tkmmsacquirermanager-$(enviroment).yaml'
+                    secureFile: tkmmsacquirermanager-$(enviroment).yaml
                     retryCount: '2'
                 - task: Kubernetes@1
                   displayName: 'apply tkmmsacquirermanager.yaml'
