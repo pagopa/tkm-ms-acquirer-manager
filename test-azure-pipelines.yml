@@ -17,25 +17,25 @@ stages:
       displayName: Create Namespace
       pool:
         name: pagopa-agent-pool-uat
-        environment: 'uat'
-        strategy:
-          runOnce:
-            deploy:
-              steps:
-                - download: none
-                - task: DownloadPipelineArtifact@2
-                  inputs:
-                    buildType: 'current'
-                    artifactName: 'manifests'
-                    targetPath: '$(Pipeline.Workspace)/manifests'
-                - task: KubernetesManifest@0
-                  displayName: 'Create Namespace'
-                  inputs:
-                    namespace: tkm-uat
-                    action: deploy
-                    kubernetesServiceConnection: 'u87-aks-pci-uat-self-connection-tkm'
-                    manifests: |
-                      $(Pipeline.Workspace)/manifests/namespace-$(enviroment).yml
+      environment: 'uat'
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+              - download: none
+              - task: DownloadPipelineArtifact@2
+                inputs:
+                  buildType: 'current'
+                  artifactName: 'manifests'
+                  targetPath: '$(Pipeline.Workspace)/manifests'
+              - task: KubernetesManifest@0
+                displayName: 'Create Namespace'
+                inputs:
+                  namespace: tkm-uat
+                  action: deploy
+                  kubernetesServiceConnection: 'u87-aks-pci-uat-self-connection-tkm'
+                  manifests: |
+                    $(Pipeline.Workspace)/manifests/namespace-$(enviroment).yml
   - stage: Pre_Deploy
     displayName: 'Pre-Deploy'
     jobs:
