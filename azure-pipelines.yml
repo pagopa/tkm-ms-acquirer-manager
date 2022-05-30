@@ -194,12 +194,12 @@ stages:
                     kubernetesServiceConnection: 'ddsakstest-self-connection-tkm-sit'
                     manifests: |
                       $(Pipeline.Workspace)/manifests/namespace-$(enviroment).yml
-#                - task: DownloadSecureFile@1
-#                  displayName: 'download keyvault-connection-informations.yaml'
-#                  name: keyvaultconnectioninformations
-#                  inputs:
-#                    secureFile: keyvault-connection-informations-$(enviroment).yaml
-#                    retryCount: '2'
+                - task: DownloadSecureFile@1
+                  displayName: 'download keyvault-connection-informations.yaml'
+                  name: keyvaultconnectioninformations
+                  inputs:
+                    secureFile: keyvault-connection-informations-$(enviroment).yaml
+                    retryCount: '2'
 #                - task: DownloadSecureFile@1
 #                  displayName: 'download jvm.yaml'
 #                  name: jvm
