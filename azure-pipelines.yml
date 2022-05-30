@@ -31,6 +31,7 @@ variables:
     enviroment: sit
     imagePullSecret: 'tkmsitregistry-auth'
   ${{ if or(eq(variables['Build.SourceBranch'], 'refs/heads/release/uat'), startsWith(variables['Build.SourceBranch'], 'refs/heads/hotfix')) }}:
+    dockerRegistryServiceConnection: 'tkm-cstaruatregistry-connector'
     containerRegistry: 'cstaruatregistry.azurecr.io'
     enviroment: uat
     imagePullSecret: 'tkmuatregistry-auth'
