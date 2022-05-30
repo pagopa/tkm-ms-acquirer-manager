@@ -228,16 +228,16 @@ stages:
                     command: apply
                     useConfigurationFile: true
                     configuration: $(keyvaultconnectioninformations.secureFilePath)
-#                - task: Kubernetes@1
-#                  displayName: 'apply jvm.yaml'
-#                  inputs:
-#                    connectionType: Azure Resource Manager
-#                    azureSubscriptionEndpoint: 'PM-subscription-sit'
-#                    azureResourceGroup: 'DDS-Kubernetes'
-#                    kubernetesCluster: 'ddsakstest'
-#                    command: apply
-#                    useConfigurationFile: true
-#                    configuration: $(jvm.secureFilePath)
+                - task: Kubernetes@1
+                  displayName: 'apply jvm.yaml'
+                  inputs:
+                    connectionType: Azure Resource Manager
+                    azureSubscriptionEndpoint: 'PM-subscription-sit'
+                    azureResourceGroup: 'DDS-Kubernetes'
+                    kubernetesCluster: 'ddsakstest'
+                    command: apply
+                    useConfigurationFile: true
+                    configuration: $(jvm.secureFilePath)
 #                - task: Kubernetes@1
 #                  displayName: 'apply kafka-log-configuration.yaml'
 #                  inputs:
