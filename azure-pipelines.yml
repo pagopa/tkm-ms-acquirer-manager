@@ -198,25 +198,25 @@ stages:
                   displayName: 'download keyvault-connection-informations.yaml'
                   name: keyvaultconnectioninformations
                   inputs:
-                    secureFile: keyvault-connection-informations-$(enviroment).yaml
+                    secureFile: 'keyvault-connection-informations-$(enviroment).yaml'
                     retryCount: '2'
                 - task: DownloadSecureFile@1
                   displayName: 'download jvm.yaml'
                   name: jvm
                   inputs:
-                    secureFile: jvm-$(enviroment).yaml
+                    secureFile: 'jvm-$(enviroment).yaml'
                     retryCount: '2'
                 - task: DownloadSecureFile@1
                   displayName: 'download kafka-log-configuration.yaml'
                   name: kafkalogconfiguration
                   inputs:
-                    secureFile: kafka-log-configuration-$(enviroment).yaml
+                    secureFile: 'kafka-log-configuration-$(enviroment).yaml'
                     retryCount: '2'
                 - task: DownloadSecureFile@1
                   displayName: 'download tkmmsacquirermanager.yaml'
                   name: tkmmsacquirermanager
                   inputs:
-                    secureFile: tkmmsacquirermanager-$(enviroment).yaml
+                    secureFile: 'tkmmsacquirermanager-$(enviroment).yaml'
                     retryCount: '2'
                 - task: Kubernetes@1
                   displayName: 'apply keyvault-connection-informations.yaml'
