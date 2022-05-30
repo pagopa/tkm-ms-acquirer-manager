@@ -16,6 +16,13 @@ spec:
         prometheus.io/port: '8080'
         prometheus.io/scrape: 'true'
     spec:
+      hostAliases:
+      - ip: "10.70.67.9"
+        hostnames:
+        - "tkmpgsqlt01.postgres.database.azure.com"
+      - ip: "10.70.67.8"
+        hostnames:
+        - "ddstkmhub.servicebus.windows.net"
       containers:
         - name: tkmmsacquirermanagersit
           image: cstaruatregistry.azurecr.io/tkmmsacquirermanager
@@ -30,6 +37,13 @@ spec:
                 name: tkmmsacquirermanager
             - configMapRef:
                 name: jvm
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 500m
+            limits:
+              memory: 8Gi
+              cpu: 1000m
           livenessProbe:
             httpGet:
               path: /actuator/health
