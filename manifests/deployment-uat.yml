@@ -22,7 +22,7 @@ spec:
         prometheus.io/scrape: 'true'
     spec:
       nodeSelector:
-        tkm-uat: true
+        tkm-uat: 'true'
       hostAliases:
         - ip: "10.70.73.228"
           hostnames:
