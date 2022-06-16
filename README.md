@@ -30,23 +30,27 @@ Le seguenti variabile d'ambiente permettono di configurare il servizio e adattar
 - **AZURE_KEYVAULT_CLIENT_KEY**: client key  del keyvault azure
 - **AZURE_KEYVAULT_TENANT_ID**: tenant id  del keyvault azure
 
-## Avvio della pipeline azure in ambiente di SIT
 
- 1. Move into:
-> develop
+## How to start SIT azure pipeline
 
- 1. Run:<br>
-    `$version=??` for poweshell or `version=??` for gitbash<br>
- 	`mvn --batch-mode release:clean release:prepare`<br>
- 	`git checkout -b tmp/${version} acquirer-manager-${version}`<br> 
- 	`git push --set-upstream origin tmp/${version}`<br>
- 	
- 2. Merge **tmp/${version}** into **release/sit**
+1. Merge **feature branch** into **develop**<br>
+   Pipeline starts automatically and do maven prepare release.<br>
+   At the end, the pipeline create branch tmp/<version><br>
 
-  ## How to start UAT azure pipeline  
-  
- 1. Merge **release/sit** into **release/uat**
+   If you have to do manually, run:<br>
+   `$version=??` for poweshell or `version=??` for gitbash<br>
+   `mvn --batch-mode release:clean release:prepare -DscmCommentPrefix="[skip ci]"`<br>
+   `git push origin develop`<br>
+   `git push origin --tags`<br>
+   `git checkout -b tmp/${version} acquirer-manager-${version}`<br>
+   `git push --set-upstream origin tmp/${version}`<br>
 
-  ## How to start PROD azure pipeline  
-  
- 1. Merge **release/uat** into **master**
+2. Merge **tmp/${version}** into **release/sit**
+
+## How to start UAT azure pipeline
+
+1. Merge **release/sit** into **release/uat**
+
+## How to start PROD azure pipeline
+
+1. Merge **release/uat** into **master**
