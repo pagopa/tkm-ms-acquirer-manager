@@ -7,7 +7,7 @@ Le seguenti variabile d'ambiente permettono di configurare il servizio e adattar
 - **AZURE_KEYVAULT_PROFILE**: rappresenta il profilo da utilizzare per il recupero dei valori contenuti nel key vault. Sono ammessi i valori 'local', 'sit', 'uat', 'prod'
 - **KAFKA_APPENDER_TOPIC**: Non del topic sulla quale scrivere i log.
 - **AZURE_STORAGE_ENDPOINT**: Url completo del blob storage
-- **VISA_URL**: URL di VISA per il recuper dei bin range.
+- **VISA_URL_ACQUIRER**: URL di VISA per il recuper dei bin range.
 - **DB_SERVER**: Stringa di connessione al database
 - **LOGGING_LEVEL**: livello root del log
 - **SFTP_SIA_HOSTNAME**: IP/hostname del server SFTP nel quale sono depositati i file degli acquirer

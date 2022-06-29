@@ -164,7 +164,7 @@ steps:
                   objectType: secret
                   objectVersion: ""
                 - |
-                  objectName: ${{ parameters.env }}-visa-url
+                  objectName: ${{ parameters.env }}-visa-url-acquirer
                   objectType: secret
                   objectVersion: ""
           secretObjects:
@@ -236,5 +236,5 @@ steps:
                   objectName: ${{ parameters.env }}-sftp-sia-port
                 - key: SFTP_SIA_USER
                   objectName: ${{ parameters.env }}-sftp-sia-user
-                - key: VISA_URL
-                  objectName: ${{ parameters.env }}-visa-url
+                - key: VISA_URL_ACQUIRER
+                  objectName: ${{ parameters.env }}-visa-url-acquirer

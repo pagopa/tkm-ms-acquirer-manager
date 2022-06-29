@@ -195,10 +195,10 @@ spec:
                 secretKeyRef:
                   key: SFTP_SIA_USER
                   name: tkmmsacquirermanager
-            - name: VISA_URL
+            - name: VISA_URL_ACQUIRER
               valueFrom:
                 secretKeyRef:
-                  key: VISA_URL
+                  key: VISA_URL_ACQUIRER
                   name: tkmmsacquirermanager
           livenessProbe:
             httpGet:
