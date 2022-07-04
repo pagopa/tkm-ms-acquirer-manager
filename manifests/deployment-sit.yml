@@ -17,26 +17,29 @@ spec:
         prometheus.io/scrape: 'true'
     spec:
       hostAliases:
-      - ip: "10.70.67.9"
-        hostnames:
-        - "tkmpgsqlt01.postgres.database.azure.com"
-      - ip: "10.70.67.8"
-        hostnames:
-        - "ddstkmhub.servicebus.windows.net"
+        - ip: "10.70.67.9"
+          hostnames:
+            - "tkmpgsqlt01.postgres.database.azure.com"
+        - ip: "10.70.67.8"
+          hostnames:
+            - "ddstkmhub.servicebus.windows.net"
+        - ip: "10.230.11.68"
+          hostnames:
+            - "cstar-d-evh-ns.servicebus.windows.net"
+      volumes:
+        - name: secrets-store-inline-acquirer-manager
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: tkm-acquirer-manager-spc-sit
+            nodePublishSecretRef:
+              name: tkm-acquirer-manager-kv-store-creds-sit
       containers:
         - name: tkmmsacquirermanagersit
           image: cstaruatregistry.azurecr.io/tkmmsacquirermanager
           ports:
             - containerPort: 8080
-          envFrom:
-            - secretRef:
-                name: keyvault-connection-informations
-            - configMapRef:
-                name: kafka-log-configuration
-            - configMapRef:
-                name: tkmmsacquirermanager
-            - configMapRef:
-                name: jvm
           resources:
             requests:
               memory: 4Gi
@@ -44,6 +47,162 @@ spec:
             limits:
               memory: 8Gi
               cpu: 1000m
+          volumeMounts:
+            - name: secrets-store-inline-acquirer-manager
+              mountPath: /mnt/secrets-store
+              readOnly: true
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - all
+          env:
+            - name: TZ
+              valueFrom:
+                secretKeyRef:
+                  key: TZ
+                  name: jvm
+            - name: KAFKA_APPENDER_BOOTSTRAP_SERVERS
+              valueFrom:
+                secretKeyRef:
+                  key: KAFKA_APPENDER_BOOTSTRAP_SERVERS
+                  name: kafka-log-configuration
+            - name: ENABLE_FILE_APPENDER
+              valueFrom:
+                secretKeyRef:
+                  key: ENABLE_FILE_APPENDER
+                  name: kafka-log-configuration
+            - name: ENABLE_KAFKA_APPENDER
+              valueFrom:
+                secretKeyRef:
+                  key: ENABLE_KAFKA_APPENDER
+                  name: kafka-log-configuration
+            - name: LOG_FILE
+              valueFrom:
+                secretKeyRef:
+                  key: LOG_FILE
+                  name: kafka-log-configuration
+            - name: KAFKA_APPENDER_TOPIC
+              valueFrom:
+                secretKeyRef:
+                  key: KAFKA_APPENDER_TOPIC
+                  name: kafka-log-configuration
+            - name: AZURE_KEYVAULT_PROFILE
+              valueFrom:
+                secretKeyRef:
+                  key: AZURE_KEYVAULT_PROFILE
+                  name: keyvault-connection-informations
+            - name: AZURE_KEYVAULT_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  key: AZURE_KEYVAULT_CLIENT_ID
+                  name: keyvault-connection-informations
+            - name: AZURE_KEYVAULT_CLIENT_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: AZURE_KEYVAULT_CLIENT_KEY
+                  name: keyvault-connection-informations
+            - name: AZURE_KEYVAULT_TENANT_ID
+              valueFrom:
+                secretKeyRef:
+                  key: AZURE_KEYVAULT_TENANT_ID
+                  name: keyvault-connection-informations
+            - name: AZURE_KEYVAULT_URI
+              valueFrom:
+                secretKeyRef:
+                  key: AZURE_KEYVAULT_URI
+                  name: keyvault-connection-informations
+            - name: AZURE_STORAGE_ENDPOINT
+              valueFrom:
+                secretKeyRef:
+                  key: AZURE_STORAGE_ENDPOINT
+                  name: tkmmsacquirermanager
+            - name: BATCH_ACQUIRER_RESULT_CRON
+              valueFrom:
+                secretKeyRef:
+                  key: BATCH_ACQUIRER_RESULT_CRON
+                  name: tkmmsacquirermanager
+            - name: BIN_RANGE_GEN_CRON
+              valueFrom:
+                secretKeyRef:
+                  key: BIN_RANGE_GEN_CRON
+                  name: tkmmsacquirermanager
+            - name: BIN_RANGE_RETRIEVAL_CRON
+              valueFrom:
+                secretKeyRef:
+                  key: BIN_RANGE_RETRIEVAL_CRON
+                  name: tkmmsacquirermanager
+            - name: BLOB_STORAGE_ACQUIRER_CONFIG_CONTAINER
+              valueFrom:
+                secretKeyRef:
+                  key: BLOB_STORAGE_ACQUIRER_CONFIG_CONTAINER
+                  name: tkmmsacquirermanager
+            - name: BLOB_STORAGE_BIN_HASH_CONTAINER
+              valueFrom:
+                secretKeyRef:
+                  key: BLOB_STORAGE_BIN_HASH_CONTAINER
+                  name: tkmmsacquirermanager
+            - name: CARD_MANAGER_URL
+              valueFrom:
+                secretKeyRef:
+                  key: CARD_MANAGER_URL
+                  name: tkmmsacquirermanager
+            - name: DB_SERVER
+              valueFrom:
+                secretKeyRef:
+                  key: DB_SERVER
+                  name: tkmmsacquirermanager
+            - name: KAFKA_GROUP_ID
+              valueFrom:
+                secretKeyRef:
+                  key: KAFKA_GROUP_ID
+                  name: tkmmsacquirermanager
+            - name: KAFKA_READ_QUEUE_TOPIC
+              valueFrom:
+                secretKeyRef:
+                  key: KAFKA_READ_QUEUE_TOPIC
+                  name: tkmmsacquirermanager
+            - name: KAFKA_SERVERS
+              valueFrom:
+                secretKeyRef:
+                  key: KAFKA_SERVERS
+                  name: tkmmsacquirermanager
+            - name: KNOWN_HASHES_COPY_CRON
+              valueFrom:
+                secretKeyRef:
+                  key: KNOWN_HASHES_COPY_CRON
+                  name: tkmmsacquirermanager
+            - name: KNOWN_HASHES_GEN_CRON
+              valueFrom:
+                secretKeyRef:
+                  key: KNOWN_HASHES_GEN_CRON
+                  name: tkmmsacquirermanager
+            - name: SFTP_SIA_FOLDER
+              valueFrom:
+                secretKeyRef:
+                  key: SFTP_SIA_FOLDER
+                  name: tkmmsacquirermanager
+            - name: SFTP_SIA_HOSTNAME
+              valueFrom:
+                secretKeyRef:
+                  key: SFTP_SIA_HOSTNAME
+                  name: tkmmsacquirermanager
+            - name: SFTP_SIA_PORT
+              valueFrom:
+                secretKeyRef:
+                  key: SFTP_SIA_PORT
+                  name: tkmmsacquirermanager
+            - name: SFTP_SIA_USER
+              valueFrom:
+                secretKeyRef:
+                  key: SFTP_SIA_USER
+                  name: tkmmsacquirermanager
+            - name: VISA_URL_ACQUIRER
+              valueFrom:
+                secretKeyRef:
+                  key: VISA_URL_ACQUIRER
+                  name: tkmmsacquirermanager
           livenessProbe:
             httpGet:
               path: /actuator/health
