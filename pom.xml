@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
 
 	<artifactId>acquirer-manager</artifactId>
-	<version>1.1.10</version>
+	<version>1.1.17</version>
 	<packaging>jar</packaging>
 
     <parent>
@@ -146,6 +146,15 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <version>2.5.3</version>
+                <configuration>
+                    <localCheckout>true</localCheckout>
+                    <pushChanges>false</pushChanges>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
@@ -184,8 +193,9 @@
             <url>https://pkgs.dev.azure.com/sia-dds/_packaging/sia-dds/maven/v1</url>
         </repository>
     </distributionManagement>
+
     <scm>
         <developerConnection>scm:git:https://github.com/pagopa/tkm-ms-acquirer-manager.git</developerConnection>
-        <tag>acquirer-manager-1.1.10</tag>
+        <tag>acquirer-manager-1.1.17</tag>
     </scm>
 </project>

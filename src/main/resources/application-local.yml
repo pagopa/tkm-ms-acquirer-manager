@@ -3,7 +3,7 @@ AZURE_KEYVAULT_PROFILE: local
 KAFKA_APPENDER_SECURITY_PROTOCOL: PLAINTEXT
 KAFKA_APPENDER_TOPIC: tkm-log
 AZURE_STORAGE_ENDPOINT: https://127.0.0.1:8125/devstoreaccount1
-VISA_URL: https://sandbox.api.visa.com/v1/binRangeDetails
+VISA_URL_ACQUIRER: https://sandbox.api.visa.com/v1/binRangeDetails
 DB_SERVER: localhost:5000/tkm_acquirer_manager
 LOGGING_LEVEL: DEBUG
 SFTP_SIA_HOSTNAME: localhost

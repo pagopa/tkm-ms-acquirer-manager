@@ -85,7 +85,7 @@ client-urls:
   card-manager: ${CARD_MANAGER_URL}
 
 circuit-urls:
-  visa: ${VISA_URL:}
+  visa: ${VISA_URL_ACQUIRER:}
 
 management:
   health:
