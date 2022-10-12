@@ -1,5 +1,6 @@
 package it.gov.pagopa.tkm.ms.acquirermanager.service;
 
+import com.azure.storage.blob.*;
 import com.azure.storage.blob.models.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.constant.*;
 
@@ -19,5 +20,7 @@ public interface BlobService {
     List<BlobItem> getFilesFromDirectory(String directory);
 
     void deleteFolder(String directory);
+
+    BlobContainerClient getBlobContainerClient(String container);
 
 }

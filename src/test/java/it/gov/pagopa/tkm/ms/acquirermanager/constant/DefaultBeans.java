@@ -11,12 +11,7 @@ import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.TkmBatchResult;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.TkmBinRange;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.TkmHashOffset;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.response.LinksResponse;
-import net.schmizz.sshj.sftp.FileAttributes;
-import net.schmizz.sshj.sftp.PathComponents;
-import net.schmizz.sshj.sftp.RemoteResourceInfo;
-import org.apache.commons.io.FileUtils;
 
-import java.io.File;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -47,8 +42,6 @@ public class DefaultBeans {
     public static final String KNOWN_HASHES_GEN_LOCAL__0 = "KNOWN_HASHES_GEN_LOCAL_date_0.csv";
     public static final String KNOWN_HASHES_GEN_LOCAL__1 = "KNOWN_HASHES_GEN_LOCAL_date_1.csv";
     public static final String BIN_RANGE_GEN_LOCAL__1_NO_DATE = "BIN_RANGE_GEN_LOCAL_19700101_1.csv";
-
-    public static final UUID UUID_TEST = UUID.fromString("c1f77e6e-8fc7-42d2-8128-58ca293e3b42");
 
     public final LinksResponse LINKS_RESPONSE = LinksResponse.builder()
             .fileLinks(Collections.singletonList("null/" + TESTNAME + "?null"))
@@ -185,45 +178,6 @@ public class DefaultBeans {
             .lastHashesFileRowCount(0)
             .build();
 
-    public final String acquirerFileName = "TKM.acquirer.junit.csv.pgp";
-    public final List<RemoteResourceInfo> REMOTE_RESOURCE_INFO = Arrays.asList(
-            new RemoteResourceInfo(new PathComponents("parent", acquirerFileName, acquirerFileName), FileAttributes.EMPTY));
+    public final String ACQUIRER_FILE = "0000;0000;0000";
 
-    public final List<String> FILE_PATH_LIST = Collections.singletonList(
-            FileUtils.getTempDirectoryPath() + File.separator + UUID_TEST + File.separator + "name"
-    );
-
-    public final BatchResultDetails BATCH_RESULT_DETAILS = new BatchResultDetails(
-            FILE_PATH_LIST.get(0),
-            0,
-            null,
-            true,
-            null);
-
-    public final BatchResultDetails BATCH_RESULT_DETAILS_UNSUCCESSFUL = new BatchResultDetails(
-            FILE_PATH_LIST.get(0),
-            0,
-            null,
-            false,
-            null);
-
-    public final TkmBatchResult TKM_BATCH_RESULT_SUCCESS = new TkmBatchResult(
-            null,
-            "noTraceId",
-            BatchEnum.BATCH_ACQUIRER,
-            INSTANT,
-            true,
-            0,
-            null
-    );
-
-    public final TkmBatchResult TKM_BATCH_RESULT_UNSUCCESSFUL = new TkmBatchResult(
-            null,
-            "noTraceId",
-            BatchEnum.BATCH_ACQUIRER,
-            INSTANT,
-            false,
-            0,
-            null
-    );
 }
