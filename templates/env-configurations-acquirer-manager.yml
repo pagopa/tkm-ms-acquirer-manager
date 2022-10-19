@@ -167,6 +167,10 @@ steps:
                   objectName: ${{ parameters.env }}-visa-url-acquirer
                   objectType: secret
                   objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-applicationinsights-connection-string
+                  objectType: secret
+                  objectVersion: ""
           secretObjects:
             - secretName: jvm
               type: Opaque
@@ -199,6 +203,11 @@ steps:
                   objectName: ${{ parameters.env }}-azure-keyvault-tenant-id
                 - key: AZURE_KEYVAULT_URI
                   objectName: ${{ parameters.env }}-azure-keyvault-uri
+            - secretName: applicationinsights
+              type: Opaque
+              data:
+                - key: APPLICATIONINSIGHTS_CONNECTION_STRING
+                  objectName: ${{ parameters.env }}-applicationinsights-connection-string
             - secretName: tkmmsacquirermanager
               type: Opaque
               data:

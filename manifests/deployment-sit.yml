@@ -203,6 +203,13 @@ spec:
                 secretKeyRef:
                   key: VISA_URL_ACQUIRER
                   name: tkmmsacquirermanager
+            - name: APPLICATIONINSIGHTS_CONNECTION_STRING
+              valueFrom:
+                secretKeyRef:
+                  key: APPLICATIONINSIGHTS_CONNECTION_STRING
+                  name: applicationinsights
+            - name: APPLICATIONINSIGHTS_ROLE_NAME
+              value: tkmmsacquirermanagersit
           livenessProbe:
             httpGet:
               path: /actuator/health
