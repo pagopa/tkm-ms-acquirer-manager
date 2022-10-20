@@ -5,7 +5,7 @@ import com.azure.storage.blob.models.*;
 import com.google.common.collect.Lists;
 import com.univocity.parsers.common.processor.*;
 import com.univocity.parsers.csv.*;
-import it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum;
+import it.gov.pagopa.tkm.ms.acquirermanager.constant.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.dto.BatchAcquirerCSVRecord;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.dto.BatchResultDetails;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.TkmBatchResult;
@@ -24,9 +24,12 @@ import org.springframework.stereotype.Service;
 
 import java.io.*;
 import java.time.Instant;
+import java.time.temporal.*;
 import java.util.*;
 import java.util.concurrent.Future;
 import java.util.stream.*;
+
+import static it.gov.pagopa.tkm.ms.acquirermanager.constant.BlobMetadataEnum.processed;
 
 @Service
 @Log4j2
@@ -77,11 +80,17 @@ public class BatchAcquirerServiceImpl implements BatchAcquirerService {
             BlobContainerClient client = blobService.getBlobContainerClient(containerNameAcquirer);
             List<BlobItem> blobItems = client.listBlobs().stream().collect(Collectors.toList());
             for (BlobItem blobItem : blobItems) {
-                String blobName = blobItem.getName();
-                BlobClient blobClient = client.getBlobClient(blobName);
+                BlobClient blobClient = client.getBlobClient(blobItem.getName());
+                if (blobItem.getMetadata() != null && blobItem.getMetadata().containsKey(processed.name())) {
+                    if (blobItem.getProperties().getLastModified().toInstant().isBefore(now.minus(1, ChronoUnit.WEEKS))) {
+                        blobClient.delete();
+                    }
+                    continue;
+                }
                 ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
                 blobClient.download(outputStream);
-                batchResultDetailsList.add(workOnFile(outputStream.toByteArray(), blobName));
+                batchResultDetailsList.add(workOnFile(outputStream.toByteArray(), blobItem, blobClient, now));
+                setProcessed(blobClient, now);
             }
         } catch (Exception e) {
             BatchResultDetails build = BatchResultDetails.builder().errorMessage(e.getMessage()).success(false).build();
@@ -91,8 +100,14 @@ public class BatchAcquirerServiceImpl implements BatchAcquirerService {
         saveBatchResult(now, batchResultDetailsList);
     }
 
-    private BatchResultDetails workOnFile(byte[] fileInputPgp, String filename) {
-        BatchResultDetails build = BatchResultDetails.builder().success(false).fileName(filename).build();
+    private void setProcessed(BlobClient blobClient, Instant now) {
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put(processed.name(), now.toString());
+        blobClient.setMetadata(metadata);
+    }
+
+    private BatchResultDetails workOnFile(byte[] fileInputPgp, BlobItem blob, BlobClient blobClient, Instant now) {
+        BatchResultDetails build = BatchResultDetails.builder().success(false).fileName(blob.getName()).build();
         try {
             String fileOutputClear = PgpStaticUtils.decryptFileToString(fileInputPgp, pgpPrivateKey, pgpPassPhrase);
             log.debug("File decrypted " + fileOutputClear);
@@ -111,6 +126,7 @@ public class BatchAcquirerServiceImpl implements BatchAcquirerService {
         } catch (Exception e) {
             log.error("Failed queueBatchAcquirerResult to elaborate: " + Arrays.toString(fileInputPgp), e);
             build.setErrorMessage(e.getMessage());
+            setProcessed(blobClient, now);
         }
         return build;
     }

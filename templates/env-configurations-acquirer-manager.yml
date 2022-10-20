@@ -238,3 +238,11 @@ steps:
                   objectName: ${{ parameters.env }}-sftp-sia-user
                 - key: VISA_URL_ACQUIRER
                   objectName: ${{ parameters.env }}-visa-url-acquirer
+                - key: BLOB_STORAGE_ACQUIRER_CONTAINER
+                  objectName: ${{ parameters.env }}-blob-storage-acquirer-container
+                - key: ACQUIRER_FILE_UPLOAD_CHUNK_SIZE_MB
+                  objectName: ${{ parameters.env }}-acquirer-file-upload-chunk-size-mb
+                - key: ACQUIRER_FILE_UPLOAD_MAX_CONCURRENCY
+                  objectName: ${{ parameters.env }}-acquirer-file-upload-max-concurrency
+                - key: ACQUIRER_FILE_UPLOAD_TIME_LIMIT_MINUTES
+                  objectName: ${{ parameters.env }}-acquirer-file-upload-time-limit-minutes
