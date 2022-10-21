@@ -25,6 +25,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.*;
 
 import java.io.*;
+import java.nio.charset.*;
+import java.nio.file.*;
 import java.time.*;
 import java.time.temporal.*;
 import java.util.*;
@@ -66,6 +68,9 @@ public class BatchAcquirerServiceImpl implements BatchAcquirerService {
 
     @Value("${BLOB_STORAGE_ACQUIRER_CONFIG_CONTAINER}")
     private String acquirerConfigContainer;
+
+    @Value("${ACQUIRER_FILE_DAYS_TO_LIVE}")
+    private Integer daysToLive;
 
     @Autowired
     private ObjectMapperUtils mapperUtils;
@@ -129,17 +134,19 @@ public class BatchAcquirerServiceImpl implements BatchAcquirerService {
                 BlobClient blobClient = client.getBlobClient(name);
                 if (blobItem.getMetadata() != null && blobItem.getMetadata().containsKey(processed.name())) {
                     log.info("File " + name + " has been processed already");
-                    if (blobItem.getProperties().getLastModified().toInstant().isBefore(now.minus(1, ChronoUnit.WEEKS))) {
+                    if (blobItem.getProperties().getLastModified().toInstant().isBefore(now.minus(daysToLive, ChronoUnit.DAYS))) {
                         log.info("File " + name + " has been processed more than a week ago, deleting...");
                         blobClient.delete();
                         log.info("File " + name + " successfully deleted");
                     }
                     continue;
                 }
-                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-                log.info("Downloading file " + name);
-                blobClient.download(outputStream);
-                batchResultDetailsList.add(workOnFile(outputStream.toByteArray(), blobItem, blobClient, now));
+                String workingDir = FileUtils.getTempDirectoryPath() + UUID.randomUUID();
+                createWorkingDir(workingDir);
+                log.debug("Working dir: " + workingDir);
+                String fileInputPgp = workingDir + File.separator + name;
+                blobClient.downloadToFile(fileInputPgp);
+                batchResultDetailsList.add(workOnFile(fileInputPgp, workingDir, name, blobClient, now));
                 markAsProcessed(blobClient, now, name);
             }
         } catch (Exception e) {
@@ -158,13 +165,20 @@ public class BatchAcquirerServiceImpl implements BatchAcquirerService {
         log.info("File " + name + " marked as processed");
     }
 
-    private BatchResultDetails workOnFile(byte[] fileInputPgp, BlobItem blob, BlobClient blobClient, Instant now) {
-        String name = blob.getName();
+    private void createWorkingDir(String workingDir) throws IOException {
+        boolean mkdirs = new File(workingDir).mkdirs();
+        if (!mkdirs) {
+            throw new IOException("Cannot Create folder " + workingDir);
+        }
+    }
+
+    private BatchResultDetails workOnFile(String fileInputPgp, String workingDir, String name, BlobClient blobClient, Instant now) {
         BatchResultDetails build = BatchResultDetails.builder().success(false).fileName(name).build();
         try {
-            String fileOutputClear = PgpStaticUtils.decryptFileToString(fileInputPgp, pgpPrivateKey, pgpPassPhrase);
+            String fileOutputClear = fileInputPgp + ".clear";
+            PgpStaticUtils.decryptToFile(fileInputPgp, pgpPrivateKey, pgpPassPhrase, fileOutputClear);
             log.info("Decrypted file " + name);
-            List<BatchAcquirerCSVRecord> parsedRows = parseCSV(fileOutputClear);
+            List<BatchAcquirerCSVRecord> parsedRows = parseCSVFile(fileOutputClear);
             log.info("Parsed file " + name);
             int partitionSize = (int) Math.ceil((double) parsedRows.size() / threadNumber);
             List<List<BatchAcquirerCSVRecord>> partition = Lists.partition(parsedRows, partitionSize);
@@ -182,12 +196,23 @@ public class BatchAcquirerServiceImpl implements BatchAcquirerService {
             log.error("Failed parsing of file " + name, e);
             build.setErrorMessage(e.getMessage());
             markAsProcessed(blobClient, now, name);
+        } finally {
+            deleteDirectoryQuietly(workingDir);
         }
         return build;
     }
 
-    private List<BatchAcquirerCSVRecord> parseCSV(String file) {
-        Reader inputReader = new InputStreamReader(IOUtils.toInputStream(file));
+    private void deleteDirectoryQuietly(String destDirectory) {
+        log.debug("Deleting " + destDirectory);
+        try {
+            FileUtils.deleteDirectory(new File(destDirectory));
+        } catch (IOException e) {
+            log.error("Cannot delete directory");
+        }
+    }
+
+    private List<BatchAcquirerCSVRecord> parseCSVFile(String filePath) throws IOException {
+        Reader inputReader = new InputStreamReader(Files.newInputStream(Paths.get(filePath)), StandardCharsets.UTF_8);
         BeanListProcessor<BatchAcquirerCSVRecord> rowProcessor = new BeanListProcessor<>(BatchAcquirerCSVRecord.class);
         CsvParserSettings settings = new CsvParserSettings();
         settings.setHeaderExtractionEnabled(false);

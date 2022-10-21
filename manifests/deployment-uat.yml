@@ -228,6 +228,11 @@ spec:
                 secretKeyRef:
                   key: ACQUIRER_FILE_UPLOAD_TIME_LIMIT_MINUTES
                   name: tkmmsacquirermanager
+            - name: ACQUIRER_FILE_UPLOAD_TIME_LIMIT_MINUTES
+              valueFrom:
+                secretKeyRef:
+                  key: ACQUIRER_FILE_DAYS_TO_LIVE
+                  name: tkmmsacquirermanager
           livenessProbe:
             httpGet:
               path: /actuator/health

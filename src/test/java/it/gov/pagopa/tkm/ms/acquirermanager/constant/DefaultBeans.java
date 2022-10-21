@@ -23,6 +23,8 @@ import static it.gov.pagopa.tkm.ms.acquirermanager.constant.BlobMetadataEnum.gen
 
 public class DefaultBeans {
 
+    public final String acquirerFileName = "TKM.acquirer.junit.csv.pgp";
+
     public static final String TEST_CONNECTION_STRING = "DefaultEndpointsProtocol=https;AccountName=TESTACCOUNTNAME;AccountKey=TESTACCOUNTKEY;BlobEndpoint=https://127.0.0.1:8125/TESTCONTAINER;";
 
     public static final String TEST_CONTAINER_NAME = "TESTCONTAINERNAME";

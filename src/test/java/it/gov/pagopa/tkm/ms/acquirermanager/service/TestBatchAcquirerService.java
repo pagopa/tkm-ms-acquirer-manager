@@ -3,6 +3,7 @@ package it.gov.pagopa.tkm.ms.acquirermanager.service;
 import com.azure.core.http.rest.*;
 import com.azure.storage.blob.*;
 import com.azure.storage.blob.models.*;
+import com.google.common.io.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.constant.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.TkmBatchResult;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.response.*;
@@ -10,8 +11,7 @@ import it.gov.pagopa.tkm.ms.acquirermanager.repository.BatchResultRepository;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.impl.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.thread.SendBatchAcquirerRecordToQueue;
 import it.gov.pagopa.tkm.ms.acquirermanager.util.ObjectMapperUtils;
-import it.gov.pagopa.tkm.service.*;
-import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.*;
 import org.bouncycastle.openpgp.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,6 +27,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.time.*;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.*;
 
@@ -86,23 +87,34 @@ class TestBatchAcquirerService {
 
     @Test
     void givenAcquirerFile_success() throws IOException, PGPException {
+        final UUID defaultUuid = UUID.fromString("8d8b30e3-de52-4f1c-a71c-9905a8043dac");
         when(tracer.currentSpan()).thenReturn(span);
         when(span.context()).thenReturn(traceContext);
         when(span.context().traceId()).thenReturn(TRACE_ID);
         String privateKey = IOUtils.toString(new ClassPathResource("junit_pgp_private.asc").getInputStream(), StandardCharsets.UTF_8.name());
         ReflectionTestUtils.setField(batchAcquirerService, "pgpPrivateKey", privateKey);
         ReflectionTestUtils.setField(batchAcquirerService, "pgpPassPhrase", "passphrase");
-        try (MockedStatic<PgpStaticUtils> pgpStaticUtilsMockedStatic = mockStatic(PgpStaticUtils.class)) {
+        try (MockedStatic<UUID> mockedUuid = Mockito.mockStatic(UUID.class)) {
+            mockedUuid.when(UUID::randomUUID).thenReturn(defaultUuid);
+            String directory = FileUtils.getTempDirectoryPath() + "null-null-null-null-null";
+            String tempInputFile = directory + File.separator + testBeans.acquirerFileName;
+            FileUtils.deleteDirectory(new File(directory));
+            byte[] bytes = ByteStreams.toByteArray(new ClassPathResource(testBeans.acquirerFileName).getInputStream());
             when(blobContainerClient.listBlobs()).thenReturn(pagedIterableMock);
-            when(pagedIterableMock.stream().collect(Collectors.toList())).thenAnswer(invocation -> Stream.of(new BlobItem()));
+            when(pagedIterableMock.stream().collect(Collectors.toList())).thenAnswer(invocation -> Stream.of(new BlobItem().setName(testBeans.acquirerFileName)));
             when(mapperUtils.toJsonOrNull(any())).thenReturn("{}");
-            pgpStaticUtilsMockedStatic.when(() -> PgpStaticUtils.decryptFileToString(any(), any(), any())).thenReturn(testBeans.ACQUIRER_FILE);
             when(sendBatchAcquirerRecordToQueue.sendToQueue(anyList())).thenReturn(mockFuture);
+            doAnswer((i) -> {
+                FileUtils.writeByteArrayToFile(new File(tempInputFile), bytes);
+                return null;
+            }).when(blobClientMock).downloadToFile(anyString());
+            String details = "{}";
+            when(mapperUtils.toJsonOrNull(any())).thenReturn(details);
             batchAcquirerService.queueBatchAcquirerResult();
             TkmBatchResult build = TkmBatchResult.builder().
                     runOutcome(true)
                     .executionTraceId(TRACE_ID)
-                    .details("{}")
+                    .details(details)
                     .targetBatch(BatchEnum.BATCH_ACQUIRER)
                     .build();
             verify(batchResultRepository).save(batchResultArgumentCaptor.capture());

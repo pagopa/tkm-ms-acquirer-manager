@@ -246,3 +246,5 @@ steps:
                   objectName: ${{ parameters.env }}-acquirer-file-upload-max-concurrency
                 - key: ACQUIRER_FILE_UPLOAD_TIME_LIMIT_MINUTES
                   objectName: ${{ parameters.env }}-acquirer-file-upload-time-limit-minutes
+                - key: ACQUIRER_FILE_DAYS_TO_LIVE
+                  objectName: ${{ parameters.env }}-acquirer-file-days-to-live
