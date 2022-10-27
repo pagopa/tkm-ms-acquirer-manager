@@ -1,35 +1,39 @@
 package it.gov.pagopa.tkm.ms.acquirermanager.service.impl;
 
+import com.azure.storage.blob.*;
+import com.azure.storage.blob.models.*;
 import com.google.common.collect.Lists;
-import com.univocity.parsers.common.processor.BeanListProcessor;
-import com.univocity.parsers.csv.CsvParser;
-import com.univocity.parsers.csv.CsvParserSettings;
-import it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum;
+import com.univocity.parsers.common.processor.*;
+import com.univocity.parsers.csv.*;
+import it.gov.pagopa.tkm.ms.acquirermanager.constant.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.dto.BatchAcquirerCSVRecord;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.dto.BatchResultDetails;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.TkmBatchResult;
+import it.gov.pagopa.tkm.ms.acquirermanager.model.response.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.repository.BatchResultRepository;
 import it.gov.pagopa.tkm.ms.acquirermanager.service.BatchAcquirerService;
 import it.gov.pagopa.tkm.ms.acquirermanager.thread.SendBatchAcquirerRecordToQueue;
 import it.gov.pagopa.tkm.ms.acquirermanager.util.ObjectMapperUtils;
-import it.gov.pagopa.tkm.ms.acquirermanager.util.SftpUtils;
 import it.gov.pagopa.tkm.service.PgpStaticUtils;
 import lombok.extern.log4j.Log4j2;
-import net.schmizz.sshj.sftp.RemoteResourceInfo;
-import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.sleuth.Span;
 import org.springframework.cloud.sleuth.Tracer;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.*;
 
 import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.nio.charset.*;
+import java.nio.file.*;
+import java.time.*;
+import java.time.temporal.*;
+import java.util.*;
 import java.util.concurrent.Future;
+import java.util.stream.*;
+
+import static it.gov.pagopa.tkm.ms.acquirermanager.constant.BlobMetadataEnum.processed;
 
 @Service
 @Log4j2
@@ -50,8 +54,23 @@ public class BatchAcquirerServiceImpl implements BatchAcquirerService {
     @Value("${batch.acquirer-result.threadNumber}")
     private int threadNumber;
 
-    @Autowired
-    private SftpUtils sftpUtils;
+    @Value("${BLOB_STORAGE_ACQUIRER_CONTAINER}")
+    private String containerNameAcquirer;
+
+    @Value("${ACQUIRER_FILE_UPLOAD_CHUNK_SIZE_MB}")
+    private Long chunkSize;
+
+    @Value("${ACQUIRER_FILE_UPLOAD_MAX_CONCURRENCY}")
+    private Integer maxConcurrency;
+
+    @Value("${ACQUIRER_FILE_UPLOAD_TIME_LIMIT_MINUTES}")
+    private Long timeLimit;
+
+    @Value("${BLOB_STORAGE_ACQUIRER_CONFIG_CONTAINER}")
+    private String acquirerConfigContainer;
+
+    @Value("${ACQUIRER_FILE_DAYS_TO_LIVE}")
+    private Integer daysToLive;
 
     @Autowired
     private ObjectMapperUtils mapperUtils;
@@ -68,21 +87,67 @@ public class BatchAcquirerServiceImpl implements BatchAcquirerService {
     @Autowired
     private SendBatchAcquirerRecordToQueue sendBatchAcquirerRecordToQueue;
 
+    @Autowired
+    private BlobServiceImpl blobService;
+
+    @Override
+    public String getPublicPgpKey() {
+        log.info("Getting public PGP key...");
+        BlobContainerClient client = blobService.getBlobContainerClient(acquirerConfigContainer);
+        BlobClient blobClient = client.getBlobClient("acquirer-pgp-pub-key.asc");
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        blobClient.download(outputStream);
+        log.info("Public PGP key retrieval successful");
+        return outputStream.toString();
+    }
+
+    @Override
+    public TokenListUploadResponse uploadFile(MultipartFile file) throws IOException {
+        String filename = file.getOriginalFilename();
+        long size = file.getSize();
+        log.info("Uploading acquirer file " + filename + " of " + size + " bytes");
+        String newFilename = UUID.randomUUID() + filename;
+        log.info("New filename: " + newFilename);
+        BlobContainerClient client = blobService.getBlobContainerClient(containerNameAcquirer);
+        BlobClient blobClient = client.getBlobClient(newFilename);
+        ParallelTransferOptions options = new ParallelTransferOptions()
+                .setBlockSizeLong(chunkSize * 1048576L)
+                .setMaxConcurrency(maxConcurrency)
+                .setProgressReceiver(bytesTransferred -> log.info("Uploaded " + bytesTransferred + " bytes of " + size));
+        blobClient.uploadWithResponse(file.getInputStream(), size, options, new BlobHttpHeaders().setContentType("binary"), null, AccessTier.HOT, new BlobRequestConditions(), Duration.ofMinutes(timeLimit), null);
+        log.info("File " + newFilename + " successfully uploaded");
+        return new TokenListUploadResponse(newFilename);
+    }
+
     @Override
     public void queueBatchAcquirerResult() {
         Instant now = Instant.now();
         List<BatchResultDetails> batchResultDetailsList = new ArrayList<>();
         try {
-            log.info("Read and unzip files");
-            List<RemoteResourceInfo> remoteResourceInfo = sftpUtils.listFile();
-            log.debug("Remote files " + remoteResourceInfo);
-            for (RemoteResourceInfo remoteFile : remoteResourceInfo) {
-                String workingDir = FileUtils.getTempDirectoryPath() + File.separator + UUID.randomUUID();
+            log.info("Retrieving acquirer files...");
+            BlobContainerClient client = blobService.getBlobContainerClient(containerNameAcquirer);
+            List<BlobItem> blobItems = client.listBlobs().stream().collect(Collectors.toList());
+            log.info("Found " + blobItems.size() + " files");
+            for (BlobItem blobItem : blobItems) {
+                String name = blobItem.getName();
+                log.info("Processing file " + name);
+                BlobClient blobClient = client.getBlobClient(name);
+                if (blobItem.getMetadata() != null && blobItem.getMetadata().containsKey(processed.name())) {
+                    log.info("File " + name + " has been processed already");
+                    if (blobItem.getProperties().getLastModified().toInstant().isBefore(now.minus(daysToLive, ChronoUnit.DAYS))) {
+                        log.info("File " + name + " has been processed more than a week ago, deleting...");
+                        blobClient.delete();
+                        log.info("File " + name + " successfully deleted");
+                    }
+                    continue;
+                }
+                String workingDir = FileUtils.getTempDirectoryPath() + UUID.randomUUID();
                 createWorkingDir(workingDir);
-                log.debug("Working dir " + workingDir);
-                String fileInputPgp = workingDir + File.separator + remoteFile.getName();
-                sftpUtils.downloadFile(remoteFile.getPath(), fileInputPgp);
-                batchResultDetailsList.add(workOnFile(fileInputPgp, workingDir));
+                log.debug("Working dir: " + workingDir);
+                String fileInputPgp = workingDir + File.separator + name;
+                blobClient.downloadToFile(fileInputPgp);
+                batchResultDetailsList.add(workOnFile(fileInputPgp, workingDir, name, blobClient, now));
+                markAsProcessed(blobClient, now, name);
             }
         } catch (Exception e) {
             BatchResultDetails build = BatchResultDetails.builder().errorMessage(e.getMessage()).success(false).build();
@@ -92,6 +157,14 @@ public class BatchAcquirerServiceImpl implements BatchAcquirerService {
         saveBatchResult(now, batchResultDetailsList);
     }
 
+    private void markAsProcessed(BlobClient blobClient, Instant now, String name) {
+        log.info("Marking file " + name + " as processed");
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put(processed.name(), now.toString());
+        blobClient.setMetadata(metadata);
+        log.info("File " + name + " marked as processed");
+    }
+
     private void createWorkingDir(String workingDir) throws IOException {
         boolean mkdirs = new File(workingDir).mkdirs();
         if (!mkdirs) {
@@ -99,27 +172,30 @@ public class BatchAcquirerServiceImpl implements BatchAcquirerService {
         }
     }
 
-    private BatchResultDetails workOnFile(String fileInputPgp, String workingDir) {
-        BatchResultDetails build = BatchResultDetails.builder().success(false).fileName(fileInputPgp).build();
+    private BatchResultDetails workOnFile(String fileInputPgp, String workingDir, String name, BlobClient blobClient, Instant now) {
+        BatchResultDetails build = BatchResultDetails.builder().success(false).fileName(name).build();
         try {
             String fileOutputClear = fileInputPgp + ".clear";
             PgpStaticUtils.decryptToFile(fileInputPgp, pgpPrivateKey, pgpPassPhrase, fileOutputClear);
-            log.debug("File decrypted " + fileOutputClear);
+            log.info("Decrypted file " + name);
             List<BatchAcquirerCSVRecord> parsedRows = parseCSVFile(fileOutputClear);
+            log.info("Parsed file " + name);
             int partitionSize = (int) Math.ceil((double) parsedRows.size() / threadNumber);
             List<List<BatchAcquirerCSVRecord>> partition = Lists.partition(parsedRows, partitionSize);
             List<Future<Void>> futureList = new ArrayList<>();
-            for (List<BatchAcquirerCSVRecord> record : partition) {
-                Future<Void> voidFuture = sendBatchAcquirerRecordToQueue.sendToQueue(record);
+            for (List<BatchAcquirerCSVRecord> csvRecord : partition) {
+                Future<Void> voidFuture = sendBatchAcquirerRecordToQueue.sendToQueue(csvRecord);
                 futureList.add(voidFuture);
             }
+            log.info("Records in file "+ name + " sent to read queue");
             for (Future<Void> future : futureList) {
                 future.get();
             }
             build.setSuccess(true);
         } catch (Exception e) {
-            log.error("Failed queueBatchAcquirerResult to elaborate: " + fileInputPgp, e);
+            log.error("Failed parsing of file " + name, e);
             build.setErrorMessage(e.getMessage());
+            markAsProcessed(blobClient, now, name);
         } finally {
             deleteDirectoryQuietly(workingDir);
         }
@@ -135,8 +211,8 @@ public class BatchAcquirerServiceImpl implements BatchAcquirerService {
         }
     }
 
-    private List<BatchAcquirerCSVRecord> parseCSVFile(String filePath) throws FileNotFoundException {
-        Reader inputReader = new InputStreamReader(new FileInputStream(filePath), StandardCharsets.UTF_8);
+    private List<BatchAcquirerCSVRecord> parseCSVFile(String filePath) throws IOException {
+        Reader inputReader = new InputStreamReader(Files.newInputStream(Paths.get(filePath)), StandardCharsets.UTF_8);
         BeanListProcessor<BatchAcquirerCSVRecord> rowProcessor = new BeanListProcessor<>(BatchAcquirerCSVRecord.class);
         CsvParserSettings settings = new CsvParserSettings();
         settings.setHeaderExtractionEnabled(false);
@@ -160,4 +236,5 @@ public class BatchAcquirerServiceImpl implements BatchAcquirerService {
                 .build();
         batchResultRepository.save(build);
     }
+
 }

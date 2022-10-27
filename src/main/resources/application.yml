@@ -27,6 +27,10 @@ spring:
     topics:
       read-queue:
         name: ${KAFKA_READ_QUEUE_TOPIC}
+  servlet:
+    multipart:
+      max-file-size: -1
+      max-request-size: -1
 
 server:
   port: ${SERVER_PORT:8080}
@@ -112,15 +116,6 @@ batch:
   acquirer-result:
     cron: ${BATCH_ACQUIRER_RESULT_CRON:-}
     threadNumber: ${BATCH_ACQUIRER_THREAD_NUMBER:5}
-
-sftp:
-  sftpHostname: ${SFTP_SIA_HOSTNAME}
-  sftpPort: ${SFTP_SIA_PORT}
-  sftpUser: ${SFTP_SIA_USER}
-  sftpPrivateKey: ${keyvault.sftpPrivateKey}
-  sftpPassPhrase: ${keyvault.sftpPassPhrase}
-  sftpFolder: ${SFTP_SIA_FOLDER}
-  sftpFilesPattern: ${SFTP_SIA_FILE_PATTERN:^TKM\..*\.pgp}
 
 thread:
   corePoolSize: ${THREAD_CORE_POOL_SIZE:5}

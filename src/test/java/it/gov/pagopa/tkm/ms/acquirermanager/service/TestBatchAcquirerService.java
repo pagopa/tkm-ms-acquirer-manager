@@ -1,20 +1,19 @@
 package it.gov.pagopa.tkm.ms.acquirermanager.service;
 
-import com.google.common.io.ByteStreams;
-import it.gov.pagopa.tkm.ms.acquirermanager.constant.BatchEnum;
-import it.gov.pagopa.tkm.ms.acquirermanager.constant.DefaultBeans;
+import com.azure.core.http.rest.*;
+import com.azure.storage.blob.*;
+import com.azure.storage.blob.models.*;
+import com.google.common.io.*;
+import it.gov.pagopa.tkm.ms.acquirermanager.constant.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.TkmBatchResult;
+import it.gov.pagopa.tkm.ms.acquirermanager.model.response.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.repository.BatchResultRepository;
-import it.gov.pagopa.tkm.ms.acquirermanager.service.impl.BatchAcquirerServiceImpl;
+import it.gov.pagopa.tkm.ms.acquirermanager.service.impl.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.thread.SendBatchAcquirerRecordToQueue;
 import it.gov.pagopa.tkm.ms.acquirermanager.util.ObjectMapperUtils;
-import it.gov.pagopa.tkm.ms.acquirermanager.util.SftpUtils;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.bouncycastle.openpgp.PGPException;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.apache.commons.io.*;
+import org.bouncycastle.openpgp.*;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -22,18 +21,18 @@ import org.springframework.cloud.sleuth.Span;
 import org.springframework.cloud.sleuth.TraceContext;
 import org.springframework.cloud.sleuth.Tracer;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.mock.web.*;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.util.UUID;
-import java.util.concurrent.Future;
+import java.time.*;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.stream.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -45,9 +44,6 @@ class TestBatchAcquirerService {
 
     @Mock
     private BatchResultRepository batchResultRepository;
-
-    @Mock
-    private SftpUtils sftpUtils;
 
     @Mock
     private Tracer tracer;
@@ -62,44 +58,59 @@ class TestBatchAcquirerService {
     private TraceContext traceContext;
 
     @Mock
-    Future<Void> mockFuture;
+    private ObjectMapperUtils mapperUtils;
 
     @Mock
-    private ObjectMapperUtils mapperUtils;
+    private BlobServiceImpl blobService;
+
+    @Mock
+    private BlobContainerClient blobContainerClient;
+
+    @Mock
+    private BlobClient blobClientMock;
+
+    @Mock
+    private PagedIterable<BlobItem> pagedIterableMock;
+
+    @Mock
+    Future<Void> mockFuture;
+
+    @BeforeEach
+    void init() {
+        when(blobService.getBlobContainerClient(any())).thenReturn(blobContainerClient);
+        when(blobContainerClient.getBlobClient(any())).thenReturn(blobClientMock);
+    }
 
     private final ArgumentCaptor<TkmBatchResult> batchResultArgumentCaptor = ArgumentCaptor.forClass(TkmBatchResult.class);
 
     private final DefaultBeans testBeans = new DefaultBeans();
 
-    @BeforeEach
-    void init() throws IOException {
+    @Test
+    void givenAcquirerFile_success() throws IOException, PGPException {
+        final UUID defaultUuid = UUID.fromString("8d8b30e3-de52-4f1c-a71c-9905a8043dac");
         when(tracer.currentSpan()).thenReturn(span);
         when(span.context()).thenReturn(traceContext);
         when(span.context().traceId()).thenReturn(TRACE_ID);
         String privateKey = IOUtils.toString(new ClassPathResource("junit_pgp_private.asc").getInputStream(), StandardCharsets.UTF_8.name());
         ReflectionTestUtils.setField(batchAcquirerService, "pgpPrivateKey", privateKey);
         ReflectionTestUtils.setField(batchAcquirerService, "pgpPassPhrase", "passphrase");
-    }
-
-    @Test
-    void givenRemoteResourceInfo_success() throws IOException, PGPException {
-        final UUID defaultUuid = UUID.fromString("8d8b30e3-de52-4f1c-a71c-9905a8043dac");
         try (MockedStatic<UUID> mockedUuid = Mockito.mockStatic(UUID.class)) {
-            mockedUuid.when(() -> UUID.randomUUID()).thenReturn(defaultUuid);
-            String directory = FileUtils.getTempDirectoryPath() + File.separator + UUID.randomUUID();
+            mockedUuid.when(UUID::randomUUID).thenReturn(defaultUuid);
+            String directory = FileUtils.getTempDirectoryPath() + "null-null-null-null-null";
             String tempInputFile = directory + File.separator + testBeans.acquirerFileName;
             FileUtils.deleteDirectory(new File(directory));
             byte[] bytes = ByteStreams.toByteArray(new ClassPathResource(testBeans.acquirerFileName).getInputStream());
-            when(sftpUtils.listFile()).thenReturn(testBeans.REMOTE_RESOURCE_INFO);
+            when(blobContainerClient.listBlobs()).thenReturn(pagedIterableMock);
+            when(pagedIterableMock.stream().collect(Collectors.toList())).thenAnswer(invocation -> Stream.of(new BlobItem().setName(testBeans.acquirerFileName)));
+            when(mapperUtils.toJsonOrNull(any())).thenReturn("{}");
+            when(sendBatchAcquirerRecordToQueue.sendToQueue(anyList())).thenReturn(mockFuture);
             doAnswer((i) -> {
                 FileUtils.writeByteArrayToFile(new File(tempInputFile), bytes);
                 return null;
-            }).when(sftpUtils).downloadFile(anyString(), anyString());
-            when(sendBatchAcquirerRecordToQueue.sendToQueue(anyList())).thenReturn(mockFuture);
+            }).when(blobClientMock).downloadToFile(anyString());
             String details = "{}";
             when(mapperUtils.toJsonOrNull(any())).thenReturn(details);
             batchAcquirerService.queueBatchAcquirerResult();
-            verify(sftpUtils, times(1)).downloadFile(anyString(), anyString());
             TkmBatchResult build = TkmBatchResult.builder().
                     runOutcome(true)
                     .executionTraceId(TRACE_ID)
@@ -107,6 +118,7 @@ class TestBatchAcquirerService {
                     .targetBatch(BatchEnum.BATCH_ACQUIRER)
                     .build();
             verify(batchResultRepository).save(batchResultArgumentCaptor.capture());
+            verify(sendBatchAcquirerRecordToQueue).sendToQueue(anyList());
             TkmBatchResult value = batchResultArgumentCaptor.getValue();
             assertThat(value)
                     .usingRecursiveComparison()
@@ -116,4 +128,22 @@ class TestBatchAcquirerService {
             assertNotNull(value.getRunDate());
         }
     }
+
+    @Test
+    void getPublicPgpKey_success() {
+        String key = batchAcquirerService.getPublicPgpKey();
+        verify(blobClientMock).download(any(ByteArrayOutputStream.class));
+        assertEquals("", key);
+    }
+
+    @Test
+    void uploadFile_success() throws IOException {
+        ReflectionTestUtils.setField(batchAcquirerService, "chunkSize", 10L);
+        ReflectionTestUtils.setField(batchAcquirerService, "maxConcurrency", 2);
+        ReflectionTestUtils.setField(batchAcquirerService, "timeLimit", 5L);
+        TokenListUploadResponse resp = batchAcquirerService.uploadFile(new MockMultipartFile("FILENAME", new byte[]{100}));
+        verify(blobClientMock).uploadWithResponse(any(ByteArrayInputStream.class), anyLong(), any(ParallelTransferOptions.class), any(BlobHttpHeaders.class), any(), any(AccessTier.class), any(BlobRequestConditions.class), any(Duration.class), any());
+        assertNotNull(resp);
+    }
+
 }
