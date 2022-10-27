@@ -203,6 +203,31 @@ spec:
                 secretKeyRef:
                   key: VISA_URL_ACQUIRER
                   name: tkmmsacquirermanager
+            - name: BLOB_STORAGE_ACQUIRER_CONTAINER
+              valueFrom:
+                secretKeyRef:
+                  key: BLOB_STORAGE_ACQUIRER_CONTAINER
+                  name: tkmmsacquirermanager
+            - name: ACQUIRER_FILE_UPLOAD_CHUNK_SIZE_MB
+              valueFrom:
+                secretKeyRef:
+                  key: ACQUIRER_FILE_UPLOAD_CHUNK_SIZE_MB
+                  name: tkmmsacquirermanager
+            - name: BLOB_STORAGE_ACQUIRER_CONTAINER
+              valueFrom:
+                secretKeyRef:
+                  key: ACQUIRER_FILE_UPLOAD_MAX_CONCURRENCY
+                  name: tkmmsacquirermanager
+            - name: ACQUIRER_FILE_UPLOAD_TIME_LIMIT_MINUTES
+              valueFrom:
+                secretKeyRef:
+                  key: ACQUIRER_FILE_UPLOAD_TIME_LIMIT_MINUTES
+                  name: tkmmsacquirermanager
+            - name: ACQUIRER_FILE_UPLOAD_TIME_LIMIT_MINUTES
+              valueFrom:
+                secretKeyRef:
+                  key: ACQUIRER_FILE_DAYS_TO_LIVE
+                  name: tkmmsacquirermanager
           livenessProbe:
             httpGet:
               path: /actuator/health
