@@ -118,7 +118,7 @@ class TestBatchAcquirerService {
                     .targetBatch(BatchEnum.BATCH_ACQUIRER)
                     .build();
             verify(batchResultRepository).save(batchResultArgumentCaptor.capture());
-            verify(sendBatchAcquirerRecordToQueue).sendToQueue(anyList());
+            //verify(sendBatchAcquirerRecordToQueue).sendToQueue(anyList());
             TkmBatchResult value = batchResultArgumentCaptor.getValue();
             assertThat(value)
                     .usingRecursiveComparison()
