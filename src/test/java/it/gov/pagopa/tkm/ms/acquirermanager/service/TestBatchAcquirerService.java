@@ -96,7 +96,7 @@ class TestBatchAcquirerService {
         ReflectionTestUtils.setField(batchAcquirerService, "pgpPassPhrase", "passphrase");
         try (MockedStatic<UUID> mockedUuid = Mockito.mockStatic(UUID.class)) {
             mockedUuid.when(UUID::randomUUID).thenReturn(defaultUuid);
-            String directory = FileUtils.getTempDirectoryPath() + "null-null-null-null-null";
+            String directory = FileUtils.getTempDirectoryPath() + File.separator + "null-null-null-null-null";
             String tempInputFile = directory + File.separator + testBeans.acquirerFileName;
             FileUtils.deleteDirectory(new File(directory));
             byte[] bytes = ByteStreams.toByteArray(new ClassPathResource(testBeans.acquirerFileName).getInputStream());
@@ -118,7 +118,7 @@ class TestBatchAcquirerService {
                     .targetBatch(BatchEnum.BATCH_ACQUIRER)
                     .build();
             verify(batchResultRepository).save(batchResultArgumentCaptor.capture());
-            //verify(sendBatchAcquirerRecordToQueue).sendToQueue(anyList());
+            verify(sendBatchAcquirerRecordToQueue).sendToQueue(anyList());
             TkmBatchResult value = batchResultArgumentCaptor.getValue();
             assertThat(value)
                     .usingRecursiveComparison()

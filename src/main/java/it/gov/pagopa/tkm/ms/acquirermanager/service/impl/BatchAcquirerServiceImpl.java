@@ -141,7 +141,7 @@ public class BatchAcquirerServiceImpl implements BatchAcquirerService {
                     }
                     continue;
                 }
-                String workingDir = FileUtils.getTempDirectoryPath() + UUID.randomUUID();
+                String workingDir = FileUtils.getTempDirectoryPath() + File.separator + UUID.randomUUID();
                 createWorkingDir(workingDir);
                 log.debug("Working dir: " + workingDir);
                 String fileInputPgp = workingDir + File.separator + name;
