@@ -228,7 +228,7 @@ spec:
                 secretKeyRef:
                   key: ACQUIRER_FILE_UPLOAD_TIME_LIMIT_MINUTES
                   name: tkmmsacquirermanager
-            - name: ACQUIRER_FILE_UPLOAD_TIME_LIMIT_MINUTES
+            - name: ACQUIRER_FILE_DAYS_TO_LIVE
               valueFrom:
                 secretKeyRef:
                   key: ACQUIRER_FILE_DAYS_TO_LIVE
