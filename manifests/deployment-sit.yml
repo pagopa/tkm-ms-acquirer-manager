@@ -213,7 +213,7 @@ spec:
                 secretKeyRef:
                   key: ACQUIRER_FILE_UPLOAD_CHUNK_SIZE_MB
                   name: tkmmsacquirermanager
-            - name: BLOB_STORAGE_ACQUIRER_CONTAINER
+            - name: ACQUIRER_FILE_UPLOAD_MAX_CONCURRENCY
               valueFrom:
                 secretKeyRef:
                   key: ACQUIRER_FILE_UPLOAD_MAX_CONCURRENCY
@@ -223,7 +223,7 @@ spec:
                 secretKeyRef:
                   key: ACQUIRER_FILE_UPLOAD_TIME_LIMIT_MINUTES
                   name: tkmmsacquirermanager
-            - name: ACQUIRER_FILE_UPLOAD_TIME_LIMIT_MINUTES
+            - name: ACQUIRER_FILE_DAYS_TO_LIVE
               valueFrom:
                 secretKeyRef:
                   key: ACQUIRER_FILE_DAYS_TO_LIVE
