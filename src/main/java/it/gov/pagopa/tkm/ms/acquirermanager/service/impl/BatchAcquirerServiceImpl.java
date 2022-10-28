@@ -45,12 +45,6 @@ public class BatchAcquirerServiceImpl implements BatchAcquirerService {
     @Value("${keyvault.acquirerPgpPrivateKey}")
     private String pgpPrivateKey;
 
-    @Value("${keyvault.sftpPassPhrase}")
-    private char[] sftpPassPhrase;
-
-    @Value("${keyvault.sftpPrivateKey}")
-    private byte[] sftpPrivateKey;
-
     @Value("${batch.acquirer-result.threadNumber}")
     private int threadNumber;
 

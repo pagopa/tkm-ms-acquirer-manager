@@ -183,26 +183,6 @@ spec:
                 secretKeyRef:
                   key: KNOWN_HASHES_GEN_CRON
                   name: tkmmsacquirermanager
-            - name: SFTP_SIA_FOLDER
-              valueFrom:
-                secretKeyRef:
-                  key: SFTP_SIA_FOLDER
-                  name: tkmmsacquirermanager
-            - name: SFTP_SIA_HOSTNAME
-              valueFrom:
-                secretKeyRef:
-                  key: SFTP_SIA_HOSTNAME
-                  name: tkmmsacquirermanager
-            - name: SFTP_SIA_PORT
-              valueFrom:
-                secretKeyRef:
-                  key: SFTP_SIA_PORT
-                  name: tkmmsacquirermanager
-            - name: SFTP_SIA_USER
-              valueFrom:
-                secretKeyRef:
-                  key: SFTP_SIA_USER
-                  name: tkmmsacquirermanager
             - name: VISA_URL_ACQUIRER
               valueFrom:
                 secretKeyRef:
