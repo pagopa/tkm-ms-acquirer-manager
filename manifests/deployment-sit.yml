@@ -178,26 +178,6 @@ spec:
                 secretKeyRef:
                   key: KNOWN_HASHES_GEN_CRON
                   name: tkmmsacquirermanager
-            - name: SFTP_SIA_FOLDER
-              valueFrom:
-                secretKeyRef:
-                  key: SFTP_SIA_FOLDER
-                  name: tkmmsacquirermanager
-            - name: SFTP_SIA_HOSTNAME
-              valueFrom:
-                secretKeyRef:
-                  key: SFTP_SIA_HOSTNAME
-                  name: tkmmsacquirermanager
-            - name: SFTP_SIA_PORT
-              valueFrom:
-                secretKeyRef:
-                  key: SFTP_SIA_PORT
-                  name: tkmmsacquirermanager
-            - name: SFTP_SIA_USER
-              valueFrom:
-                secretKeyRef:
-                  key: SFTP_SIA_USER
-                  name: tkmmsacquirermanager
             - name: VISA_URL_ACQUIRER
               valueFrom:
                 secretKeyRef:
@@ -228,32 +208,32 @@ spec:
                 secretKeyRef:
                   key: ACQUIRER_FILE_DAYS_TO_LIVE
                   name: tkmmsacquirermanager
-#          livenessProbe:
-#            httpGet:
-#              path: /actuator/health
-#              port: 8080
-#              scheme: HTTP
-#            timeoutSeconds: 5
-#            periodSeconds: 10
-#            successThreshold: 1
-#            failureThreshold: 5
-#          readinessProbe:
-#            httpGet:
-#              path: /actuator/health
-#              port: 8080
-#              scheme: HTTP
-#            timeoutSeconds: 5
-#            periodSeconds: 10
-#            successThreshold: 1
-#            failureThreshold: 3
-#          startupProbe:
-#            httpGet:
-#              path: /actuator/health
-#              port: 8080
-#              scheme: HTTP
-#            initialDelaySeconds: 20
-#            timeoutSeconds: 5
-#            periodSeconds: 10
-#            successThreshold: 1
-#            failureThreshold: 30
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+              scheme: HTTP
+            timeoutSeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+              scheme: HTTP
+            timeoutSeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 20
+            timeoutSeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 30
           imagePullPolicy: Always
