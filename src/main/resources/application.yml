@@ -78,8 +78,6 @@ keyvault:
   acquirerPgpPrivateKey: ${${AZURE_KEYVAULT_PROFILE:prod}-acquirerPgpPrivateKey}
   acquirerPgpPrivateKeyPassphrase: ${${AZURE_KEYVAULT_PROFILE:prod}-acquirerPgpPrivateKeyPassphrase}
   tkmReadTokenParPanPubPgpKey: ${${AZURE_KEYVAULT_PROFILE:prod}-tkmReadTokenParPanPubPgpKey}
-  sftpPassPhrase: ${${AZURE_KEYVAULT_PROFILE:prod}-sftpPassPhrase}
-  sftpPrivateKey: ${${AZURE_KEYVAULT_PROFILE:prod}-sftpPrivateKey}
   tkmReadTokenParPanProducerSaslJaasConfig: ${${AZURE_KEYVAULT_PROFILE:prod}-tkmReadTokenParPanProducerSaslJaasConfig:}
 
 blob-storage:
