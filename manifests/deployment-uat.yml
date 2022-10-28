@@ -183,30 +183,35 @@ spec:
                 secretKeyRef:
                   key: KNOWN_HASHES_GEN_CRON
                   name: tkmmsacquirermanager
-            - name: SFTP_SIA_FOLDER
-              valueFrom:
-                secretKeyRef:
-                  key: SFTP_SIA_FOLDER
-                  name: tkmmsacquirermanager
-            - name: SFTP_SIA_HOSTNAME
-              valueFrom:
-                secretKeyRef:
-                  key: SFTP_SIA_HOSTNAME
-                  name: tkmmsacquirermanager
-            - name: SFTP_SIA_PORT
-              valueFrom:
-                secretKeyRef:
-                  key: SFTP_SIA_PORT
-                  name: tkmmsacquirermanager
-            - name: SFTP_SIA_USER
-              valueFrom:
-                secretKeyRef:
-                  key: SFTP_SIA_USER
-                  name: tkmmsacquirermanager
             - name: VISA_URL_ACQUIRER
               valueFrom:
                 secretKeyRef:
                   key: VISA_URL_ACQUIRER
+                  name: tkmmsacquirermanager
+            - name: BLOB_STORAGE_ACQUIRER_CONTAINER
+              valueFrom:
+                secretKeyRef:
+                  key: BLOB_STORAGE_ACQUIRER_CONTAINER
+                  name: tkmmsacquirermanager
+            - name: ACQUIRER_FILE_UPLOAD_CHUNK_SIZE_MB
+              valueFrom:
+                secretKeyRef:
+                  key: ACQUIRER_FILE_UPLOAD_CHUNK_SIZE_MB
+                  name: tkmmsacquirermanager
+            - name: ACQUIRER_FILE_UPLOAD_MAX_CONCURRENCY
+              valueFrom:
+                secretKeyRef:
+                  key: ACQUIRER_FILE_UPLOAD_MAX_CONCURRENCY
+                  name: tkmmsacquirermanager
+            - name: ACQUIRER_FILE_UPLOAD_TIME_LIMIT_MINUTES
+              valueFrom:
+                secretKeyRef:
+                  key: ACQUIRER_FILE_UPLOAD_TIME_LIMIT_MINUTES
+                  name: tkmmsacquirermanager
+            - name: ACQUIRER_FILE_DAYS_TO_LIVE
+              valueFrom:
+                secretKeyRef:
+                  key: ACQUIRER_FILE_DAYS_TO_LIVE
                   name: tkmmsacquirermanager
             - name: APPLICATIONINSIGHTS_CONNECTION_STRING
               valueFrom:

@@ -2,7 +2,6 @@ package it.gov.pagopa.tkm.ms.acquirermanager.util;
 
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -52,7 +51,7 @@ public class ZipUtils {
             destDir.mkdir();
         }
 
-        try (ZipInputStream zipIn = new ZipInputStream(new FileInputStream(zipFilePath))) {
+        try (ZipInputStream zipIn = new ZipInputStream(Files.newInputStream(Paths.get(zipFilePath)))) {
             ZipEntry entry = zipIn.getNextEntry();
             // iterates over entries in the zip file
             while (entry != null) {
@@ -74,7 +73,7 @@ public class ZipUtils {
     }
 
     private static void extractFile(ZipInputStream zipIn, String filePath) throws IOException {
-        try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(filePath))) {
+        try (BufferedOutputStream bos = new BufferedOutputStream(Files.newOutputStream(Paths.get(filePath)))) {
             byte[] bytesIn = new byte[BUFFER_SIZE];
             int read;
             while ((read = zipIn.read(bytesIn)) != -1) {

@@ -148,23 +148,27 @@ steps:
                   objectType: secret
                   objectVersion: ""
                 - |
-                  objectName: ${{ parameters.env }}-sftp-sia-folder
-                  objectType: secret
-                  objectVersion: ""
-                - |
-                  objectName: ${{ parameters.env }}-sftp-sia-hostname
-                  objectType: secret
-                  objectVersion: ""
-                - |
-                  objectName: ${{ parameters.env }}-sftp-sia-port
-                  objectType: secret
-                  objectVersion: ""
-                - |
-                  objectName: ${{ parameters.env }}-sftp-sia-user
-                  objectType: secret
-                  objectVersion: ""
-                - |
                   objectName: ${{ parameters.env }}-visa-url-acquirer
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-blob-storage-acquirer-container
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-acquirer-file-upload-chunk-size-mb
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-acquirer-file-upload-max-concurrency
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-acquirer-file-upload-time-limit-minutes
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-acquirer-file-days-to-live
                   objectType: secret
                   objectVersion: ""
                 - |
@@ -237,13 +241,15 @@ steps:
                   objectName: ${{ parameters.env }}-known-hashes-copy-cron
                 - key: KNOWN_HASHES_GEN_CRON
                   objectName: ${{ parameters.env }}-known-hashes-gen-cron
-                - key: SFTP_SIA_FOLDER
-                  objectName: ${{ parameters.env }}-sftp-sia-folder
-                - key: SFTP_SIA_HOSTNAME
-                  objectName: ${{ parameters.env }}-sftp-sia-hostname
-                - key: SFTP_SIA_PORT
-                  objectName: ${{ parameters.env }}-sftp-sia-port
-                - key: SFTP_SIA_USER
-                  objectName: ${{ parameters.env }}-sftp-sia-user
                 - key: VISA_URL_ACQUIRER
                   objectName: ${{ parameters.env }}-visa-url-acquirer
+                - key: BLOB_STORAGE_ACQUIRER_CONTAINER
+                  objectName: ${{ parameters.env }}-blob-storage-acquirer-container
+                - key: ACQUIRER_FILE_UPLOAD_CHUNK_SIZE_MB
+                  objectName: ${{ parameters.env }}-acquirer-file-upload-chunk-size-mb
+                - key: ACQUIRER_FILE_UPLOAD_MAX_CONCURRENCY
+                  objectName: ${{ parameters.env }}-acquirer-file-upload-max-concurrency
+                - key: ACQUIRER_FILE_UPLOAD_TIME_LIMIT_MINUTES
+                  objectName: ${{ parameters.env }}-acquirer-file-upload-time-limit-minutes
+                - key: ACQUIRER_FILE_DAYS_TO_LIVE
+                  objectName: ${{ parameters.env }}-acquirer-file-days-to-live
