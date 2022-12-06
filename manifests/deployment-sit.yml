@@ -215,6 +215,106 @@ spec:
                   name: tkmmsacquirermanager
             - name: APPLICATIONINSIGHTS_ROLE_NAME
               value: tkmmsacquirermanagersit
+            - name: BATCH_ACQUIRER_THREAD_NUMBER
+              valueFrom:
+                secretKeyRef:
+                  key: BATCH_ACQUIRER_THREAD_NUMBER
+                  name: tkmmsacquirermanager
+            - name: BATCH_MAX_THREAD
+              valueFrom:
+                secretKeyRef:
+                  key: BATCH_MAX_THREAD
+                  name: tkmmsacquirermanager
+            - name: BIN_RANGE_GEN_MAX_ROWS_IN_FILES
+              valueFrom:
+                secretKeyRef:
+                  key: BIN_RANGE_GEN_MAX_ROWS_IN_FILES
+                  name: tkmmsacquirermanager
+            - name: FAILURE_RATE_THRESHOLD
+              valueFrom:
+                secretKeyRef:
+                  key: FAILURE_RATE_THRESHOLD
+                  name: tkmmsacquirermanager
+            - name: KAFKA_SASL_MECHANISM
+              valueFrom:
+                secretKeyRef:
+                  key: KAFKA_SASL_MECHANISM
+                  name: tkmmsacquirermanager
+            - name: KAFKA_SECURITY_PROTOCOL
+              valueFrom:
+                secretKeyRef:
+                  key: KAFKA_SECURITY_PROTOCOL
+                  name: tkmmsacquirermanager
+            - name: KNOWN_HASHES_GEN_MAX_RECORDS_IN_API_CALL
+              valueFrom:
+                secretKeyRef:
+                  key: KNOWN_HASHES_GEN_MAX_RECORDS_IN_API_CALL
+                  name: tkmmsacquirermanager
+            - name: KNOWN_HASHES_GEN_MAX_ROWS_IN_FILES
+              valueFrom:
+                secretKeyRef:
+                  key: KNOWN_HASHES_GEN_MAX_ROWS_IN_FILES
+                  name: tkmmsacquirermanager
+            - name: LOGGING_LEVEL
+              valueFrom:
+                secretKeyRef:
+                  key: LOGGING_LEVEL
+                  name: tkmmsacquirermanager
+            - name: LOGGING_LEVEL_HIBERNATE
+              valueFrom:
+                secretKeyRef:
+                  key: LOGGING_LEVEL_HIBERNATE
+                  name: tkmmsacquirermanager
+            - name: LOGGING_PATTERN
+              valueFrom:
+                secretKeyRef:
+                  key: LOGGING_PATTERN
+                  name: tkmmsacquirermanager
+            - name: MINIMUM_NUMBER_OF_CALLS
+              valueFrom:
+                secretKeyRef:
+                  key: MINIMUM_NUMBER_OF_CALLS
+                  name: tkmmsacquirermanager
+            - name: RETRY_MAX_ATTEMPTS
+              valueFrom:
+                secretKeyRef:
+                  key: RETRY_MAX_ATTEMPTS
+                  name: tkmmsacquirermanager
+            - name: RETRY_WAIT_DURATION
+              valueFrom:
+                secretKeyRef:
+                  key: RETRY_WAIT_DURATION
+                  name: tkmmsacquirermanager
+            - name: RING_BUFFER_SIZE_IN_CLOSED_SATE
+              valueFrom:
+                secretKeyRef:
+                  key: RING_BUFFER_SIZE_IN_CLOSED_SATE
+                  name: tkmmsacquirermanager
+            - name: RING_BUFFER_SIZE_IN_HALFOPEN_SATE
+              valueFrom:
+                secretKeyRef:
+                  key: RING_BUFFER_SIZE_IN_HALFOPEN_SATE
+                  name: tkmmsacquirermanager
+            - name: SLIDING_WINDOW_SIZE
+              valueFrom:
+                secretKeyRef:
+                  key: SLIDING_WINDOW_SIZE
+                  name: tkmmsacquirermanager
+            - name: THREAD_CORE_POOL_SIZE
+              valueFrom:
+                secretKeyRef:
+                  key: THREAD_CORE_POOL_SIZE
+                  name: tkmmsacquirermanager
+            - name: THREAD_MAX_POOL_SIZE
+              valueFrom:
+                secretKeyRef:
+                  key: THREAD_MAX_POOL_SIZE
+                  name: tkmmsacquirermanager
+            - name: WAIT_DURATION_IN_OPENSTATE
+              valueFrom:
+                secretKeyRef:
+                  key: WAIT_DURATION_IN_OPENSTATE
+                  name: tkmmsacquirermanager
           livenessProbe:
             httpGet:
               path: /actuator/health
