@@ -21,11 +21,11 @@ variables:
   imageRepository: 'tkmmsacquirermanager'
 
   isToDeploy: $[ne(variables['Build.Reason'], 'PullRequest')]
-  isSIT: $[eq(variables['Build.SourceBranch'], 'refs/heads/release/sit')]
+  isSIT: $[eq(variables['Build.SourceBranch'], 'refs/heads/PM-1167-liquibase')]
   isUAT: $[or(eq(variables['Build.SourceBranch'], 'refs/heads/release/uat'), startsWith(variables['Build.SourceBranch'], 'refs/heads/hotfix'))]
   isPROD: $[eq(variables['Build.SourceBranch'], 'refs/heads/master')]
 
-  ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/release/sit') }}:
+  ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/PM-1167-liquibase') }}:
     dockerRegistryServiceConnection: 'tkm-cstaruatregistry-connector'
     containerRegistry: 'cstaruatregistry.azurecr.io'
     enviroment: sit
