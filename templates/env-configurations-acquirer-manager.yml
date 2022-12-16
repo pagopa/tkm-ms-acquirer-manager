@@ -186,6 +186,86 @@ steps:
                   objectName: ${{ parameters.env }}-applicationinsights-connection-string
                   objectType: secret
                   objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-batch-acquirer-thread-number
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-acquirer-manager-batch-max-thread
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-acquirer-manager-bin-range-gen-max-rows-in-files
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-acquirer-manager-failure-rate-threshold
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-kafka-sasl-mechanism
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-kafka-security-protocol
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-acquirer-manager-known-hashes-gen-max-records-in-api-call
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-acquirer-manager-known-hashes-gen-max-rows-in-files
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-acquirer-manager-logging-level
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-acquirer-manager-logging-level-hibernate
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-acquirer-manager-logging-pattern
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-acquirer-manager-minimum-number-of-calls
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-acquirer-manager-retry-max-attempts
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-acquirer-manager-retry-wait-duration
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-acquirer-manager-ring-buffer-size-in-closed-sate
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-acquirer-manager-ring-buffer-size-in-halfopen-sate
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-acquirer-manager-sliding-window-size
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-acquirer-manager-thread-core-pool-size
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-acquirer-manager-thread-max-pool-size
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-acquirer-manager-wait-duration-in-openstate
+                  objectType: secret
+                  objectVersion: ""
           secretObjects:
             - secretName: tkmmsacquirermanager
               type: Opaque
@@ -256,3 +336,43 @@ steps:
                   objectName: ${{ parameters.env }}-acquirer-file-upload-time-limit-minutes
                 - key: ACQUIRER_FILE_DAYS_TO_LIVE
                   objectName: ${{ parameters.env }}-acquirer-file-days-to-live
+                - key: BATCH_ACQUIRER_THREAD_NUMBER
+                  objectName: ${{ parameters.env }}-batch-acquirer-thread-number
+                - key: BATCH_MAX_THREAD
+                  objectName: ${{ parameters.env }}-acquirer-manager-batch-max-thread
+                - key: BIN_RANGE_GEN_MAX_ROWS_IN_FILES
+                  objectName: ${{ parameters.env }}-acquirer-manager-bin-range-gen-max-rows-in-files
+                - key: FAILURE_RATE_THRESHOLD
+                  objectName: ${{ parameters.env }}-acquirer-manager-failure-rate-threshold
+                - key: KAFKA_SASL_MECHANISM
+                  objectName: ${{ parameters.env }}-kafka-sasl-mechanism
+                - key: KAFKA_SECURITY_PROTOCOL
+                  objectName: ${{ parameters.env }}-kafka-security-protocol
+                - key: KNOWN_HASHES_GEN_MAX_RECORDS_IN_API_CALL
+                  objectName: ${{ parameters.env }}-acquirer-manager-known-hashes-gen-max-records-in-api-call
+                - key: KNOWN_HASHES_GEN_MAX_ROWS_IN_FILES
+                  objectName: ${{ parameters.env }}-acquirer-manager-known-hashes-gen-max-rows-in-files
+                - key: LOGGING_LEVEL
+                  objectName: ${{ parameters.env }}-acquirer-manager-logging-level
+                - key: LOGGING_LEVEL_HIBERNATE
+                  objectName: ${{ parameters.env }}-acquirer-manager-logging-level-hibernate
+                - key: LOGGING_PATTERN
+                  objectName: ${{ parameters.env }}-acquirer-manager-logging-pattern
+                - key: MINIMUM_NUMBER_OF_CALLS
+                  objectName: ${{ parameters.env }}-acquirer-manager-minimum-number-of-calls
+                - key: RETRY_MAX_ATTEMPTS
+                  objectName: ${{ parameters.env }}-acquirer-manager-retry-max-attempts
+                - key: RETRY_WAIT_DURATION
+                  objectName: ${{ parameters.env }}-acquirer-manager-retry-wait-duration
+                - key: RING_BUFFER_SIZE_IN_CLOSED_SATE
+                  objectName: ${{ parameters.env }}-acquirer-manager-ring-buffer-size-in-closed-sate
+                - key: RING_BUFFER_SIZE_IN_HALFOPEN_SATE
+                  objectName: ${{ parameters.env }}-acquirer-manager-ring-buffer-size-in-halfopen-sate
+                - key: SLIDING_WINDOW_SIZE
+                  objectName: ${{ parameters.env }}-acquirer-manager-sliding-window-size
+                - key: THREAD_CORE_POOL_SIZE
+                  objectName: ${{ parameters.env }}-acquirer-manager-thread-core-pool-size
+                - key: THREAD_MAX_POOL_SIZE
+                  objectName: ${{ parameters.env }}-acquirer-manager-thread-max-pool-size
+                - key: WAIT_DURATION_IN_OPENSTATE
+                  objectName: ${{ parameters.env }}-acquirer-manager-wait-duration-in-openstate
