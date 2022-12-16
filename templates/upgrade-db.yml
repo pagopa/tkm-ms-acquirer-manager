@@ -7,8 +7,8 @@ parameters:
   - name: azureSubscription
   - name: KeyVaultName
   - name: definitionId
-  - name: ENV
   - name: env
+  - name: envkv
   - name: contexts
 
 jobs:
@@ -34,7 +34,7 @@ jobs:
     pool:
       name: ${{ parameters.poolName }}
     dependsOn: prepare_args_from_keyvault
-    environment: ${{ parameters.ENV }}
+    environment: ${{ parameters.env }}
     variables:
       argsFromKeyvault: $[ dependencies.prepare_args_from_keyvault.outputs['scriptArgsFromKeyvault.args'] ]
     strategy:
@@ -101,16 +101,16 @@ jobs:
 
             - template: ../liquibase-update.yml
               parameters:
-                url: $(${{ parameters.env }}-db-acquirer-manager-url-simple)
-                username: $(${{ parameters.env }}-db-acquirer-manager-username)
-                password: $(${{ parameters.env }}-db-acquirer-manager-password)
+                url: $(${{ parameters.envkv }}-db-acquirer-manager-url-simple)
+                username: $(${{ parameters.envkv }}-db-acquirer-manager-username)
+                password: $(${{ parameters.envkv }}-db-acquirer-manager-password)
                 classpath: $(Pipeline.Workspace)/${{ parameters.version }}-liquibase-script/changelogs/acquirer-manager
-                liquibaseSchemaName: $(${{ parameters.env }}-db-acquirer-manager-schema)
-                defaultSchemaName: $(${{ parameters.env }}-db-acquirer-manager-schema)
-                schema: $(${{ parameters.env }}-db-acquirer-manager-schema)
+                liquibaseSchemaName: $(${{ parameters.envkv }}-db-acquirer-manager-schema)
+                defaultSchemaName: $(${{ parameters.envkv }}-db-acquirer-manager-schema)
+                schema: $(${{ parameters.envkv }}-db-acquirer-manager-schema)
                 args: "-Dversion=${{ parameters.version }} $(argsFromKeyvault)"
-                liquibaseTablespaceName: $(${{ parameters.env }}-db-acquirer-manager-tablespace)
-                title: "Update DB tkm_acquirer_manager - ${{ parameters.ENV }}"
+                liquibaseTablespaceName: $(${{ parameters.envkv }}-db-acquirer-manager-tablespace)
+                title: "Update DB tkm_acquirer_manager - ${{ parameters.env }}"
                 databaseChangelogLockTableName: "DATABASECHANGELOGLOCK"
                 databaseChangelogTableName: "DATABASECHANGELOG"
                 contexts: ${{ parameters.contexts }}
