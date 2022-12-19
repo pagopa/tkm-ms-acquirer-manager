@@ -41,6 +41,7 @@ jobs:
         deploy:
           steps:
             - checkout: none
+            - download: none
 
             - script: echo ${{ parameters.version }}
               displayName: Branch Version
