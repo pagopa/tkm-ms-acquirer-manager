@@ -119,8 +119,10 @@ public class BatchAcquirerServiceImpl implements BatchAcquirerService {
         List<BatchResultDetails> batchResultDetailsList = new ArrayList<>();
         try {
             log.info("Retrieving acquirer files...");
+            BlobListDetails blobListDetails = new BlobListDetails().setRetrieveMetadata(true);
+            ListBlobsOptions listBlobOptions = new ListBlobsOptions().setDetails(blobListDetails);
             BlobContainerClient client = blobService.getBlobContainerClient(containerNameAcquirer);
-            List<BlobItem> blobItems = client.listBlobs().stream().collect(Collectors.toList());
+            List<BlobItem> blobItems = client.listBlobs(listBlobOptions, Duration.ofHours(1)).stream().collect(Collectors.toList());
             log.info("Found " + blobItems.size() + " files");
             for (BlobItem blobItem : blobItems) {
                 String name = blobItem.getName();
