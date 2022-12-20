@@ -100,7 +100,7 @@ class TestBatchAcquirerService {
             String tempInputFile = directory + File.separator + testBeans.acquirerFileName;
             FileUtils.deleteDirectory(new File(directory));
             byte[] bytes = ByteStreams.toByteArray(new ClassPathResource(testBeans.acquirerFileName).getInputStream());
-            when(blobContainerClient.listBlobs()).thenReturn(pagedIterableMock);
+            when(blobContainerClient.listBlobs(any(), any())).thenReturn(pagedIterableMock);
             when(pagedIterableMock.stream().collect(Collectors.toList())).thenAnswer(invocation -> Stream.of(new BlobItem().setName(testBeans.acquirerFileName)));
             when(mapperUtils.toJsonOrNull(any())).thenReturn("{}");
             when(sendBatchAcquirerRecordToQueue.sendToQueue(anyList())).thenReturn(mockFuture);
