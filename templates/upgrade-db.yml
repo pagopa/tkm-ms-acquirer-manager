@@ -99,7 +99,7 @@ jobs:
                 url: "jdbc:postgresql://${DB_SERVER}"
                 username: $(${{ parameters.envkv }}-acquirerMDbUsername)
                 password: $(${{ parameters.envkv }}-acquirerMDbPassword)
-                classpath: $(Pipeline.Workspace)/${{ parameters.version }}-liquibase-script/changelogs/acquirer-manager
+                classpath: $(Pipeline.Workspace)/${{ parameters.version }}-liquibase/changelogs/acquirer-manager
                 #liquibaseSchemaName: $(${{ parameters.envkv }}-db-acquirer-manager-schema)
                 #defaultSchemaName: $(${{ parameters.envkv }}-db-acquirer-manager-schema)
                 #schema: $(${{ parameters.envkv }}-db-acquirer-manager-schema)
