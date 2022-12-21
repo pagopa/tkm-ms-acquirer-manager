@@ -51,6 +51,7 @@ variables:
 #    enviroment: sit
 
   maven_cache_folder: $(Pipeline.Workspace)/.m2/repository
+  liquibaseFolderScript: '$(Build.SourcesDirectory)/devops/db/liquibase'
 
 stages:
   - stage: Test_Develop_Release
@@ -272,6 +273,9 @@ stages:
               targetPath: '$(Build.Repository.LocalPath)/target'
               artifact: 'target'
               publishLocation: 'pipeline'
+          - publish: $(liquibaseFolderScript)
+            artifact: $(pomversion)-liquibase-script
+            displayName: Publish Liquibase Scripts
 
       - job: Push
         displayName: Push
