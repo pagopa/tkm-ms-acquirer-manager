@@ -276,6 +276,14 @@ stages:
           - publish: $(liquibaseFolderScript)
             artifact: $(pomversion)-liquibase-script
             displayName: Publish Liquibase Scripts
+          - script: |
+              echo $(pomversion) > $(Pipeline.Workspace)/build_version
+            displayName: "Create build_version file"
+          - task: PublishBuildArtifacts@1
+            displayName: Publish build_version file
+            inputs:
+              pathToPublish: '$(Pipeline.Workspace)/build_version'
+              artifactName: 'build_version'
 
       - job: Push
         displayName: Push
