@@ -95,15 +95,16 @@ jobs:
 
             - template: ./liquibase-update.yml
               parameters:
-                url: $(${{ parameters.envkv }}-db-acquirer-manager-url-simple)
-                username: $(${{ parameters.envkv }}-db-acquirer-manager-username)
-                password: $(${{ parameters.envkv }}-db-acquirer-manager-password)
+                #url: $(${{ parameters.envkv }}-db-acquirer-manager-url-simple)
+                url: "jdbc:postgresql://${DB_SERVER}"
+                username: $(${{ parameters.envkv }}-acquirerMDbUsername)
+                password: $(${{ parameters.envkv }}-acquirerMDbPassword)
                 classpath: $(Pipeline.Workspace)/${{ parameters.version }}-liquibase-script/changelogs/acquirer-manager
-                liquibaseSchemaName: $(${{ parameters.envkv }}-db-acquirer-manager-schema)
-                defaultSchemaName: $(${{ parameters.envkv }}-db-acquirer-manager-schema)
-                schema: $(${{ parameters.envkv }}-db-acquirer-manager-schema)
+                #liquibaseSchemaName: $(${{ parameters.envkv }}-db-acquirer-manager-schema)
+                #defaultSchemaName: $(${{ parameters.envkv }}-db-acquirer-manager-schema)
+                #schema: $(${{ parameters.envkv }}-db-acquirer-manager-schema)
                 args: "-Dversion=${{ parameters.version }} $(argsFromKeyvault)"
-                liquibaseTablespaceName: $(${{ parameters.envkv }}-db-acquirer-manager-tablespace)
+                #liquibaseTablespaceName: $(${{ parameters.envkv }}-db-acquirer-manager-tablespace)
                 title: "Update DB tkm_acquirer_manager - ${{ parameters.env }}"
                 databaseChangelogLockTableName: "DATABASECHANGELOGLOCK"
                 databaseChangelogTableName: "DATABASECHANGELOG"
