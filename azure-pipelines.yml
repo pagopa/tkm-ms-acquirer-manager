@@ -335,7 +335,6 @@ stages:
     jobs:
       - template: templates/upgrade-db.yml
         parameters:
-          version: $(pomversion)
           poolName: uat_agent_pool
           azureSubscription: $(azureSubscription)
           KeyVaultName: $(KeyVaultName)
@@ -429,7 +428,6 @@ stages:
     jobs:
       - template: templates/upgrade-db.yml
         parameters:
-          version: $(pomversion)
           poolName: pagopa-agent-pool-uat
           azureSubscription: $(azureSubscription)
           KeyVaultName: $(KeyVaultName)
