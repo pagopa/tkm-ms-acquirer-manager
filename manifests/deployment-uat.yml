@@ -224,7 +224,7 @@ spec:
             - name: APPLICATIONINSIGHTS_ROLE_NAME
               value: tkmmsacquirermanageruat
             - name: APPLICATIONINSIGHTS_SAMPLING_PERCENTAGE
-              value: 100
+              value: "100"
             - name: BATCH_ACQUIRER_THREAD_NUMBER
               valueFrom:
                 secretKeyRef:
