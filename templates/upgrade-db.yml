@@ -102,11 +102,11 @@ jobs:
                 username: $(${{ parameters.envkv }}-acquirerMDbUsername)
                 password: $(${{ parameters.envkv }}-acquirerMDbPassword)
                 classpath: $(Pipeline.Workspace)/$(var.dirName)/changelogs/acquirer-manager
-                #liquibaseSchemaName: $(${{ parameters.envkv }}-db-acquirer-manager-schema)
-                #defaultSchemaName: $(${{ parameters.envkv }}-db-acquirer-manager-schema)
-                #schema: $(${{ parameters.envkv }}-db-acquirer-manager-schema)
+                liquibaseSchemaName: $(${{ parameters.envkv }}-acquirerMDbSchema)
+                defaultSchemaName: $(${{ parameters.envkv }}-acquirerMDbSchema)
+                schema: $(${{ parameters.envkv }}-acquirerMDbSchema)
                 args: "-Dversion=$(var.buildVersion) $(argsFromKeyvault)"
-                #liquibaseTablespaceName: $(${{ parameters.envkv }}-db-acquirer-manager-tablespace)
+                liquibaseTablespaceName: $(${{ parameters.envkv }}-acquirerMDbTablespace)
                 title: "Update DB tkm_acquirer_manager - ${{ parameters.env }}"
                 databaseChangelogLockTableName: "DATABASECHANGELOGLOCK"
                 databaseChangelogTableName: "DATABASECHANGELOG"
