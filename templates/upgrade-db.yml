@@ -98,7 +98,7 @@ jobs:
 
             - template: ./liquibase-update.yml
               parameters:
-                url: $(${{ parameters.envkv }}-db-server)
+                url: "jdbc:postgresql://$(${{ parameters.envkv }}-db-server)"
                 username: $(${{ parameters.envkv }}-acquirerMDbUsername)
                 password: $(${{ parameters.envkv }}-acquirerMDbPassword)
                 classpath: $(Pipeline.Workspace)/$(var.dirName)/changelogs/acquirer-manager
