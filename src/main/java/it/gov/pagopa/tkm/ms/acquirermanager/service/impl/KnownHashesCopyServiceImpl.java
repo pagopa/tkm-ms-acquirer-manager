@@ -69,7 +69,6 @@ public class KnownHashesCopyServiceImpl implements KnownHashesCopyService {
         for (BlobItem blobItem : allKnownHashesFiles) {
             batchResultDetails.add(copyFileToDestinationForAcquirer(now, blobItem));
         }
-        blobService.deleteFolder(blobService.getDirectoryName(now, BatchEnum.KNOWN_HASHES_GEN));
         saveBatchResult(now, batchResultDetails);
         hashOffsetRepository.deleteAll();
         log.info("End of known hashes copy batch " + traceId);
