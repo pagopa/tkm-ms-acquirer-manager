@@ -27,7 +27,7 @@ import static org.mockito.Mockito.*;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ExtendWith(MockitoExtension.class)
-public class TestKnownHashesGenService {
+class TestKnownHashesGenService {
 
     @InjectMocks
     private KnownHashesGenServiceImpl knownHashesService;
@@ -67,6 +67,9 @@ public class TestKnownHashesGenService {
 
     @Mock
     private AppendBlobClient appendBlobClient;
+
+    @Mock
+    private BlobServiceImpl blobService;
 
     private final DefaultBeans testBeans = new DefaultBeans();
 
