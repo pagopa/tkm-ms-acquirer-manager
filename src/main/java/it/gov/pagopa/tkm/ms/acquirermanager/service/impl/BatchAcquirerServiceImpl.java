@@ -100,7 +100,7 @@ public class BatchAcquirerServiceImpl implements BatchAcquirerService {
         String filename = file.getOriginalFilename();
         long size = file.getSize();
         log.info("Uploading acquirer file " + filename + " of " + size + " bytes");
-        String newFilename = UUID.randomUUID() + filename;
+        String newFilename = UUID.randomUUID() + "_" + filename;
         log.info("New filename: " + newFilename);
         BlobContainerClient client = blobService.getBlobContainerClient(containerNameAcquirer);
         BlobClient blobClient = client.getBlobClient(newFilename);
@@ -119,8 +119,10 @@ public class BatchAcquirerServiceImpl implements BatchAcquirerService {
         List<BatchResultDetails> batchResultDetailsList = new ArrayList<>();
         try {
             log.info("Retrieving acquirer files...");
+            BlobListDetails blobListDetails = new BlobListDetails().setRetrieveMetadata(true);
+            ListBlobsOptions listBlobOptions = new ListBlobsOptions().setDetails(blobListDetails);
             BlobContainerClient client = blobService.getBlobContainerClient(containerNameAcquirer);
-            List<BlobItem> blobItems = client.listBlobs().stream().collect(Collectors.toList());
+            List<BlobItem> blobItems = client.listBlobs(listBlobOptions, Duration.ofHours(1)).stream().collect(Collectors.toList());
             log.info("Found " + blobItems.size() + " files");
             for (BlobItem blobItem : blobItems) {
                 String name = blobItem.getName();
@@ -129,7 +131,7 @@ public class BatchAcquirerServiceImpl implements BatchAcquirerService {
                 if (blobItem.getMetadata() != null && blobItem.getMetadata().containsKey(processed.name())) {
                     log.info("File " + name + " has been processed already");
                     if (blobItem.getProperties().getLastModified().toInstant().isBefore(now.minus(daysToLive, ChronoUnit.DAYS))) {
-                        log.info("File " + name + " has been processed more than a week ago, deleting...");
+                        log.info("File " + name + " has been processed more than " + daysToLive + " days ago, deleting...");
                         blobClient.delete();
                         log.info("File " + name + " successfully deleted");
                     }
@@ -140,7 +142,7 @@ public class BatchAcquirerServiceImpl implements BatchAcquirerService {
                 log.debug("Working dir: " + workingDir);
                 String fileInputPgp = workingDir + File.separator + name;
                 blobClient.downloadToFile(fileInputPgp);
-                batchResultDetailsList.add(workOnFile(fileInputPgp, workingDir, name, blobClient, now));
+                batchResultDetailsList.add(workOnFile(fileInputPgp, workingDir, name));
                 markAsProcessed(blobClient, now, name);
             }
         } catch (Exception e) {
@@ -166,7 +168,7 @@ public class BatchAcquirerServiceImpl implements BatchAcquirerService {
         }
     }
 
-    private BatchResultDetails workOnFile(String fileInputPgp, String workingDir, String name, BlobClient blobClient, Instant now) {
+    private BatchResultDetails workOnFile(String fileInputPgp, String workingDir, String name) {
         BatchResultDetails build = BatchResultDetails.builder().success(false).fileName(name).build();
         try {
             String fileOutputClear = fileInputPgp + ".clear";
@@ -189,7 +191,6 @@ public class BatchAcquirerServiceImpl implements BatchAcquirerService {
         } catch (Exception e) {
             log.error("Failed parsing of file " + name, e);
             build.setErrorMessage(e.getMessage());
-            markAsProcessed(blobClient, now, name);
         } finally {
             deleteDirectoryQuietly(workingDir);
         }
