@@ -1,0 +1,1 @@
+insert into BIN_RANGE (ID, CIRCUIT, MIN, MAX, INSERT_DATE) values (999999999, '1', '1', '100', current_timestamp);
