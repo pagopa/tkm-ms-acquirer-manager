@@ -51,7 +51,7 @@ variables:
     containerRegistry: ''
     enviroment: sit
     imagePullSecret: ''
-    azureSubscription: ''
+    azureSubscription: 'TKM-Subscription-sit'
     KeyVaultName: ''
 
   maven_cache_folder: $(Pipeline.Workspace)/.m2/repository
