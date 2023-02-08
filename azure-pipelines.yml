@@ -41,14 +41,14 @@ variables:
     KeyVaultName: 'u87-kmn-tkm-pci-uat'
   ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/master') }}:
     dockerRegistryServiceConnection: 'tkm-cstaruatregistry-connector'
-    containerRegistry: 'cstaruatregistry.azurecr.io'
+    containerRegistry: ''
     enviroment: prod
     imagePullSecret: ''
     azureSubscription: ''
     KeyVaultName: ''
   ${{ if and(not(startsWith(variables['Build.SourceBranch'], 'refs/heads/release')), ne(variables['Build.SourceBranch'], 'refs/heads/master'), not(startsWith(variables['Build.SourceBranch'], 'refs/heads/hotfix'))) }}:
-    dockerRegistryServiceConnection: ''
-    containerRegistry: 'cstaruatregistry.azurecr.io'
+    dockerRegistryServiceConnection: 'tkm-cstaruatregistry-connector'
+    containerRegistry: ''
     enviroment: sit
     imagePullSecret: ''
     azureSubscription: 'TKM-Subscription-sit'
@@ -318,7 +318,7 @@ stages:
           - task: Docker@2
             displayName: Build and push an image to container registry
             inputs:
-              containerRegistry: 'cstaruatregistry.azurecr.io'
+              containerRegistry: '$(dockerRegistryServiceConnection)'
               repository: '$(imageRepository)'
               command: 'buildAndPush'
               Dockerfile: '$(Build.Repository.LocalPath)/$(dockerfileRelativePath)'
