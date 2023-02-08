@@ -41,14 +41,14 @@ variables:
     KeyVaultName: 'u87-kmn-tkm-pci-uat'
   ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/master') }}:
     dockerRegistryServiceConnection: 'tkm-cstaruatregistry-connector'
-    containerRegistry: ''
+    containerRegistry: 'cstaruatregistry.azurecr.io'
     enviroment: prod
     imagePullSecret: ''
     azureSubscription: ''
     KeyVaultName: ''
   ${{ if and(not(startsWith(variables['Build.SourceBranch'], 'refs/heads/release')), ne(variables['Build.SourceBranch'], 'refs/heads/master'), not(startsWith(variables['Build.SourceBranch'], 'refs/heads/hotfix'))) }}:
     dockerRegistryServiceConnection: ''
-    containerRegistry: ''
+    containerRegistry: 'cstaruatregistry.azurecr.io'
     enviroment: sit
     imagePullSecret: ''
     azureSubscription: 'TKM-Subscription-sit'
