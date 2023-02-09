@@ -19,6 +19,7 @@ steps:
       KeyVaultName: ${{ parameters.KeyVaultName }}
       SecretsFilter: '*'
       RunAsPreJob: false
+
   - task: KubernetesManifest@0
     displayName: Create secret ${{ parameters.secretName }}
     inputs:
@@ -28,6 +29,16 @@ steps:
       secretArguments: --from-literal=clientid=$(${{ parameters.env }}-clientid) --from-literal=clientsecret=$(${{ parameters.env }}-clientsecret)
       kubernetesServiceConnection: ${{ parameters.kubernetesServiceConnection }}
       namespace: tkm-${{ parameters.env }}
+
+  - task: Kubernetes@1
+    displayName: Add label to secret map
+    inputs:
+      connectionType: Kubernetes Service Connection
+      kubernetesServiceEndpoint: ${{ parameters.kubernetesServiceConnection }}
+      namespace: tkm-${{ parameters.env }}
+      command: label
+      arguments: "secret ${{ parameters.secretName }} secrets-store.csi.k8s.io/used=true"
+
   - task: Kubernetes@1
     displayName: Create spc ${{ parameters.spcClassName }}
     inputs:
@@ -148,34 +159,120 @@ steps:
                   objectType: secret
                   objectVersion: ""
                 - |
-                  objectName: ${{ parameters.env }}-sftp-sia-folder
-                  objectType: secret
-                  objectVersion: ""
-                - |
-                  objectName: ${{ parameters.env }}-sftp-sia-hostname
-                  objectType: secret
-                  objectVersion: ""
-                - |
-                  objectName: ${{ parameters.env }}-sftp-sia-port
-                  objectType: secret
-                  objectVersion: ""
-                - |
-                  objectName: ${{ parameters.env }}-sftp-sia-user
-                  objectType: secret
-                  objectVersion: ""
-                - |
                   objectName: ${{ parameters.env }}-visa-url-acquirer
                   objectType: secret
                   objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-blob-storage-acquirer-container
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-acquirer-file-upload-chunk-size-mb
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-acquirer-file-upload-max-concurrency
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-acquirer-file-upload-time-limit-minutes
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-acquirer-file-days-to-live
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-applicationinsights-connection-string
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-batch-acquirer-thread-number
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-acquirer-manager-batch-max-thread
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-acquirer-manager-bin-range-gen-max-rows-in-files
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-acquirer-manager-failure-rate-threshold
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-kafka-sasl-mechanism
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-kafka-security-protocol
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-acquirer-manager-known-hashes-gen-max-records-in-api-call
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-acquirer-manager-known-hashes-gen-max-rows-in-files
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-acquirer-manager-logging-level
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-acquirer-manager-logging-level-hibernate
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-acquirer-manager-logging-pattern
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-acquirer-manager-minimum-number-of-calls
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-acquirer-manager-retry-max-attempts
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-acquirer-manager-retry-wait-duration
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-acquirer-manager-ring-buffer-size-in-closed-sate
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-acquirer-manager-ring-buffer-size-in-halfopen-sate
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-acquirer-manager-sliding-window-size
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-acquirer-manager-thread-core-pool-size
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-acquirer-manager-thread-max-pool-size
+                  objectType: secret
+                  objectVersion: ""
+                - |
+                  objectName: ${{ parameters.env }}-acquirer-manager-wait-duration-in-openstate
+                  objectType: secret
+                  objectVersion: ""
           secretObjects:
-            - secretName: jvm
+            - secretName: tkmmsacquirermanager
               type: Opaque
               data:
                 - key: TZ
                   objectName: ${{ parameters.env }}-tz
-            - secretName: kafka-log-configuration
-              type: Opaque
-              data:
+
                 - key: KAFKA_APPENDER_BOOTSTRAP_SERVERS
                   objectName: ${{ parameters.env }}-kafka-appender-bootstrap-servers
                 - key: ENABLE_FILE_APPENDER
@@ -186,9 +283,7 @@ steps:
                   objectName: ${{ parameters.env }}-log-file
                 - key: KAFKA_APPENDER_TOPIC
                   objectName: ${{ parameters.env }}-kafka-appender-topic
-            - secretName: keyvault-connection-informations
-              type: Opaque
-              data:
+
                 - key: AZURE_KEYVAULT_PROFILE
                   objectName: ${{ parameters.env }}-azure-keyvault-profile
                 - key: AZURE_KEYVAULT_CLIENT_ID
@@ -199,9 +294,10 @@ steps:
                   objectName: ${{ parameters.env }}-azure-keyvault-tenant-id
                 - key: AZURE_KEYVAULT_URI
                   objectName: ${{ parameters.env }}-azure-keyvault-uri
-            - secretName: tkmmsacquirermanager
-              type: Opaque
-              data:
+
+                - key: APPLICATIONINSIGHTS_CONNECTION_STRING
+                  objectName: ${{ parameters.env }}-applicationinsights-connection-string
+
                 - key: AZURE_STORAGE_ENDPOINT
                   objectName: ${{ parameters.env }}-azure-storage-endpoint
                 - key: BATCH_ACQUIRER_RESULT_CRON
@@ -228,13 +324,55 @@ steps:
                   objectName: ${{ parameters.env }}-known-hashes-copy-cron
                 - key: KNOWN_HASHES_GEN_CRON
                   objectName: ${{ parameters.env }}-known-hashes-gen-cron
-                - key: SFTP_SIA_FOLDER
-                  objectName: ${{ parameters.env }}-sftp-sia-folder
-                - key: SFTP_SIA_HOSTNAME
-                  objectName: ${{ parameters.env }}-sftp-sia-hostname
-                - key: SFTP_SIA_PORT
-                  objectName: ${{ parameters.env }}-sftp-sia-port
-                - key: SFTP_SIA_USER
-                  objectName: ${{ parameters.env }}-sftp-sia-user
                 - key: VISA_URL_ACQUIRER
                   objectName: ${{ parameters.env }}-visa-url-acquirer
+                - key: BLOB_STORAGE_ACQUIRER_CONTAINER
+                  objectName: ${{ parameters.env }}-blob-storage-acquirer-container
+                - key: ACQUIRER_FILE_UPLOAD_CHUNK_SIZE_MB
+                  objectName: ${{ parameters.env }}-acquirer-file-upload-chunk-size-mb
+                - key: ACQUIRER_FILE_UPLOAD_MAX_CONCURRENCY
+                  objectName: ${{ parameters.env }}-acquirer-file-upload-max-concurrency
+                - key: ACQUIRER_FILE_UPLOAD_TIME_LIMIT_MINUTES
+                  objectName: ${{ parameters.env }}-acquirer-file-upload-time-limit-minutes
+                - key: ACQUIRER_FILE_DAYS_TO_LIVE
+                  objectName: ${{ parameters.env }}-acquirer-file-days-to-live
+                - key: BATCH_ACQUIRER_THREAD_NUMBER
+                  objectName: ${{ parameters.env }}-batch-acquirer-thread-number
+                - key: BATCH_MAX_THREAD
+                  objectName: ${{ parameters.env }}-acquirer-manager-batch-max-thread
+                - key: BIN_RANGE_GEN_MAX_ROWS_IN_FILES
+                  objectName: ${{ parameters.env }}-acquirer-manager-bin-range-gen-max-rows-in-files
+                - key: FAILURE_RATE_THRESHOLD
+                  objectName: ${{ parameters.env }}-acquirer-manager-failure-rate-threshold
+                - key: KAFKA_SASL_MECHANISM
+                  objectName: ${{ parameters.env }}-kafka-sasl-mechanism
+                - key: KAFKA_SECURITY_PROTOCOL
+                  objectName: ${{ parameters.env }}-kafka-security-protocol
+                - key: KNOWN_HASHES_GEN_MAX_RECORDS_IN_API_CALL
+                  objectName: ${{ parameters.env }}-acquirer-manager-known-hashes-gen-max-records-in-api-call
+                - key: KNOWN_HASHES_GEN_MAX_ROWS_IN_FILES
+                  objectName: ${{ parameters.env }}-acquirer-manager-known-hashes-gen-max-rows-in-files
+                - key: LOGGING_LEVEL
+                  objectName: ${{ parameters.env }}-acquirer-manager-logging-level
+                - key: LOGGING_LEVEL_HIBERNATE
+                  objectName: ${{ parameters.env }}-acquirer-manager-logging-level-hibernate
+                - key: LOGGING_PATTERN
+                  objectName: ${{ parameters.env }}-acquirer-manager-logging-pattern
+                - key: MINIMUM_NUMBER_OF_CALLS
+                  objectName: ${{ parameters.env }}-acquirer-manager-minimum-number-of-calls
+                - key: RETRY_MAX_ATTEMPTS
+                  objectName: ${{ parameters.env }}-acquirer-manager-retry-max-attempts
+                - key: RETRY_WAIT_DURATION
+                  objectName: ${{ parameters.env }}-acquirer-manager-retry-wait-duration
+                - key: RING_BUFFER_SIZE_IN_CLOSED_SATE
+                  objectName: ${{ parameters.env }}-acquirer-manager-ring-buffer-size-in-closed-sate
+                - key: RING_BUFFER_SIZE_IN_HALFOPEN_SATE
+                  objectName: ${{ parameters.env }}-acquirer-manager-ring-buffer-size-in-halfopen-sate
+                - key: SLIDING_WINDOW_SIZE
+                  objectName: ${{ parameters.env }}-acquirer-manager-sliding-window-size
+                - key: THREAD_CORE_POOL_SIZE
+                  objectName: ${{ parameters.env }}-acquirer-manager-thread-core-pool-size
+                - key: THREAD_MAX_POOL_SIZE
+                  objectName: ${{ parameters.env }}-acquirer-manager-thread-max-pool-size
+                - key: WAIT_DURATION_IN_OPENSTATE
+                  objectName: ${{ parameters.env }}-acquirer-manager-wait-duration-in-openstate

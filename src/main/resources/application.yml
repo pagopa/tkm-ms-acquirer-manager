@@ -27,6 +27,10 @@ spring:
     topics:
       read-queue:
         name: ${KAFKA_READ_QUEUE_TOPIC}
+  servlet:
+    multipart:
+      max-file-size: -1
+      max-request-size: -1
 
 server:
   port: ${SERVER_PORT:8080}
@@ -74,8 +78,6 @@ keyvault:
   acquirerPgpPrivateKey: ${${AZURE_KEYVAULT_PROFILE:prod}-acquirerPgpPrivateKey}
   acquirerPgpPrivateKeyPassphrase: ${${AZURE_KEYVAULT_PROFILE:prod}-acquirerPgpPrivateKeyPassphrase}
   tkmReadTokenParPanPubPgpKey: ${${AZURE_KEYVAULT_PROFILE:prod}-tkmReadTokenParPanPubPgpKey}
-  sftpPassPhrase: ${${AZURE_KEYVAULT_PROFILE:prod}-sftpPassPhrase}
-  sftpPrivateKey: ${${AZURE_KEYVAULT_PROFILE:prod}-sftpPrivateKey}
   tkmReadTokenParPanProducerSaslJaasConfig: ${${AZURE_KEYVAULT_PROFILE:prod}-tkmReadTokenParPanProducerSaslJaasConfig:}
 
 blob-storage:
@@ -113,15 +115,6 @@ batch:
     cron: ${BATCH_ACQUIRER_RESULT_CRON:-}
     threadNumber: ${BATCH_ACQUIRER_THREAD_NUMBER:5}
 
-sftp:
-  sftpHostname: ${SFTP_SIA_HOSTNAME}
-  sftpPort: ${SFTP_SIA_PORT}
-  sftpUser: ${SFTP_SIA_USER}
-  sftpPrivateKey: ${keyvault.sftpPrivateKey}
-  sftpPassPhrase: ${keyvault.sftpPassPhrase}
-  sftpFolder: ${SFTP_SIA_FOLDER}
-  sftpFilesPattern: ${SFTP_SIA_FILE_PATTERN:^TKM\..*\.pgp}
-
 thread:
   corePoolSize: ${THREAD_CORE_POOL_SIZE:5}
   maxPoolSize: ${THREAD_MAX_POOL_SIZE:10}
@@ -129,7 +122,7 @@ thread:
 #resilience4j.circuitbreaker:
  # instances:
   #  visaBinRangesCircuitBreaker:
-  #  minimumNumberOfCalls: ${MINUMUM_NUMBER_OF_CALLS:2}
+  #  minimumNumberOfCalls: ${MINIMUM_NUMBER_OF_CALLS:2}
   #  slidingWindowSize: ${SLIDING_WINDOW_SIZE:4}
   #  ringBufferSizeInClosedState: ${RING_BUFFER_SIZE_IN_CLOSED_SATE:2}
   #  ringBufferSizeInHalfOpenState: ${RING_BUFFER_SIZE_IN_HALFOPEN_SATE:2}

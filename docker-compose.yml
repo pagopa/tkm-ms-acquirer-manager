@@ -1,0 +1,23 @@
+version: '3'
+services:
+    db-acquirer-manager:
+        image: "postgres:alpine"
+        container_name: postgress-acquirer-manager
+        volumes:
+            - './postgresinit:/docker-entrypoint-initdb.d/'
+        ports:
+            - "5000:5432"
+        environment:
+            POSTGRES_PASSWORD: tkm_acquirer_manager
+            POSTGRES_DB: tkm_acquirer_manager
+            POSTGRES_USER: tkm_acquirer_manager
+        networks:
+            - tkmnet
+
+    liquibase-acquirer-manager:
+        build: ./devops/db/liquibase
+        container_name: liquibase-acquirer-manager
+
+networks:
+    tkmnet:
+        name: acquirer_manager_network

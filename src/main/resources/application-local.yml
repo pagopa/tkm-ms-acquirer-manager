@@ -6,10 +6,6 @@ AZURE_STORAGE_ENDPOINT: https://127.0.0.1:8125/devstoreaccount1
 VISA_URL_ACQUIRER: https://sandbox.api.visa.com/v1/binRangeDetails
 DB_SERVER: localhost:5000/tkm_acquirer_manager
 LOGGING_LEVEL: DEBUG
-SFTP_SIA_HOSTNAME: localhost
-SFTP_SIA_PORT: 2222
-SFTP_SIA_USER: local
-SFTP_SIA_FOLDER: upload
 KAFKA_READ_QUEUE_TOPIC: tkm-read-token-par-pan
 KAFKA_SERVERS: localhost:9092
 KAFKA_SECURITY_PROTOCOL: PLAINTEXT

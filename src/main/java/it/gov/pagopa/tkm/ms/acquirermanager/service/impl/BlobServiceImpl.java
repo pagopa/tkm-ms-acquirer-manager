@@ -115,7 +115,7 @@ public class BlobServiceImpl implements BlobService {
 
     @Override
     public void downloadFileHashingTmp(String remotePathFile, String localPathFileOut) {
-        BlobContainerClient client = getBlobContainerClient();
+        BlobContainerClient client = getBlobContainerClient(containerNameBinHash);
         BlobClient blobClient = client.getBlobClient(remotePathFile);
         blobClient.downloadToFile(localPathFileOut, true);
     }
@@ -123,7 +123,7 @@ public class BlobServiceImpl implements BlobService {
     @Override
     public List<BlobItem> getFilesFromDirectory(String directory) {
         directory = StringUtils.appendIfMissing(directory, Constants.BLOB_STORAGE_DELIMITER);
-        BlobContainerClient client = getBlobContainerClient();
+        BlobContainerClient client = getBlobContainerClient(containerNameBinHash);
         log.info("Looking for directory: " + directory);
         BlobListDetails blobListDetails = new BlobListDetails().setRetrieveMetadata(true);
         ListBlobsOptions listBlobsOptions = new ListBlobsOptions()
@@ -138,7 +138,7 @@ public class BlobServiceImpl implements BlobService {
     @Override
     public void deleteFolder(String directory) {
         List<BlobItem> files = getFilesFromDirectory(directory);
-        BlobContainerClient client = getBlobContainerClient();
+        BlobContainerClient client = getBlobContainerClient(containerNameBinHash);
         for (BlobItem blobItem : files) {
             log.debug("The folder is not empty. Deleting " + blobItem.getName());
             client.getBlobClient(blobItem.getName()).delete();
@@ -146,9 +146,10 @@ public class BlobServiceImpl implements BlobService {
     }
 
     @NotNull
-    private BlobContainerClient getBlobContainerClient() {
+    @Override
+    public BlobContainerClient getBlobContainerClient(String container) {
         BlobServiceClient serviceClient = serviceClientBuilder.connectionString(connectionString).buildClient();
-        return serviceClient.getBlobContainerClient(containerNameBinHash);
+        return serviceClient.getBlobContainerClient(container);
     }
 
 }

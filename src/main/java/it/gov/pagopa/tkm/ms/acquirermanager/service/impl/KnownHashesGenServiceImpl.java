@@ -11,8 +11,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import it.gov.pagopa.tkm.ms.acquirermanager.client.internal.cardmanager.CardManagerClient;
 import it.gov.pagopa.tkm.ms.acquirermanager.client.internal.cardmanager.model.response.KnownHashesResponse;
-import it.gov.pagopa.tkm.ms.acquirermanager.constant.DirectoryNames;
-import it.gov.pagopa.tkm.ms.acquirermanager.constant.ErrorCodeEnum;
+import it.gov.pagopa.tkm.ms.acquirermanager.constant.*;
 import it.gov.pagopa.tkm.ms.acquirermanager.exception.AcquirerDataNotFoundException;
 import it.gov.pagopa.tkm.ms.acquirermanager.exception.AcquirerException;
 import it.gov.pagopa.tkm.ms.acquirermanager.exception.EmptyResponseException;
@@ -21,8 +20,7 @@ import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.TkmBatchResult;
 import it.gov.pagopa.tkm.ms.acquirermanager.model.entity.TkmHashOffset;
 import it.gov.pagopa.tkm.ms.acquirermanager.repository.BatchResultRepository;
 import it.gov.pagopa.tkm.ms.acquirermanager.repository.HashOffsetRepository;
-import it.gov.pagopa.tkm.ms.acquirermanager.service.FileGeneratorService;
-import it.gov.pagopa.tkm.ms.acquirermanager.service.KnownHashesGenService;
+import it.gov.pagopa.tkm.ms.acquirermanager.service.*;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.ListUtils;
@@ -71,6 +69,9 @@ public class KnownHashesGenServiceImpl implements KnownHashesGenService {
     @Autowired
     private CardManagerClient cardManagerClient;
 
+    @Autowired
+    private BlobService blobService;
+
     @Value("${azure.storage.connection-string}")
     private String connectionString;
 
@@ -115,6 +116,7 @@ public class KnownHashesGenServiceImpl implements KnownHashesGenService {
     }
 
     private List<BatchResultDetails> getKnownHpans(Instant now) throws AcquirerException {
+        blobService.deleteFolder(blobService.getDirectoryName(now, BatchEnum.KNOWN_HASHES_GEN));
         List<BatchResultDetails> details = new ArrayList<>();
         List<TkmHashOffset> offsets = hashOffsetRepository.findAll();
         TkmHashOffset lastOffset = CollectionUtils.isEmpty(offsets) ? new TkmHashOffset() : offsets.get(0);
@@ -136,7 +138,7 @@ public class KnownHashesGenServiceImpl implements KnownHashesGenService {
                 details.add(newFileDetails);
             }
         }
-        log.trace(lastOffset);
+        log.info("Last offset: " + lastOffset);
         hashOffsetRepository.save(lastOffset);
         return details;
     }
