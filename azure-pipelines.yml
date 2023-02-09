@@ -395,7 +395,9 @@ stages:
 
   - stage: UAT_Build
     displayName: UAT Build
-    dependsOn: POM
+    dependsOn:
+      - POM
+      - SIT_Build
     condition: and(succeeded('POM'), eq(variables.isToDeploy, true), eq(variables.isUAT, true), or(ne(variables.isHOTFIX, true), and(eq(variables.isHOTFIX, true), succeeded('SIT_Build'))))
     variables:
       pomversion: $[ stageDependencies.POM.POM.outputs['getpomversion.outputpomversion'] ]
