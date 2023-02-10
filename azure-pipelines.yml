@@ -272,11 +272,6 @@ stages:
         pool:
           vmImage: $(vmImageNameDefault)
         steps:
-          - task: DownloadPipelineArtifact@2
-            inputs:
-              buildType: 'current'
-              artifactName: 'target'
-              targetPath: '$(Pipeline.Workspace)/target'
           - task: Bash@3
             displayName: PrintInfo
             name: PrintInfo
